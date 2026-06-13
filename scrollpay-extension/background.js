@@ -21,7 +21,7 @@ const DEFAULT_ADS = [
     id: 'ad_001',
     brandName: 'ScrollPay',
     brandLogo: '',
-    headline: 'Invite friends. Earn 50 sats per install.',
+    headline: 'Invite friends. Earn 50 XP per install.',
     ctaText: 'Share now',
     ctaUrl: 'https://scrollpay.app',
     pointsPerImpression: 5

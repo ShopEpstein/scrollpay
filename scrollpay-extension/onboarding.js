@@ -9,7 +9,6 @@ const totalScreens = 4;
 // Collected data across screens
 const userData = {
   email: '',
-  lightningAddress: '',
   referredBy: '',
   userId: ''
 };
@@ -60,7 +59,6 @@ document.getElementById('btn-screen-0').addEventListener('click', () => {
 // Screen 1 → 2
 function proceedFromScreen1() {
   userData.email = document.getElementById('email-input').value.trim();
-  userData.lightningAddress = document.getElementById('lightning-input').value.trim();
   showScreen(2);
 }
 
@@ -96,7 +94,6 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
       userData: {
         userId: userData.userId,
         email: userData.email,
-        lightningAddress: userData.lightningAddress,
         referredBy: userData.referredBy
       }
     });
@@ -128,7 +125,7 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
     }
   } catch (e) {
     setStatus('Something went wrong. Please retry.', 'error');
-    btn.textContent = 'Start Earning →';
+    btn.textContent = 'Start Earning XP →';
     btn.disabled = false;
   }
 });
