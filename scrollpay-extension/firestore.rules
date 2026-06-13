@@ -65,6 +65,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Waitlist: anyone can submit their email once; no reads or deletes.
+    match /sp_waitlist/{entryId} {
+      allow create: if request.resource.data.email is string
+        && request.resource.data.email.size() > 3;
+      allow read, update, delete: if false;
+    }
+
     // Global counters (signup number, etc.). Only the userCount field grows.
     match /sp_meta/{docId} {
       allow read: if true;

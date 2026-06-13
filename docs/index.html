@@ -115,6 +115,101 @@
       .hero h1 { font-size: 36px; }
       .steps, .privacy-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── Waitlist ── */
+    .waitlist-form {
+      display: flex; gap: 10px; max-width: 480px;
+      margin: 28px auto 0; flex-wrap: wrap; justify-content: center;
+    }
+    .waitlist-form input[type="email"] {
+      flex: 1; min-width: 200px; padding: 14px 16px;
+      border: 1.5px solid #e5e7eb; border-radius: 10px;
+      font-size: 15px; font-family: inherit; color: var(--ink);
+      outline: none; background: #fff;
+    }
+    .waitlist-form input[type="email"]:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.12);
+    }
+    .waitlist-msg { text-align: center; margin-top: 16px; font-size: 15px; font-weight: 500; }
+    .waitlist-success { color: #16a34a; }
+    .waitlist-error   { color: #dc2626; }
+
+    /* ── Demo widget (scoped) ── */
+    #demo-widget {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      width: 280px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.14), 0 1px 4px rgba(0,0,0,.06);
+      z-index: 9999;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      font-family: 'Inter', -apple-system, sans-serif;
+      transform: translateX(320px);
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+      opacity: 0;
+    }
+    #demo-widget.dw-visible  { transform: translateX(0); opacity: 1; }
+    #demo-widget.dw-hiding   { transform: translateX(320px); opacity: 0; transition: transform .3s ease-in, opacity .3s; }
+
+    #demo-widget #dw-handle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: default; user-select: none;
+    }
+    #demo-widget .dw-drag-dots { font-size: 10px; color: #9ca3af; letter-spacing: 2px; line-height: 1; }
+    #demo-widget .dw-brand { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #f97316; text-transform: uppercase; }
+    #demo-widget .dw-status { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 500; color: #16a34a; }
+    #demo-widget .dw-dot {
+      display: inline-block; width: 6px; height: 6px;
+      background: #22c55e; border-radius: 50%;
+      animation: dw-pulse 2s infinite;
+    }
+    @keyframes dw-pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    #demo-widget #dw-ad-area { padding: 12px; }
+    #demo-widget .dw-ad-content { display: flex; align-items: flex-start; gap: 10px; }
+    #demo-widget .dw-logo {
+      width: 36px; height: 36px; flex-shrink: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg,#f97316,#ea580c);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff; overflow: hidden;
+    }
+    #demo-widget .dw-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    #demo-widget .dw-ad-text { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    #demo-widget .dw-headline { font-size: 12px; font-weight: 500; color: #111827; line-height: 1.4; }
+    #demo-widget .dw-cta {
+      display: inline-block; padding: 5px 10px;
+      background: #f97316; color: #fff;
+      font-size: 11px; font-weight: 600;
+      border-radius: 6px; text-decoration: none;
+      align-self: flex-start; transition: background .15s;
+    }
+    #demo-widget .dw-cta:hover { background: #ea580c; color: #fff; }
+
+    #demo-widget #dw-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: #f8f9fa; border-top: 1px solid #e5e7eb;
+    }
+    #demo-widget .dw-earnings { font-size: 11px; font-weight: 600; color: #16a34a; }
+    #demo-widget .dw-close {
+      background: none; border: none; cursor: pointer;
+      color: #9ca3af; font-size: 12px; font-weight: 500;
+      padding: 2px 6px; border-radius: 4px; font-family: inherit;
+    }
+    #demo-widget .dw-close:hover { background: #e5e7eb; color: #374151; }
+    #demo-widget #dw-progress { height: 3px; background: #e5e7eb; }
+    #demo-widget #dw-progress-fill {
+      height: 100%; width: 0%; background: linear-gradient(90deg,#f97316,#fbbf24);
+      border-radius: 0 2px 2px 0;
+    }
   </style>
 </head>
 <body>
@@ -217,6 +312,18 @@
     </div>
   </section>
 
+  <section class="block" id="waitlist">
+    <div class="wrap" style="text-align:center">
+      <h2>Get early access</h2>
+      <p class="section-sub">Join the waitlist before launch and lock in <strong>Founding Member</strong> status — that's 1.5× XP on every referral, forever.</p>
+      <form id="waitlist-form" class="waitlist-form">
+        <input type="email" id="waitlist-email" placeholder="your@email.com" required />
+        <button type="submit" class="btn-primary">Join the waitlist →</button>
+      </form>
+      <p id="waitlist-msg" class="waitlist-msg" style="display:none"></p>
+    </div>
+  </section>
+
   <section class="final" id="get-started">
     <div class="wrap">
       <h2>Start earning XP today</h2>
@@ -234,6 +341,210 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Demo widget — mirrors the real Chrome extension widget -->
+  <div id="demo-widget" aria-label="ScrollPay demo widget">
+    <div id="dw-handle">
+      <span class="dw-drag-dots">⠿⠿⠿</span>
+      <span class="dw-brand">SCROLLPAY</span>
+      <span class="dw-status"><span class="dw-dot"></span> <span id="dw-status-text">earning</span></span>
+    </div>
+    <div id="dw-ad-area">
+      <div class="dw-ad-content">
+        <div class="dw-logo" id="dw-logo">S</div>
+        <div class="dw-ad-text">
+          <div class="dw-headline" id="dw-headline">Loading ad…</div>
+          <a class="dw-cta" id="dw-cta" href="#" target="_blank" rel="noopener noreferrer">Learn more</a>
+        </div>
+      </div>
+    </div>
+    <div id="dw-footer">
+      <span class="dw-earnings">🎟️ <span id="dw-xp">0</span> XP earned</span>
+      <button class="dw-close" id="dw-close" aria-label="Hide demo widget">✕</button>
+    </div>
+    <div id="dw-progress"><div id="dw-progress-fill"></div></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import {
+      getFirestore, collection, query, where, getDocs,
+      doc, setDoc, serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
+      authDomain: "scrollpay-1ce29.firebaseapp.com",
+      projectId: "scrollpay-1ce29",
+      storageBucket: "scrollpay-1ce29.firebasestorage.app",
+      messagingSenderId: "710989126022",
+      appId: "1:710989126022:web:50324119c803af284f7407"
+    };
+
+    // Fallback ads shown before Firestore loads or if it fails
+    const FALLBACK_ADS = [
+      {
+        brandName: 'Staccana',
+        brandLogo: '',
+        headline: 'Premium coffee, delivered fresh to your door.',
+        ctaText: 'Shop now',
+        ctaUrl: 'https://staccana.com'
+      },
+      {
+        brandName: 'ScrollPay',
+        brandLogo: '',
+        headline: 'Invite friends. Earn 100 XP per install + build your downline.',
+        ctaText: 'Share now',
+        ctaUrl: '#get-started'
+      }
+    ];
+
+    const AD_ROTATE_MS = 7000;
+    let ads = [...FALLBACK_ADS];
+    let adIndex = 0;
+    let xpCount = 0;
+
+    const fbApp = initializeApp(FIREBASE_CONFIG, 'landing');
+    const db = getFirestore(fbApp);
+
+    // Load live ads from Firestore (picks up any booked campaigns automatically)
+    async function loadAds() {
+      try {
+        const snap = await getDocs(query(collection(db, 'sp_ads'), where('active', '==', true)));
+        if (!snap.empty) {
+          const live = [];
+          snap.forEach(d => live.push({ id: d.id, ...d.data() }));
+          ads = live;
+        }
+      } catch (_) { /* use fallback */ }
+      renderAd(ads[0]);
+      restartProgress();
+    }
+
+    // ── Widget rendering ────────────────────────────────────────
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderAd(ad) {
+      if (!ad) return;
+      document.getElementById('dw-headline').textContent = ad.headline || '';
+      const cta = document.getElementById('dw-cta');
+      cta.textContent = ad.ctaText || 'Learn more';
+
+      // Internal ScrollPay links scroll to the CTA section instead of opening a new tab
+      if ((ad.ctaUrl || '').startsWith('#') || (ad.brandName || '').toLowerCase() === 'scrollpay') {
+        cta.href = '#get-started';
+        cta.removeAttribute('target');
+      } else {
+        cta.href = ad.ctaUrl || '#';
+        cta.setAttribute('target', '_blank');
+      }
+
+      const logo = document.getElementById('dw-logo');
+      if (ad.brandLogo) {
+        const initial = esc((ad.brandName || 'S')[0].toUpperCase());
+        logo.innerHTML = `<img src="${esc(ad.brandLogo)}" alt="${esc(ad.brandName)}"
+          onerror="this.parentElement.textContent='${initial}'" />`;
+      } else {
+        logo.textContent = (ad.brandName || 'S')[0].toUpperCase();
+      }
+    }
+
+    function restartProgress() {
+      const fill = document.getElementById('dw-progress-fill');
+      if (!fill) return;
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+      fill.getBoundingClientRect(); // force reflow
+      fill.style.transition = `width ${AD_ROTATE_MS}ms linear`;
+      fill.style.width = '100%';
+    }
+
+    function rotateAd() {
+      adIndex = (adIndex + 1) % ads.length;
+      renderAd(ads[adIndex]);
+      restartProgress();
+    }
+
+    // ── Widget visibility ────────────────────────────────────────
+
+    function showWidget() {
+      document.getElementById('demo-widget').classList.remove('dw-hiding');
+      document.getElementById('demo-widget').classList.add('dw-visible');
+    }
+
+    function hideWidget() {
+      const w = document.getElementById('demo-widget');
+      w.classList.add('dw-hiding');
+      w.classList.remove('dw-visible');
+    }
+
+    document.getElementById('dw-close').addEventListener('click', () => {
+      hideWidget();
+      // Slide back in after 8 seconds so it's always present
+      setTimeout(showWidget, 8000);
+    });
+
+    document.getElementById('dw-cta').addEventListener('click', e => {
+      const href = e.currentTarget.getAttribute('href');
+      if (href === '#get-started') {
+        e.preventDefault();
+        document.getElementById('get-started').scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // ── XP counter ───────────────────────────────────────────────
+
+    setInterval(() => {
+      if (document.getElementById('demo-widget').classList.contains('dw-visible')) {
+        xpCount++;
+        document.getElementById('dw-xp').textContent = xpCount.toLocaleString();
+      }
+    }, 1000);
+
+    setInterval(rotateAd, AD_ROTATE_MS);
+
+    // ── Waitlist form ────────────────────────────────────────────
+
+    const waitlistForm = document.getElementById('waitlist-form');
+    waitlistForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = document.getElementById('waitlist-email').value.trim();
+      const msg   = document.getElementById('waitlist-msg');
+      const btn   = waitlistForm.querySelector('button[type="submit"]');
+
+      btn.disabled = true;
+      btn.textContent = 'Joining…';
+      msg.style.display = 'none';
+
+      try {
+        const docId = email.toLowerCase().replace(/[^a-z0-9@._+-]/g, '_');
+        await setDoc(doc(db, 'sp_waitlist', docId), {
+          email,
+          joinedAt: serverTimestamp(),
+          source: 'landing'
+        });
+        msg.textContent = "✓ You're on the list! We'll reach out when we launch.";
+        msg.className = 'waitlist-msg waitlist-success';
+        msg.style.display = 'block';
+        waitlistForm.style.display = 'none';
+      } catch (err) {
+        msg.textContent = 'Something went wrong — please try again.';
+        msg.className = 'waitlist-msg waitlist-error';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Join the waitlist →';
+      }
+    });
+
+    // ── Init ─────────────────────────────────────────────────────
+
+    // Slide widget in after 800ms
+    setTimeout(showWidget, 800);
+    loadAds();
   </script>
 </body>
 </html>
