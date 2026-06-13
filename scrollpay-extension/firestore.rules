@@ -43,10 +43,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Ads: public read, no client writes.
+    // Ads: public read.
+    // Authenticated advertisers may create and manage their own ads.
+    // Counter fields (impressions, clicks, budgetUsed) are immutable from the
+    // client — only server-side functions should update them.
     match /sp_ads/{adId} {
       allow read: if true;
-      allow write: if false;
+
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.impressions == 0
+        && request.resource.data.clicks == 0
+        && request.resource.data.budgetUsed == 0;
+
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.impressions == resource.data.impressions
+        && request.resource.data.clicks == resource.data.clicks
+        && request.resource.data.budgetUsed == resource.data.budgetUsed;
+
+      allow delete: if false;
     }
 
     // Global counters (signup number, etc.). Only the userCount field grows.

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrollPay — Advertiser Portal</title>
+  <link rel="icon" href="../docs/icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Top nav (hidden on auth screen) -->
+  <nav id="main-nav" class="hidden">
+    <div class="nav-inner">
+      <span class="nav-brand">SCROLLPAY <span class="nav-tag">Advertiser</span></span>
+      <div class="nav-right">
+        <span id="nav-email"></span>
+        <button id="signout-btn" class="btn-ghost-sm">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── AUTH VIEW ── -->
+  <div id="view-auth" class="view auth-view">
+    <div class="auth-card">
+      <div class="auth-logo">SCROLLPAY</div>
+      <div class="auth-sub">Advertiser Portal</div>
+
+      <div class="auth-tabs">
+        <button class="tab-btn active" data-tab="login">Sign in</button>
+        <button class="tab-btn" data-tab="register">Create account</button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="you@company.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <p id="auth-error" class="err-msg hidden"></p>
+        <button type="submit" id="auth-submit" class="btn-primary full">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD VIEW ── -->
+  <div id="view-dashboard" class="view hidden">
+    <div class="page">
+      <div class="page-head">
+        <h1>Your Campaigns</h1>
+        <button id="new-campaign-btn" class="btn-primary">+ New Campaign</button>
+      </div>
+      <div id="campaigns-container"></div>
+    </div>
+  </div>
+
+  <!-- ── CREATE CAMPAIGN VIEW ── -->
+  <div id="view-create" class="view hidden">
+    <div class="page">
+      <div class="wizard-head">
+        <button id="back-to-dashboard" class="back-link">← Back</button>
+        <h1>New Campaign</h1>
+      </div>
+
+      <!-- Step progress -->
+      <div class="wizard-progress">
+        <div class="wp-step active" data-step="1"><span class="wp-num">1</span><span class="wp-lbl">Brand</span></div>
+        <div class="wp-line"></div>
+        <div class="wp-step" data-step="2"><span class="wp-num">2</span><span class="wp-lbl">Ad Creative</span></div>
+        <div class="wp-line"></div>
+        <div class="wp-step" data-step="3"><span class="wp-num">3</span><span class="wp-lbl">Budget & Launch</span></div>
+      </div>
+
+      <!-- Step 1: Brand -->
+      <div class="step-panel" id="step-1">
+        <div class="card">
+          <h2 class="card-title">Your Brand</h2>
+          <div class="field">
+            <label>Brand / Company Name <span class="req">*</span></label>
+            <input type="text" id="brand-name" placeholder="Acme Corp" />
+          </div>
+          <div class="field">
+            <label>Logo URL <span class="opt">(optional — leave blank to use initials)</span></label>
+            <input type="url" id="brand-logo" placeholder="https://example.com/logo.png" />
+            <span class="hint">Direct image link, square format, min 64 × 64 px.</span>
+          </div>
+          <div class="field">
+            <label>Company Website <span class="opt">(optional)</span></label>
+            <input type="url" id="brand-website" placeholder="https://acme.com" />
+          </div>
+          <div class="step-actions">
+            <button class="btn-primary" id="step1-next">Continue →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Ad Creative -->
+      <div class="step-panel hidden" id="step-2">
+        <div class="card">
+          <h2 class="card-title">Ad Creative</h2>
+          <div class="field">
+            <label>Headline <span class="req">*</span></label>
+            <input type="text" id="ad-headline" placeholder="The best coffee you'll ever try." maxlength="80" />
+            <span class="char-count"><span id="headline-chars">0</span> / 80</span>
+          </div>
+          <div class="field">
+            <label>CTA Button Text <span class="req">*</span></label>
+            <input type="text" id="ad-cta" placeholder="Shop now" maxlength="25" />
+          </div>
+          <div class="field">
+            <label>Destination URL <span class="req">*</span></label>
+            <input type="url" id="ad-url" placeholder="https://acme.com/offer" />
+          </div>
+
+          <!-- Live preview -->
+          <div class="preview-wrap">
+            <div class="preview-label">Live Preview</div>
+            <div class="preview-widget">
+              <div class="pw-handle">
+                <span class="pw-brand-text">SCROLLPAY</span>
+                <span class="pw-status"><span class="pw-dot"></span> earning</span>
+              </div>
+              <div class="pw-body">
+                <div id="preview-logo" class="pw-logo">A</div>
+                <div class="pw-text">
+                  <div id="preview-headline" class="pw-headline">Your headline here</div>
+                  <button id="preview-cta" class="pw-cta">CTA Text</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions two">
+            <button class="btn-ghost" id="step2-back">← Back</button>
+            <button class="btn-primary" id="step2-next">Continue →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Budget & Launch -->
+      <div class="step-panel hidden" id="step-3">
+        <div class="card">
+          <h2 class="card-title">Budget & Launch</h2>
+          <div class="field">
+            <label>Daily Budget <span class="req">*</span></label>
+            <div class="input-suffix-wrap">
+              <input type="number" id="daily-budget" placeholder="1000" min="100" step="100" />
+              <span class="input-suffix">XP / day</span>
+            </div>
+            <span class="hint">Minimum 100 XP/day. Your ad rotates until the daily budget is spent.</span>
+          </div>
+          <div class="field">
+            <label>Total Campaign Budget <span class="req">*</span></label>
+            <div class="input-suffix-wrap">
+              <input type="number" id="total-budget" placeholder="10000" min="500" step="500" />
+              <span class="input-suffix">XP total</span>
+            </div>
+            <span class="hint">Campaign pauses automatically when this limit is reached.</span>
+          </div>
+
+          <div id="campaign-summary" class="summary-box hidden"></div>
+
+          <p id="launch-error" class="err-msg hidden"></p>
+          <div class="step-actions two">
+            <button class="btn-ghost" id="step3-back">← Back</button>
+            <button class="btn-primary" id="launch-btn">🚀 Launch Campaign</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
