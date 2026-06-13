@@ -72,11 +72,18 @@ results UI) is a future step.
 
 | Action | XP |
 |--------|------|
-| Ad impression (2+ sec) | 5 |
+| Per active second browsing | 1 |
 | Ad click | 25 |
 | Referral install | 50 |
 | Daily cap | 5,000 |
 | 1 XP | 1 prize-draw entry |
+
+Earning is **continuous**: while the tab is visible and the user has interacted
+within the last few seconds (actively scrolling), the widget rotates ads and
+accrues XP each second. XP is accumulated locally and flushed to Firestore in
+small batches (≤50 per write, matching the rules ceiling) every ~10s and on tab
+hide. The daily cap is enforced server-side in `awardXp`. See the tunables at
+the top of `content.js`.
 
 ## Technical Notes
 

@@ -103,6 +103,10 @@
   gap: 10px !important;
 }
 
+#scrollpay-widget #sp-brand-mark {
+  display: contents !important;
+}
+
 #scrollpay-widget .sp-brand-logo {
   width: 36px !important;
   height: 36px !important;
