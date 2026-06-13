@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrollPay — Earn XP While You Browse, Win Prizes</title>
+  <meta name="description" content="ScrollPay rewards you with XP for ads you see while browsing. Every XP is an entry in our weekly prize draw. Privacy-safe — we never read your page content." />
+  <link rel="icon" href="icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #f97316;
+      --orange-dark: #ea580c;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #f3f4f6;
+      --cream: #fff7ed;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      color: var(--ink);
+      line-height: 1.5;
+      background: #fff;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+    a { color: inherit; }
+
+    /* Nav */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.5px; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-cta {
+      background: var(--ink); color: #fff; text-decoration: none;
+      padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;
+    }
+
+    /* Hero */
+    .hero { text-align: center; padding: 64px 0 48px; }
+    .pill {
+      display: inline-block; background: var(--cream); color: var(--orange-dark);
+      border: 1px solid #fed7aa; border-radius: 999px;
+      padding: 6px 14px; font-size: 13px; font-weight: 600; margin-bottom: 24px;
+    }
+    .hero h1 { font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -1px; }
+    .hero h1 .accent { color: var(--orange); }
+    .hero p.sub { font-size: 19px; color: var(--muted); max-width: 620px; margin: 20px auto 32px; }
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--orange); color: #fff; text-decoration: none;
+      padding: 15px 28px; border-radius: 10px; font-weight: 700; font-size: 16px;
+      display: inline-flex; align-items: center; gap: 10px;
+      box-shadow: 0 6px 20px rgba(249,115,22,0.35); transition: background .15s, transform .15s;
+    }
+    .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); }
+    .btn-ghost {
+      background: #fff; color: var(--ink); text-decoration: none; border: 1px solid #e5e7eb;
+      padding: 15px 24px; border-radius: 10px; font-weight: 600; font-size: 16px;
+    }
+    .hero .micro { font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+    /* Sections */
+    section.block { padding: 56px 0; border-top: 1px solid var(--line); }
+    h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; text-align: center; }
+    .section-sub { text-align: center; color: var(--muted); margin-top: 10px; font-size: 16px; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 40px; }
+    .step { background: #fff; border: 1px solid #eef0f2; border-radius: 14px; padding: 28px 22px; text-align: center; }
+    .step .num {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--cream); color: var(--orange-dark);
+      font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
+    }
+    .step h3 { font-size: 17px; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 14px; }
+
+    /* Draw highlight */
+    .draw {
+      background: var(--cream); border: 1px solid #fed7aa; border-radius: 18px;
+      padding: 40px; text-align: center; margin-top: 40px;
+    }
+    .draw .ticket { font-size: 44px; }
+    .draw h3 { font-size: 24px; margin: 10px 0 8px; color: var(--orange-dark); }
+    .draw p { color: #9a3412; max-width: 560px; margin: 0 auto; }
+
+    /* Privacy */
+    .privacy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 36px; }
+    .priv { text-align: center; padding: 20px; }
+    .priv .ic { font-size: 30px; }
+    .priv h3 { font-size: 16px; margin: 10px 0 6px; }
+    .priv p { color: var(--muted); font-size: 14px; }
+
+    /* FAQ */
+    .faq { max-width: 720px; margin: 36px auto 0; }
+    .faq details { border-bottom: 1px solid var(--line); padding: 18px 4px; }
+    .faq summary { font-weight: 600; cursor: pointer; font-size: 16px; list-style: none; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; float: right; color: var(--orange); font-weight: 700; }
+    .faq details[open] summary::after { content: '−'; }
+    .faq p { color: var(--muted); margin-top: 10px; font-size: 15px; }
+
+    /* Final CTA */
+    .final { text-align: center; padding: 64px 0; }
+    .final h2 { margin-bottom: 24px; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: 13px; text-align: center; }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 760px) {
+      .hero h1 { font-size: 36px; }
+      .steps, .privacy-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <div class="brand"><img src="icon128.png" alt="ScrollPay" /> SCROLLPAY</div>
+      <a class="nav-cta" href="#get-started">Add to Chrome</a>
+    </nav>
+
+    <header class="hero">
+      <span class="pill">🎟️ Earn XP · Win the weekly draw</span>
+      <h1>Get rewarded for the<br /><span class="accent">scrolling you already do.</span></h1>
+      <p class="sub">ScrollPay shows you the occasional ad while you browse. Every ad earns you XP — and every XP is an entry in our weekly prize draw. That's it.</p>
+      <div class="cta-row">
+        <a class="btn-primary" href="#get-started">＋ Add to Chrome — Free</a>
+        <a class="btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="micro">Free forever · No crypto wallet needed · We never read your page content</p>
+    </header>
+  </div>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="section-sub">Three steps. No accounts to manage, no payouts to chase.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Add it to Chrome</h3>
+          <p>Install the extension in one click. A tiny widget rides along as you browse.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Browse like normal</h3>
+          <p>Now and then the widget shows a short ad. See it, or tap it — you earn XP either way.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Win the draw</h3>
+          <p>Your XP becomes entries in the weekly prize draw. More scrolling, more chances to win.</p>
+        </div>
+      </div>
+
+      <div class="draw">
+        <div class="ticket">🎟️</div>
+        <h3>1 XP = 1 entry</h3>
+        <p>Earn 5 XP per ad you see, 25 XP for ones you tap, and 50 XP for every friend you bring. Each week we draw a winner — the more entries you've earned, the better your odds.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>Private by design</h2>
+      <p class="section-sub">Earning rewards shouldn't cost you your privacy.</p>
+      <div class="privacy-grid">
+        <div class="priv">
+          <div class="ic">🔒</div>
+          <h3>We never read your pages</h3>
+          <p>No article text, no messages, nothing you type. We only know which site you're on.</p>
+        </div>
+        <div class="priv">
+          <div class="ic">🚫</div>
+          <h3>Your data is never sold</h3>
+          <p>We don't sell your information to anyone, ever. Advertisers only see anonymous view counts.</p>
+        </div>
+        <div class="priv">
+          <div class="ic">⚡</div>
+          <h3>Lightweight & quiet</h3>
+          <p>One small widget you can drag or dismiss. No pop-ups hijacking your browsing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <div class="faq">
+        <details open>
+          <summary>Is it really free?</summary>
+          <p>Yes. ScrollPay is free to install and use. You earn XP just by browsing with it on.</p>
+        </details>
+        <details>
+          <summary>How do I win a prize?</summary>
+          <p>Every XP you earn is one entry in the weekly draw. We pick a winner each week and contact them at the email you provide. The more XP you've earned, the more entries you have.</p>
+        </details>
+        <details>
+          <summary>What data do you collect?</summary>
+          <p>Only what's needed to count ad views and run the draw: the domain you're on (e.g. "twitter.com"), whether an ad was visible, whether you tapped it, and an optional email so we can reach you if you win. Never page content, URLs, or anything you type. See our <a href="privacy.html">privacy policy</a>.</p>
+        </details>
+        <details>
+          <summary>Which sites does it work on?</summary>
+          <p>Everywhere — Twitter/X, Reddit, YouTube, Instagram, TikTok, and any other site you visit.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final" id="get-started">
+    <div class="wrap">
+      <h2>Start earning XP today</h2>
+      <!-- TODO: replace href with the Chrome Web Store listing URL once published -->
+      <a class="btn-primary" href="#" id="install-btn">＋ Add to Chrome — Free</a>
+      <p class="micro">Coming soon to the Chrome Web Store. <a href="#" id="pilot-link">Join the pilot →</a></p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      © <span id="year"></span> ScrollPay · <a href="privacy.html">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
