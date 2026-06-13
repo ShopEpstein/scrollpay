@@ -12,15 +12,24 @@
   const WIDGET_ID = 'scrollpay-widget';
   const DISMISS_KEY = 'scrollpay_dismissed_until';
   const USER_KEY = 'scrollpay_user_id';
+  const WIDGET_SIZE_KEY = 'scrollpay_widget_size';
   const COOLDOWN_MS = 10 * 60 * 1000;   // close button hides widget for 10 min
 
   // Continuous-earning tunables
-  const XP_PER_TICK = 1;                // XP earned per active second
+  const XP_PER_TICK = 1;                // base XP earned per active second (scaled by size)
   const ACCRUAL_TICK_MS = 1000;         // accrual cadence (1s)
   const ACTIVITY_WINDOW_MS = 4000;      // must have interacted within this to earn
   const AD_ROTATE_MS = 7000;            // rotate the displayed ad every 7s
   const FLUSH_MS = 10000;               // push accrued XP to Firestore every 10s
   const MAX_FLUSH = 50;                 // per-write ceiling (matches firestore.rules)
+
+  // Size → XP multiplier mapping. Larger widget = more visible = more XP.
+  const SIZE_CONFIGS = {
+    sm:  { multiplier: 0.5,  label: 'S',  title: 'Small (0.5× XP)'  },
+    md:  { multiplier: 1.0,  label: 'M',  title: 'Medium (1× XP)'   },
+    lg:  { multiplier: 1.5,  label: 'L',  title: 'Large (1.5× XP)'  },
+    xl:  { multiplier: 2.0,  label: 'XL', title: 'X-Large (2× XP)'  }
+  };
 
   let adList = [];
   let adIndex = 0;
@@ -28,7 +37,9 @@
   let userId = null;
 
   let displayedXp = 0;     // session counter shown in the widget
-  let pendingXp = 0;       // accrued but not yet sent to the backend
+  let pendingXp = 0;       // accrued integer XP not yet sent to the backend
+  let fracXp = 0.0;        // fractional XP remainder carried between ticks
+  let xpMultiplier = 1.0;  // current size multiplier
   let capped = false;      // hit the daily cap
   let lastActivityAt = Date.now();
 
@@ -90,6 +101,10 @@
     widget.setAttribute('role', 'complementary');
     widget.setAttribute('aria-label', 'ScrollPay ad widget');
 
+    const sizeBtns = Object.entries(SIZE_CONFIGS).map(([key, cfg]) =>
+      `<button class="sp-size-btn" data-size="${key}" title="${cfg.title}">${cfg.label}</button>`
+    ).join('');
+
     widget.innerHTML = `
       <div id="sp-drag-handle" aria-label="Drag to move">
         <span class="sp-drag-dots">⠿⠿⠿</span>
@@ -107,7 +122,10 @@
       </div>
       <div id="sp-footer">
         <span class="sp-earnings" id="sp-earnings-label">🎟️ <span id="sp-sats-count">0</span> XP earned</span>
-        <button class="sp-close-btn" id="sp-close-btn" aria-label="Close widget">✕</button>
+        <div class="sp-footer-controls">
+          <div class="sp-size-controls" role="group" aria-label="Widget size">${sizeBtns}</div>
+          <button class="sp-close-btn" id="sp-close-btn" aria-label="Close widget">✕</button>
+        </div>
       </div>
       <div id="sp-progress-bar">
         <div id="sp-progress-fill"></div>
@@ -168,15 +186,40 @@
 
   function tick() {
     if (isEarning()) {
-      displayedXp += XP_PER_TICK;
-      pendingXp += XP_PER_TICK;
-      setXpDisplay(displayedXp);
-      setStatus('earning');
+      // Accumulate fractional XP so non-integer multipliers stay accurate over time.
+      fracXp += XP_PER_TICK * xpMultiplier;
+      const whole = Math.floor(fracXp);
+      if (whole > 0) {
+        fracXp -= whole;
+        displayedXp += whole;
+        pendingXp += whole;
+        setXpDisplay(displayedXp);
+      }
+      const rateLabel = xpMultiplier !== 1.0 ? `earning ${xpMultiplier}×` : 'earning';
+      setStatus(rateLabel);
     } else if (capped) {
       setStatus('daily max');
     } else {
       setStatus('paused');
     }
+  }
+
+  // --- Widget sizing ---
+  function setWidgetSize(size) {
+    if (!SIZE_CONFIGS[size]) size = 'md';
+    const widget = document.getElementById(WIDGET_ID);
+    if (!widget) return;
+
+    Object.keys(SIZE_CONFIGS).forEach(k => widget.classList.remove('sp-size-' + k));
+    widget.classList.add('sp-size-' + size);
+
+    xpMultiplier = SIZE_CONFIGS[size].multiplier;
+
+    document.querySelectorAll('.sp-size-btn').forEach(btn => {
+      btn.classList.toggle('sp-size-active', btn.dataset.size === size);
+    });
+
+    chrome.storage.local.set({ [WIDGET_SIZE_KEY]: size });
   }
 
   async function flush() {
@@ -307,6 +350,18 @@
     if (closeBtn) closeBtn.addEventListener('click', dismissWidget);
     const ctaBtn = document.getElementById('sp-cta-btn');
     if (ctaBtn) ctaBtn.addEventListener('click', handleCtaClick);
+
+    // Load and apply saved widget size
+    const sizeResult = await chrome.storage.local.get([WIDGET_SIZE_KEY]);
+    setWidgetSize(sizeResult[WIDGET_SIZE_KEY] || 'md');
+
+    // Wire size buttons (stopPropagation so they don't trigger drag)
+    document.querySelectorAll('.sp-size-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setWidgetSize(btn.dataset.size);
+      });
+    });
 
     makeDraggable(widget);
     setupActivityTracking();

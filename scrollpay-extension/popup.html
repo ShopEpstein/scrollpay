@@ -46,14 +46,29 @@
       </div>
     </div>
 
-    <!-- Referral -->
+    <!-- Referral / Downline -->
     <div class="section referral-section">
-      <div class="section-label">Referral Link</div>
+      <div class="section-label">Your Downline</div>
+      <div id="early-adopter-badge" class="early-badge" style="display:none"></div>
+      <div class="downline-stats">
+        <div class="dl-stat">
+          <span class="dl-val" id="referral-count">—</span>
+          <span class="dl-lbl">Direct recruits</span>
+        </div>
+        <div class="dl-stat">
+          <span class="dl-val" id="downline-size">—</span>
+          <span class="dl-lbl">Total downline</span>
+        </div>
+        <div class="dl-stat">
+          <span class="dl-val" id="downline-xp">—</span>
+          <span class="dl-lbl">XP from recruits</span>
+        </div>
+      </div>
       <div class="referral-row">
         <span id="referral-link" class="referral-link">Loading...</span>
         <button class="copy-btn" id="copy-ref-btn">Copy</button>
       </div>
-      <div class="referral-note">Earn 50 XP per friend who installs</div>
+      <div class="referral-note" id="referral-note">Earn 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)</div>
     </div>
 
     <!-- Footer -->

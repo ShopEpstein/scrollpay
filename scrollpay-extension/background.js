@@ -31,7 +31,11 @@ const DEFAULT_ADS = [
 const POINTS_CONFIG = {
   perImpression: 5,
   perClick: 25,
-  referralBonus: 50,
+  referralBonusL1: 100,       // direct recruit (paid in ≤50 XP writes)
+  referralBonusL2: 25,        // L2 downline — your recruit recruits someone
+  referralBonusL3: 10,        // L3 downline
+  earlyAdopterThreshold: 500, // first N users get the early bonus
+  earlyAdopterMultiplier: 1.5,// +50% referral XP for early adopters
   dailyCap: 5000,
   payoutThreshold: 1000
 };
@@ -193,6 +197,16 @@ async function awardPoints(userId, points, type = 'impression') {
   }
 }
 
+// Awards `total` XP in ≤MAX_AWARD chunks so each write satisfies firestore.rules.
+async function awardPointsBatched(userId, total, type = 'referral') {
+  let remaining = total;
+  while (remaining > 0) {
+    const batch = Math.min(remaining, MAX_AWARD);
+    await awardPoints(userId, batch, type);
+    remaining -= batch;
+  }
+}
+
 async function recordClick(userId, adId, impressionId) {
   if (!db || !userId) return false;
 
@@ -238,8 +252,40 @@ async function createUser(userData) {
     const userId = userData.userId || ('anon_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
     const refCode = Math.random().toString(36).slice(2, 10).toUpperCase();
 
-    const userRef = doc(db, 'sp_users', userId);
-    await setDoc(userRef, {
+    // Assign a signup number for early-adopter bonus tracking.
+    const statsRef = doc(db, 'sp_meta', 'stats');
+    let signupNumber = 1;
+    try {
+      const statsSnap = await getDoc(statsRef);
+      if (statsSnap.exists()) {
+        signupNumber = (statsSnap.data().userCount || 0) + 1;
+        await updateDoc(statsRef, { userCount: increment(1) });
+      } else {
+        await setDoc(statsRef, { userCount: 1 });
+      }
+    } catch (e) {
+      console.error('[ScrollPay] signup counter error:', e);
+    }
+
+    // Resolve up to 3 levels of the referrer chain.
+    let l1Id = null, l2Id = null, l3Id = null;
+
+    if (userData.referredBy) {
+      const refQuery = query(collection(db, 'sp_users'), where('refCode', '==', userData.referredBy));
+      const refSnap = await getDocs(refQuery);
+      if (!refSnap.empty) {
+        const l1Doc = refSnap.docs[0];
+        l1Id = l1Doc.id;
+        const l1Data = l1Doc.data();
+        l2Id = l1Data.referrerId || null;
+        if (l2Id) {
+          const l2Snap = await getDoc(doc(db, 'sp_users', l2Id));
+          l3Id = (l2Snap.exists() ? l2Snap.data().referrerId : null) || null;
+        }
+      }
+    }
+
+    await setDoc(doc(db, 'sp_users', userId), {
       id: userId,
       email: userData.email || '',
       lightningAddress: userData.lightningAddress || '',
@@ -249,21 +295,60 @@ async function createUser(userData) {
       impressionsToday: 0,
       refCode,
       referredBy: userData.referredBy || '',
+      referrerId: l1Id || '',
+      signupNumber,
+      referralCount: 0,
+      downlineSize: 0,
+      downlineXp: 0,
       installedAt: serverTimestamp(),
       lastActiveAt: serverTimestamp()
     });
 
-    // Award referral bonus to referrer
-    if (userData.referredBy) {
-      const refQuery = query(collection(db, 'sp_users'), where('refCode', '==', userData.referredBy));
-      const refSnap = await getDocs(refQuery);
-      if (!refSnap.empty) {
-        const referrerId = refSnap.docs[0].id;
-        await awardPoints(referrerId, POINTS_CONFIG.referralBonus, 'referral');
+    // Compute bonus XP for a referrer, applying early-adopter multiplier if eligible.
+    async function bonusFor(uid, baseAmount) {
+      try {
+        const snap = await getDoc(doc(db, 'sp_users', uid));
+        if (!snap.exists()) return baseAmount;
+        const sn = snap.data().signupNumber || 999999;
+        const mult = sn <= POINTS_CONFIG.earlyAdopterThreshold
+          ? POINTS_CONFIG.earlyAdopterMultiplier
+          : 1.0;
+        return Math.round(baseAmount * mult);
+      } catch (e) {
+        return baseAmount;
       }
     }
 
-    return { userId, refCode };
+    // Award multi-level bonuses and update downline stats.
+    if (l1Id) {
+      const l1Award = await bonusFor(l1Id, POINTS_CONFIG.referralBonusL1);
+      await awardPointsBatched(l1Id, l1Award, 'referral');
+      await updateDoc(doc(db, 'sp_users', l1Id), {
+        referralCount: increment(1),
+        downlineSize: increment(1),
+        downlineXp: increment(l1Award)
+      });
+    }
+
+    if (l2Id) {
+      const l2Award = await bonusFor(l2Id, POINTS_CONFIG.referralBonusL2);
+      await awardPointsBatched(l2Id, l2Award, 'referral');
+      await updateDoc(doc(db, 'sp_users', l2Id), {
+        downlineSize: increment(1),
+        downlineXp: increment(l2Award)
+      });
+    }
+
+    if (l3Id) {
+      const l3Award = await bonusFor(l3Id, POINTS_CONFIG.referralBonusL3);
+      await awardPointsBatched(l3Id, l3Award, 'referral');
+      await updateDoc(doc(db, 'sp_users', l3Id), {
+        downlineSize: increment(1),
+        downlineXp: increment(l3Award)
+      });
+    }
+
+    return { userId, refCode, signupNumber };
   } catch (e) {
     console.error('[ScrollPay] createUser error:', e);
     return null;
