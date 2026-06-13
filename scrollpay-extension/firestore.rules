@@ -2,17 +2,48 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users: can read/write their own doc only
+    // Largest single legitimate award (referral bonus = 50 sats).
+    function maxAward() { return 50; }
+    function dailyCap() { return 5000; }
+
+    // Balances may only grow — never be rewritten to an arbitrary value.
+    function balancesOnlyGrow() {
+      return request.resource.data.totalSats >= resource.data.totalSats
+        && request.resource.data.totalImpressions >= resource.data.totalImpressions;
+    }
+
+    // A single write may add at most one action's worth of sats / impression.
+    function awardWithinLimits() {
+      return (request.resource.data.totalSats - resource.data.totalSats) <= maxAward()
+        && (request.resource.data.totalImpressions - resource.data.totalImpressions) <= 1
+        && request.resource.data.satsToday <= dailyCap();
+    }
+
+    // Users: balance-bearing docs.
     match /sp_users/{userId} {
-      allow read, write: if true;
+      allow read: if true;
+
+      // New accounts must start empty — no pre-loaded balance.
+      allow create: if request.resource.data.totalSats == 0
+        && request.resource.data.satsToday == 0
+        && request.resource.data.totalImpressions == 0
+        && request.resource.data.impressionsToday == 0;
+
+      // Updates may add a single capped award, or leave balances untouched
+      // (e.g. saving a Lightning address).
+      allow update: if balancesOnlyGrow() && awardWithinLimits();
+
+      allow delete: if false;
     }
 
-    // Impressions: anyone can create, only owner can read
+    // Impressions: append-only log; the recorded award is bounded.
     match /sp_impressions/{impId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if request.resource.data.satsAwarded <= maxAward();
+      allow delete: if false;
     }
 
-    // Ads: public read, no client writes
+    // Ads: public read, no client writes.
     match /sp_ads/{adId} {
       allow read: if true;
       allow write: if false;
