@@ -50,11 +50,16 @@ Plus, at repo root:
 
 ## What works right now
 - Loads as an unpacked extension and runs.
-- Talks to the live Firestore project; reads the seeded ad; writes users/impressions.
-- XP-awarding logic (5/impression, 25/click, 50/referral, 5000 daily cap) runs
-  client-side in `background.js`.
+- Talks to the live Firestore project; reads active ads; writes users + XP.
+- **Continuous earning:** the widget rotates ads and accrues XP every second the
+  user is actively browsing (tab visible + interacted within ~4s). XP is batched
+  locally and flushed via `AWARD_XP` (≤50/write) every ~10s and on tab hide.
+  Clicks award 25, referrals 50. Daily cap 5000, enforced server-side in
+  `awardXp`. Tunables are at the top of `content.js`.
 - Popup shows XP total and "N entries in the next draw"; onboarding collects an
   optional email (to contact draw winners).
+- Note: the old one-shot `RECORD_IMPRESSION` path still exists in `background.js`
+  but is no longer used by `content.js` (replaced by continuous `AWARD_XP`).
 
 ## What is NOT done (gaps before this is a real product)
 1. **The prize draw is manual.** No code picks a winner. Process for now:
@@ -67,12 +72,14 @@ Plus, at repo root:
 4. **Ad content is placeholder** — Staccana headline/`ctaUrl` are guesses.
 
 ## Known issues / tech debt
-- **Minting is only partially mitigated.** Awarding happens client-side, and
-  there is no auth (users are random `anon_*` ids), so rules cannot fully stop a
-  determined user from self-awarding. Current rules block pre-loaded balances,
-  enforce monotonic balances, and cap a single write to <=50 sats / 1
-  impression. The real fix is server-side awarding (Cloud Function / Worker)
-  with the client unable to write balances. See `firestore.rules`.
+- **Minting is only partially mitigated — and continuous earning raises the
+  stakes.** Awarding happens client-side with no auth (random `anon_*` ids), so
+  rules can't fully stop self-awarding. The continuous model means a scripted
+  client could farm up to the 5000/day cap without real browsing. Activity
+  gating (visibility + recent interaction) and the daily cap limit casual abuse,
+  but the real fix is server-side awarding before the prize has meaningful
+  value. Current rules block pre-loaded balances, enforce monotonic balances,
+  and cap a single write to <=50 XP. See `firestore.rules`.
 - **Ad stat counters don't update.** `background.js` tries to increment
   `impressions`/`clicks`/`budgetUsed` on `sp_ads`, but rules block client writes
   to ads (`allow write: if false`), so those writes fail silently. Move to

@@ -50,19 +50,24 @@ function initFirebase() {
   }
 }
 
-// Ad cache: { domain: { ad, fetchedAt } }
+// Largest XP a single Firestore write may add (must match maxAward() in
+// firestore.rules). Batched XP flushes are clamped to this.
+const MAX_AWARD = 50;
+
+// Ad cache: { domain: { ads, fetchedAt } }
 const adCache = {};
 const AD_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function getNextAd(domain) {
-  // Check cache
+// Returns all active ads (cached per domain) so the content script can rotate
+// through them client-side without re-querying every few seconds.
+async function getActiveAds(domain) {
   const cached = adCache[domain];
   if (cached && Date.now() - cached.fetchedAt < AD_CACHE_TTL) {
-    return cached.ad;
+    return cached.ads;
   }
 
   if (!db) {
-    return DEFAULT_ADS[0];
+    return DEFAULT_ADS;
   }
 
   try {
@@ -71,19 +76,53 @@ async function getNextAd(domain) {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      return DEFAULT_ADS[0];
+      return DEFAULT_ADS;
     }
 
     const ads = [];
     snapshot.forEach(d => ads.push({ id: d.id, ...d.data() }));
-    // Pick random active ad
-    const ad = ads[Math.floor(Math.random() * ads.length)];
 
-    adCache[domain] = { ad, fetchedAt: Date.now() };
-    return ad;
+    adCache[domain] = { ads, fetchedAt: Date.now() };
+    return ads;
   } catch (e) {
-    console.error('[ScrollPay] getNextAd error:', e);
-    return DEFAULT_ADS[0];
+    console.error('[ScrollPay] getActiveAds error:', e);
+    return DEFAULT_ADS;
+  }
+}
+
+// Awards a batch of XP accrued from continuous viewing. Enforces the daily cap
+// server-side and clamps the per-write amount to MAX_AWARD (the rules ceiling).
+// Returns { awarded, capped }.
+async function awardXp(userId, amount) {
+  if (!db || !userId || !(amount > 0)) return { awarded: 0, capped: false };
+
+  try {
+    const userRef = doc(db, 'sp_users', userId);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return { awarded: 0, capped: false };
+
+    const userData = userSnap.data();
+    const today = new Date().toDateString();
+    const lastActiveDate = userData.lastActiveAt?.toDate?.()?.toDateString?.() || '';
+    const satsToday = lastActiveDate === today ? (userData.satsToday || 0) : 0;
+
+    const remaining = POINTS_CONFIG.dailyCap - satsToday;
+    if (remaining <= 0) return { awarded: 0, capped: true };
+
+    const award = Math.min(amount, remaining, MAX_AWARD);
+
+    await updateDoc(userRef, {
+      totalSats: increment(award),
+      satsToday: lastActiveDate === today ? increment(award) : award,
+      totalImpressions: increment(1),
+      impressionsToday: lastActiveDate === today ? increment(1) : 1,
+      lastActiveAt: serverTimestamp()
+    });
+
+    return { awarded: award, capped: (satsToday + award) >= POINTS_CONFIG.dailyCap };
+  } catch (e) {
+    console.error('[ScrollPay] awardXp error:', e);
+    return { awarded: 0, capped: false };
   }
 }
 
@@ -249,8 +288,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
       switch (message.type) {
         case 'GET_AD': {
-          const ad = await getNextAd(message.domain || 'unknown');
-          sendResponse({ success: true, ad });
+          const ads = await getActiveAds(message.domain || 'unknown');
+          const ad = ads[Math.floor(Math.random() * ads.length)];
+          sendResponse({ success: true, ad, ads });
+          break;
+        }
+        case 'AWARD_XP': {
+          const { userId, amount } = message;
+          const result = await awardXp(userId, amount);
+          sendResponse({ success: true, ...result });
           break;
         }
         case 'RECORD_IMPRESSION': {

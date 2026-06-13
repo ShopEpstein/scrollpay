@@ -1,5 +1,10 @@
 // ScrollPay Content Script — Floating Ad Widget
 // Never reads page content. Only tracks domain, impressions, clicks.
+//
+// Earning model: while the tab is visible AND the user has interacted recently
+// (i.e. they're actively scrolling/doomscrolling), XP accrues every second and
+// the ad rotates. XP is accumulated locally and flushed to the background in
+// small batches so we never hit Firestore every second.
 
 (function () {
   'use strict';
@@ -7,14 +12,29 @@
   const WIDGET_ID = 'scrollpay-widget';
   const DISMISS_KEY = 'scrollpay_dismissed_until';
   const USER_KEY = 'scrollpay_user_id';
-  const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
-  const IMPRESSION_DELAY_MS = 2000; // 2 seconds visible = impression
+  const COOLDOWN_MS = 10 * 60 * 1000;   // close button hides widget for 10 min
 
+  // Continuous-earning tunables
+  const XP_PER_TICK = 1;                // XP earned per active second
+  const ACCRUAL_TICK_MS = 1000;         // accrual cadence (1s)
+  const ACTIVITY_WINDOW_MS = 4000;      // must have interacted within this to earn
+  const AD_ROTATE_MS = 7000;            // rotate the displayed ad every 7s
+  const FLUSH_MS = 10000;               // push accrued XP to Firestore every 10s
+  const MAX_FLUSH = 50;                 // per-write ceiling (matches firestore.rules)
+
+  let adList = [];
+  let adIndex = 0;
   let currentAd = null;
-  let impressionTimer = null;
-  let impressionRecorded = false;
-  let currentImpressionId = null;
   let userId = null;
+
+  let displayedXp = 0;     // session counter shown in the widget
+  let pendingXp = 0;       // accrued but not yet sent to the backend
+  let capped = false;      // hit the daily cap
+  let lastActivityAt = Date.now();
+
+  let tickTimer = null;
+  let rotateTimer = null;
+  let flushTimer = null;
 
   // --- Utility ---
   function getDomain() {
@@ -44,11 +64,19 @@
     return userId;
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   // --- Dismiss logic ---
   async function isDismissed() {
     const result = await chrome.storage.local.get([DISMISS_KEY]);
-    const dismissedUntil = result[DISMISS_KEY] || 0;
-    return Date.now() < dismissedUntil;
+    return Date.now() < (result[DISMISS_KEY] || 0);
   }
 
   async function setDismissed() {
@@ -66,14 +94,14 @@
       <div id="sp-drag-handle" aria-label="Drag to move">
         <span class="sp-drag-dots">⠿⠿⠿</span>
         <span class="sp-brand">SCROLLPAY</span>
-        <span class="sp-status"><span class="sp-dot"></span> earning</span>
+        <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">earning</span></span>
       </div>
       <div id="sp-ad-area">
         <div class="sp-ad-content">
-          ${ad.brandLogo ? `<img class="sp-brand-logo" src="${escapeHtml(ad.brandLogo)}" alt="${escapeHtml(ad.brandName)}" />` : `<div class="sp-brand-initial">${escapeHtml(ad.brandName[0])}</div>`}
+          <span id="sp-brand-mark"></span>
           <div class="sp-ad-text">
-            <div class="sp-ad-headline">${escapeHtml(ad.headline)}</div>
-            <button class="sp-cta-btn" id="sp-cta-btn">${escapeHtml(ad.ctaText)}</button>
+            <div class="sp-ad-headline" id="sp-ad-headline"></div>
+            <button class="sp-cta-btn" id="sp-cta-btn"></button>
           </div>
         </div>
       </div>
@@ -89,84 +117,107 @@
     return widget;
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+  // Update the widget's ad content in place (no re-injection).
+  function renderAd(ad) {
+    currentAd = ad;
+    const mark = document.getElementById('sp-brand-mark');
+    if (mark) {
+      mark.innerHTML = ad.brandLogo
+        ? `<img class="sp-brand-logo" src="${escapeHtml(ad.brandLogo)}" alt="${escapeHtml(ad.brandName)}" />`
+        : `<span class="sp-brand-initial">${escapeHtml((ad.brandName || '?')[0])}</span>`;
+    }
+    const headline = document.getElementById('sp-ad-headline');
+    if (headline) headline.textContent = ad.headline || '';
+    const cta = document.getElementById('sp-cta-btn');
+    if (cta) cta.textContent = ad.ctaText || 'Learn more';
   }
 
-  // --- Impression tracking ---
-  function startImpressionTimer() {
-    if (impressionRecorded || impressionTimer) return;
+  function rotateAd() {
+    if (document.visibilityState !== 'visible' || adList.length === 0) return;
+    adIndex = (adIndex + 1) % adList.length;
+    renderAd(adList[adIndex]);
+    restartProgressBar();
+  }
 
+  function restartProgressBar() {
     const fill = document.getElementById('sp-progress-fill');
-    if (fill) {
-      fill.style.transition = `width ${IMPRESSION_DELAY_MS}ms linear`;
-      // Force reflow before applying transition
-      fill.getBoundingClientRect();
-      fill.style.width = '100%';
-    }
-
-    impressionTimer = setTimeout(async () => {
-      if (impressionRecorded) return;
-      impressionRecorded = true;
-
-      const uid = await getUserId();
-      if (!uid || !currentAd) return;
-
-      const response = await sendToBackground({
-        type: 'RECORD_IMPRESSION',
-        userId: uid,
-        adId: currentAd.id,
-        domain: getDomain(),
-        duration: IMPRESSION_DELAY_MS
-      });
-
-      if (response.success) {
-        currentImpressionId = response.impressionId;
-        updateSatsDisplay(currentAd.pointsPerImpression || 5);
-      }
-    }, IMPRESSION_DELAY_MS);
+    if (!fill) return;
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    fill.getBoundingClientRect(); // reflow
+    fill.style.transition = `width ${AD_ROTATE_MS}ms linear`;
+    fill.style.width = '100%';
   }
 
-  function stopImpressionTimer() {
-    if (impressionTimer) {
-      clearTimeout(impressionTimer);
-      impressionTimer = null;
-    }
-    const fill = document.getElementById('sp-progress-fill');
-    if (fill) {
-      fill.style.transition = 'none';
-      fill.style.width = '0%';
-    }
+  function setStatus(text) {
+    const el = document.getElementById('sp-status-text');
+    if (el) el.textContent = text;
   }
 
-  function updateSatsDisplay(amount) {
+  function setXpDisplay(value) {
     const el = document.getElementById('sp-sats-count');
-    if (el) {
-      const current = parseInt(el.textContent || '0', 10);
-      el.textContent = current + amount;
+    if (el) el.textContent = value;
+  }
+
+  // --- Earning loop ---
+  function isEarning() {
+    return !capped
+      && document.visibilityState === 'visible'
+      && (Date.now() - lastActivityAt) < ACTIVITY_WINDOW_MS;
+  }
+
+  function tick() {
+    if (isEarning()) {
+      displayedXp += XP_PER_TICK;
+      pendingXp += XP_PER_TICK;
+      setXpDisplay(displayedXp);
+      setStatus('earning');
+    } else if (capped) {
+      setStatus('daily max');
+    } else {
+      setStatus('paused');
     }
   }
 
-  // --- Visibility tracking ---
-  let visibilityObserver = null;
+  async function flush() {
+    if (pendingXp <= 0) return;
+    const uid = await getUserId();
+    if (!uid) return;
 
-  function setupVisibilityObserver(widget) {
-    visibilityObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          startImpressionTimer();
-        } else {
-          stopImpressionTimer();
-        }
-      });
-    }, { threshold: 0.5 });
+    const amount = Math.min(pendingXp, MAX_FLUSH);
+    pendingXp -= amount;
 
-    visibilityObserver.observe(widget);
+    const res = await sendToBackground({ type: 'AWARD_XP', userId: uid, amount });
+    if (res && res.capped) {
+      capped = true;
+      setStatus('daily max');
+    }
+  }
+
+  function markActive() {
+    lastActivityAt = Date.now();
+  }
+
+  function setupActivityTracking() {
+    const opts = { passive: true, capture: true };
+    ['scroll', 'wheel', 'keydown', 'mousemove', 'touchmove', 'pointermove']
+      .forEach(evt => window.addEventListener(evt, markActive, opts));
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    window.addEventListener('pagehide', flush);
+  }
+
+  function startLoops() {
+    tickTimer = setInterval(tick, ACCRUAL_TICK_MS);
+    rotateTimer = setInterval(rotateAd, AD_ROTATE_MS);
+    flushTimer = setInterval(flush, FLUSH_MS);
+  }
+
+  function stopLoops() {
+    [tickTimer, rotateTimer, flushTimer].forEach(t => t && clearInterval(t));
+    tickTimer = rotateTimer = flushTimer = null;
   }
 
   // --- Dragging ---
@@ -181,11 +232,9 @@
       dragging = true;
       startX = e.clientX;
       startY = e.clientY;
-
       const rect = widget.getBoundingClientRect();
       startRight = window.innerWidth - rect.right;
       startBottom = window.innerHeight - rect.bottom;
-
       widget.style.transition = 'none';
       e.preventDefault();
     });
@@ -194,33 +243,22 @@
       if (!dragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-
-      let newRight = startRight - dx;
-      let newBottom = startBottom - dy;
-
-      // Clamp to viewport
-      newRight = Math.max(0, Math.min(newRight, window.innerWidth - widget.offsetWidth));
-      newBottom = Math.max(0, Math.min(newBottom, window.innerHeight - widget.offsetHeight));
-
+      let newRight = Math.max(0, Math.min(startRight - dx, window.innerWidth - widget.offsetWidth));
+      let newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - widget.offsetHeight));
       widget.style.right = newRight + 'px';
       widget.style.bottom = newBottom + 'px';
     });
 
-    document.addEventListener('mouseup', () => {
-      dragging = false;
-    });
+    document.addEventListener('mouseup', () => { dragging = false; });
   }
 
   // --- Dismiss ---
   async function dismissWidget() {
     const widget = document.getElementById(WIDGET_ID);
+    stopLoops();
+    await flush(); // bank whatever was earned before closing
     if (widget) {
       widget.classList.add('sp-hiding');
-      stopImpressionTimer();
-      if (visibilityObserver) {
-        visibilityObserver.disconnect();
-        visibilityObserver = null;
-      }
       setTimeout(() => widget.remove(), 400);
     }
     await setDismissed();
@@ -232,13 +270,15 @@
     const uid = await getUserId();
 
     if (uid) {
-      await sendToBackground({
+      const res = await sendToBackground({
         type: 'RECORD_CLICK',
         userId: uid,
-        adId: currentAd.id,
-        impressionId: currentImpressionId
+        adId: currentAd.id
       });
-      updateSatsDisplay(25);
+      if (res && res.success) {
+        displayedXp += (res.satsAwarded || 25);
+        setXpDisplay(displayedXp);
+      }
     }
 
     window.open(currentAd.ctaUrl, '_blank', 'noopener,noreferrer');
@@ -246,46 +286,35 @@
 
   // --- Init ---
   async function init() {
-    // Don't inject twice
-    if (document.getElementById(WIDGET_ID)) return;
-
-    // Check dismiss cooldown
+    if (document.getElementById(WIDGET_ID)) return;       // don't inject twice
     if (await isDismissed()) return;
 
-    // Get user ID
     const uid = await getUserId();
-    if (!uid) return; // Not onboarded yet
+    if (!uid) return;                                      // not onboarded yet
 
-    // Fetch ad
-    const response = await sendToBackground({
-      type: 'GET_AD',
-      domain: getDomain()
-    });
+    const response = await sendToBackground({ type: 'GET_AD', domain: getDomain() });
+    if (!response || (!response.ads && !response.ad)) return;
 
-    if (!response || !response.ad) return;
-    currentAd = response.ad;
+    adList = (response.ads && response.ads.length) ? response.ads : [response.ad];
+    adIndex = 0;
 
-    // Create widget
-    const widget = createWidget(currentAd);
+    const widget = createWidget(adList[0]);
     document.body.appendChild(widget);
+    renderAd(adList[0]);
+    restartProgressBar();
 
-    // Wire up events
     const closeBtn = document.getElementById('sp-close-btn');
     if (closeBtn) closeBtn.addEventListener('click', dismissWidget);
-
     const ctaBtn = document.getElementById('sp-cta-btn');
     if (ctaBtn) ctaBtn.addEventListener('click', handleCtaClick);
 
     makeDraggable(widget);
-    setupVisibilityObserver(widget);
+    setupActivityTracking();
+    startLoops();
 
-    // Slide in
-    requestAnimationFrame(() => {
-      widget.classList.add('sp-visible');
-    });
+    requestAnimationFrame(() => widget.classList.add('sp-visible'));
   }
 
-  // Run on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
