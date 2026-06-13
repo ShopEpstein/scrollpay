@@ -78,7 +78,7 @@
         </div>
       </div>
       <div id="sp-footer">
-        <span class="sp-earnings" id="sp-earnings-label">+₿ <span id="sp-sats-count">0</span> sats earned</span>
+        <span class="sp-earnings" id="sp-earnings-label">🎟️ <span id="sp-sats-count">0</span> XP earned</span>
         <button class="sp-close-btn" id="sp-close-btn" aria-label="Close widget">✕</button>
       </div>
       <div id="sp-progress-bar">

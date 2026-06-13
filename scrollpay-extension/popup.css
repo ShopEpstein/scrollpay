@@ -143,43 +143,24 @@ body {
   margin-bottom: 8px;
 }
 
-/* Lightning */
-.lightning-row {
-  display: flex;
-  gap: 6px;
+/* Prize Draw */
+.draw-card {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 
-.lightning-input {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: inherit;
-  color: #111827;
-  outline: none;
-  transition: border-color 0.15s;
+.draw-entries {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c2410c;
 }
 
-.lightning-input:focus {
-  border-color: #f97316;
-}
-
-.save-btn {
-  padding: 8px 12px;
-  background: #111827;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-}
-
-.save-btn:hover {
-  background: #1f2937;
+.draw-note {
+  font-size: 11px;
+  color: #9a3412;
+  margin-top: 4px;
 }
 
 /* Recent Ads */

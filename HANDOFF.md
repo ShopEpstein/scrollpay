@@ -3,10 +3,19 @@
 _Last updated: 2026-06-13_
 
 ## What ScrollPay is
-A Manifest V3 Chrome extension that shows a floating ad widget on web pages
-and credits the user "sats" (Bitcoin, via Lightning) per ad impression/click.
-Backend is Firebase Firestore. Intended payout rail is OpenNode (Lightning),
-not yet built.
+A Manifest V3 Chrome extension that shows a floating ad widget on web pages and
+awards the user **XP** per ad impression/click. XP = entries in a periodic
+(weekly) **prize draw** — there are NO per-user crypto payouts. Backend is
+Firebase Firestore.
+
+> **Model pivot (2026-06-13):** originally "earn real Bitcoin via Lightning".
+> Switched to XP + prize draw to remove the per-user payout pipeline, Lightning
+> wallet funding, and money-transmission burden. The UI says "XP" everywhere;
+> the Lightning-address and withdrawal flows were removed.
+>
+> **Internal naming:** XP is stored under the existing `totalSats` / `satsToday`
+> Firestore fields (and `satsAwarded` on impressions) to avoid a data migration.
+> Code still uses those names internally; only the UI labels them "XP".
 
 ## Repository
 - Repo: `ShopEpstein/scrollpay`
@@ -35,14 +44,16 @@ not yet built.
 ## What works right now
 - Loads as an unpacked extension and runs.
 - Talks to the live Firestore project; reads the seeded ad; writes users/impressions.
-- Awarding logic (5/impression, 25/click, 50/referral, 5000 daily cap) runs
+- XP-awarding logic (5/impression, 25/click, 50/referral, 5000 daily cap) runs
   client-side in `background.js`.
+- Popup shows XP total and "N entries in the next draw"; onboarding collects an
+  optional email (to contact draw winners).
 
 ## What is NOT done (gaps before this is a real product)
-1. **No payouts.** Sats are just numbers in Firestore. There is no withdrawal
-   path. README specifies a Firebase Cloud Function calling OpenNode
-   (`POST https://api.opennode.com/v1/withdrawals`) — not built. This is the
-   core missing piece.
+1. **The prize draw is manual.** No code picks a winner. Process for now:
+   export `sp_users`, weight by `totalSats` (the XP field), pick a random
+   winner, contact them by the onboarding email. Automating the draw (periods,
+   winner selection, results UI) is a future step — not required to launch.
 2. **Not verified end-to-end.** Nobody has loaded it unpacked and confirmed the
    widget renders and Firestore writes happen. This is the immediate next step.
 3. **Not published** to the Chrome Web Store (no dev account, no review).
@@ -75,13 +86,19 @@ already done.
 
 ## Recommended next steps (in order)
 1. **Verify locally.** Load `scrollpay-extension/` unpacked in Chrome, browse a
-   page, confirm the Staccana widget renders and `sp_users`/`sp_impressions`
-   populate in Firestore. Check the service-worker console for errors.
-2. **Merge the branch to `main`** once verified.
-3. **Build the withdrawal path** (Cloud Function + OpenNode) — the actual
-   "earn Bitcoin" feature.
-4. **Move awarding server-side** to close the minting hole and make ad stats work.
-5. Prep Chrome Web Store submission (Firebase SDK is already vendored locally).
+   page, confirm the Staccana widget renders, the popup shows XP + draw entries,
+   and `sp_users`/`sp_impressions` populate in Firestore. Check the
+   service-worker console for errors.
+2. **Run a small real-world test** — a handful of users for a week — to see if
+   people keep the widget on and engage. Validate the behavior before investing
+   in automation.
+3. **Decide the prize + draw cadence** and state it in the popup/onboarding
+   (currently placeholder copy: "weekly"). Run the first draw manually.
+4. **Move XP-awarding server-side** (Cloud Function / Worker) to close the
+   minting hole — important before the draw involves anything valuable — and to
+   make ad stat counters work.
+5. **Automate the draw** (optional): draw periods, winner selection, results UI.
+6. Prep Chrome Web Store submission (Firebase SDK is already vendored locally).
 
 ## How to seed more ads
 From `scrollpay-extension/seed/`: save a service-account key as

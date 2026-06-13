@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ScrollPay — Earn BTC While You Browse",
+  "name": "ScrollPay — Earn XP While You Browse",
   "version": "1.0.0",
-  "description": "Earn real Bitcoin (sats via Lightning) for every ad you see while browsing. Privacy-safe, no page content read.",
+  "description": "Earn XP for every ad you see while browsing and use it to enter prize draws. Privacy-safe, no page content read.",
   "permissions": [
     "storage",
     "activeTab",

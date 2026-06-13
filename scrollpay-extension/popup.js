@@ -2,7 +2,9 @@
 
 const USER_KEY = 'scrollpay_user_id';
 const IMPRESSIONS_KEY = 'scrollpay_recent_impressions';
-const PAYOUT_THRESHOLD = 1000;
+
+// XP is stored internally under the legacy `totalSats`/`satsToday` fields.
+// 1 XP = 1 entry in the prize draw.
 
 function sendToBackground(message) {
   return new Promise((resolve) => {
@@ -26,9 +28,10 @@ async function loadUserData() {
   const recentImpressions = result[IMPRESSIONS_KEY] || [];
 
   if (!userId) {
-    document.getElementById('total-sats').textContent = '0';
-    document.getElementById('sats-today').textContent = '0';
+    document.getElementById('total-xp').textContent = '0';
+    document.getElementById('xp-today').textContent = '0';
     document.getElementById('impressions-today').textContent = '0';
+    document.getElementById('draw-entries').textContent = '0';
     document.getElementById('referral-link').textContent = 'Complete onboarding first';
     return;
   }
@@ -38,20 +41,13 @@ async function loadUserData() {
   const data = response.data;
 
   if (data) {
-    document.getElementById('total-sats').textContent = (data.totalSats || 0).toLocaleString();
-    document.getElementById('sats-today').textContent = (data.satsToday || 0).toLocaleString();
+    const totalXp = data.totalSats || 0;
+    document.getElementById('total-xp').textContent = totalXp.toLocaleString();
+    document.getElementById('xp-today').textContent = (data.satsToday || 0).toLocaleString();
     document.getElementById('impressions-today').textContent = (data.impressionsToday || 0).toLocaleString();
 
-    // Withdraw button
-    const withdrawBtn = document.getElementById('withdraw-btn');
-    if (data.totalSats >= PAYOUT_THRESHOLD) {
-      withdrawBtn.disabled = false;
-    }
-
-    // Lightning address
-    if (data.lightningAddress) {
-      document.getElementById('lightning-input').value = data.lightningAddress;
-    }
+    // Every XP = one entry in the next draw.
+    document.getElementById('draw-entries').textContent = totalXp.toLocaleString();
 
     // Referral link
     if (data.refCode) {
@@ -74,7 +70,7 @@ function renderRecentAds(impressions) {
   list.innerHTML = last5.map(imp => `
     <div class="recent-ad-item">
       <span class="recent-ad-name">${escapeHtml(imp.brandName || 'Ad')}</span>
-      <span class="recent-ad-sats">+${imp.satsAwarded || 5} sats</span>
+      <span class="recent-ad-sats">+${imp.satsAwarded || 5} XP</span>
     </div>
   `).join('');
 }
@@ -86,29 +82,6 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-
-// Save lightning address
-document.getElementById('save-lightning-btn').addEventListener('click', async () => {
-  const input = document.getElementById('lightning-input');
-  const address = input.value.trim();
-  if (!address) return;
-
-  const result = await chrome.storage.local.get([USER_KEY]);
-  const userId = result[USER_KEY];
-  if (!userId) return;
-
-  const btn = document.getElementById('save-lightning-btn');
-  btn.textContent = 'Saving...';
-
-  const response = await sendToBackground({
-    type: 'UPDATE_LIGHTNING',
-    userId,
-    lightningAddress: address
-  });
-
-  btn.textContent = response.success ? 'Saved ✓' : 'Error';
-  setTimeout(() => { btn.textContent = 'Save'; }, 2000);
-});
 
 // Copy referral link
 document.getElementById('copy-ref-btn').addEventListener('click', async () => {
@@ -127,11 +100,6 @@ document.getElementById('copy-ref-btn').addEventListener('click', async () => {
   } catch (e) {
     console.error('Copy failed:', e);
   }
-});
-
-// Withdraw button
-document.getElementById('withdraw-btn').addEventListener('click', () => {
-  chrome.tabs.create({ url: 'https://scrollpay.app/withdraw' });
 });
 
 // Init

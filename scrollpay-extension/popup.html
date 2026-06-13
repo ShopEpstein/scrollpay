@@ -14,28 +14,27 @@
     <div class="header">
       <div class="logo-row">
         <span class="logo-text">SCROLLPAY</span>
-        <span class="status-badge"><span class="status-dot"></span> earning active</span>
+        <span class="status-badge"><span class="status-dot"></span> earning XP</span>
       </div>
     </div>
 
-    <!-- Balance -->
+    <!-- XP Balance -->
     <div class="balance-section">
-      <div class="balance-label">Total Balance</div>
-      <div class="balance-amount"><span id="total-sats">—</span> <span class="sats-unit">sats</span></div>
+      <div class="balance-label">Your XP</div>
+      <div class="balance-amount"><span id="total-xp">—</span> <span class="sats-unit">XP</span></div>
       <div class="balance-sub">
-        <span><span id="sats-today">—</span> sats today</span>
+        <span><span id="xp-today">—</span> XP today</span>
         <span class="divider">·</span>
-        <span><span id="impressions-today">—</span> impressions</span>
+        <span><span id="impressions-today">—</span> ads viewed</span>
       </div>
-      <button class="withdraw-btn" id="withdraw-btn" disabled>Withdraw via Lightning</button>
     </div>
 
-    <!-- Lightning Address -->
-    <div class="section">
-      <div class="section-label">Lightning Address</div>
-      <div class="lightning-row">
-        <input type="text" id="lightning-input" class="lightning-input" placeholder="you@walletofsatoshi.com" />
-        <button class="save-btn" id="save-lightning-btn">Save</button>
+    <!-- Prize Draw -->
+    <div class="section draw-section">
+      <div class="section-label">Prize Draw</div>
+      <div class="draw-card">
+        <div class="draw-entries">🎟️ <span id="draw-entries">0</span> entries in the next draw</div>
+        <div class="draw-note">Every XP = 1 entry. We draw a winner each week.</div>
       </div>
     </div>
 
@@ -54,7 +53,7 @@
         <span id="referral-link" class="referral-link">Loading...</span>
         <button class="copy-btn" id="copy-ref-btn">Copy</button>
       </div>
-      <div class="referral-note">Earn 50 sats per friend who installs</div>
+      <div class="referral-note">Earn 50 XP per friend who installs</div>
     </div>
 
     <!-- Footer -->
