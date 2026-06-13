@@ -1,0 +1,301 @@
+// ScrollPay Background Service Worker
+// Handles all Firebase operations and messaging from content scripts
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBHxMmNQSKr2JgsPgIpbnLzaXXYTw8kBMk",
+  authDomain: "growthmonster.firebaseapp.com",
+  projectId: "growthmonster",
+  storageBucket: "growthmonster.firebasestorage.app",
+  messagingSenderId: "97804410543",
+  appId: "1:97804410543:web:ffdefa9ea29b62ce6afe5a"
+};
+
+const DEFAULT_ADS = [
+  {
+    id: 'ad_001',
+    brandName: 'ScrollPay',
+    brandLogo: '',
+    headline: 'Invite friends. Earn 50 sats per install.',
+    ctaText: 'Share now',
+    ctaUrl: 'https://scrollpay.app',
+    pointsPerImpression: 5
+  }
+];
+
+const POINTS_CONFIG = {
+  perImpression: 5,
+  perClick: 25,
+  referralBonus: 50,
+  dailyCap: 5000,
+  payoutThreshold: 1000
+};
+
+let app;
+let db;
+
+function initFirebase() {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    return true;
+  } catch (e) {
+    console.error('[ScrollPay] Firebase init failed:', e);
+    return false;
+  }
+}
+
+// Ad cache: { domain: { ad, fetchedAt } }
+const adCache = {};
+const AD_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getNextAd(domain) {
+  // Check cache
+  const cached = adCache[domain];
+  if (cached && Date.now() - cached.fetchedAt < AD_CACHE_TTL) {
+    return cached.ad;
+  }
+
+  if (!db) {
+    return DEFAULT_ADS[0];
+  }
+
+  try {
+    const adsRef = collection(db, 'sp_ads');
+    const q = query(adsRef, where('active', '==', true));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return DEFAULT_ADS[0];
+    }
+
+    const ads = [];
+    snapshot.forEach(d => ads.push({ id: d.id, ...d.data() }));
+    // Pick random active ad
+    const ad = ads[Math.floor(Math.random() * ads.length)];
+
+    adCache[domain] = { ad, fetchedAt: Date.now() };
+    return ad;
+  } catch (e) {
+    console.error('[ScrollPay] getNextAd error:', e);
+    return DEFAULT_ADS[0];
+  }
+}
+
+async function recordImpression(userId, adId, domain, duration) {
+  if (!db || !userId) return null;
+
+  try {
+    const impressionRef = await addDoc(collection(db, 'sp_impressions'), {
+      userId,
+      adId,
+      domain,
+      duration,
+      clicked: false,
+      satsAwarded: POINTS_CONFIG.perImpression,
+      timestamp: serverTimestamp()
+    });
+
+    // Update ad stats
+    const adRef = doc(db, 'sp_ads', adId);
+    await updateDoc(adRef, {
+      impressions: increment(1),
+      budgetUsed: increment(POINTS_CONFIG.perImpression)
+    });
+
+    return impressionRef.id;
+  } catch (e) {
+    console.error('[ScrollPay] recordImpression error:', e);
+    return null;
+  }
+}
+
+async function awardPoints(userId, points, type = 'impression') {
+  if (!db || !userId) return false;
+
+  try {
+    const userRef = doc(db, 'sp_users', userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) return false;
+
+    const userData = userSnap.data();
+    const today = new Date().toDateString();
+    const lastActiveDate = userData.lastActiveAt?.toDate?.()?.toDateString?.() || '';
+
+    // Reset daily stats if new day
+    const satsToday = lastActiveDate === today ? (userData.satsToday || 0) : 0;
+    const impressionsToday = lastActiveDate === today ? (userData.impressionsToday || 0) : 0;
+
+    // Enforce daily cap
+    if (satsToday >= POINTS_CONFIG.dailyCap) return false;
+
+    const actualPoints = Math.min(points, POINTS_CONFIG.dailyCap - satsToday);
+
+    await updateDoc(userRef, {
+      totalSats: increment(actualPoints),
+      satsToday: lastActiveDate === today ? increment(actualPoints) : actualPoints,
+      totalImpressions: type === 'impression' ? increment(1) : increment(0),
+      impressionsToday: type === 'impression'
+        ? (lastActiveDate === today ? increment(1) : 1)
+        : (lastActiveDate === today ? impressionsToday : 0),
+      lastActiveAt: serverTimestamp()
+    });
+
+    return true;
+  } catch (e) {
+    console.error('[ScrollPay] awardPoints error:', e);
+    return false;
+  }
+}
+
+async function recordClick(userId, adId, impressionId) {
+  if (!db || !userId) return false;
+
+  try {
+    // Update impression record
+    if (impressionId) {
+      const impRef = doc(db, 'sp_impressions', impressionId);
+      await updateDoc(impRef, { clicked: true });
+    }
+
+    // Update ad click count
+    const adRef = doc(db, 'sp_ads', adId);
+    await updateDoc(adRef, { clicks: increment(1) });
+
+    // Award click bonus
+    await awardPoints(userId, POINTS_CONFIG.perClick, 'click');
+
+    return true;
+  } catch (e) {
+    console.error('[ScrollPay] recordClick error:', e);
+    return false;
+  }
+}
+
+async function getUserBalance(userId) {
+  if (!db || !userId) return null;
+
+  try {
+    const userRef = doc(db, 'sp_users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) return null;
+    return snap.data();
+  } catch (e) {
+    console.error('[ScrollPay] getUserBalance error:', e);
+    return null;
+  }
+}
+
+async function createUser(userData) {
+  if (!db) return null;
+
+  try {
+    const userId = userData.userId || ('anon_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    const refCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+
+    const userRef = doc(db, 'sp_users', userId);
+    await setDoc(userRef, {
+      id: userId,
+      email: userData.email || '',
+      lightningAddress: userData.lightningAddress || '',
+      totalSats: 0,
+      satsToday: 0,
+      totalImpressions: 0,
+      impressionsToday: 0,
+      refCode,
+      referredBy: userData.referredBy || '',
+      installedAt: serverTimestamp(),
+      lastActiveAt: serverTimestamp()
+    });
+
+    // Award referral bonus to referrer
+    if (userData.referredBy) {
+      const refQuery = query(collection(db, 'sp_users'), where('refCode', '==', userData.referredBy));
+      const refSnap = await getDocs(refQuery);
+      if (!refSnap.empty) {
+        const referrerId = refSnap.docs[0].id;
+        await awardPoints(referrerId, POINTS_CONFIG.referralBonus, 'referral');
+      }
+    }
+
+    return { userId, refCode };
+  } catch (e) {
+    console.error('[ScrollPay] createUser error:', e);
+    return null;
+  }
+}
+
+async function updateLightningAddress(userId, lightningAddress) {
+  if (!db || !userId) return false;
+  try {
+    const userRef = doc(db, 'sp_users', userId);
+    await updateDoc(userRef, { lightningAddress });
+    return true;
+  } catch (e) {
+    console.error('[ScrollPay] updateLightningAddress error:', e);
+    return false;
+  }
+}
+
+// Message handler from content scripts and popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  (async () => {
+    try {
+      switch (message.type) {
+        case 'GET_AD': {
+          const ad = await getNextAd(message.domain || 'unknown');
+          sendResponse({ success: true, ad });
+          break;
+        }
+        case 'RECORD_IMPRESSION': {
+          const { userId, adId, domain, duration } = message;
+          const impressionId = await recordImpression(userId, adId, domain, duration);
+          await awardPoints(userId, POINTS_CONFIG.perImpression, 'impression');
+          sendResponse({ success: true, impressionId, satsAwarded: POINTS_CONFIG.perImpression });
+          break;
+        }
+        case 'RECORD_CLICK': {
+          const { userId, adId, impressionId } = message;
+          await recordClick(userId, adId, impressionId);
+          sendResponse({ success: true, satsAwarded: POINTS_CONFIG.perClick });
+          break;
+        }
+        case 'GET_BALANCE': {
+          const data = await getUserBalance(message.userId);
+          sendResponse({ success: true, data });
+          break;
+        }
+        case 'CREATE_USER': {
+          const result = await createUser(message.userData);
+          sendResponse({ success: !!result, ...result });
+          break;
+        }
+        case 'UPDATE_LIGHTNING': {
+          const ok = await updateLightningAddress(message.userId, message.lightningAddress);
+          sendResponse({ success: ok });
+          break;
+        }
+        default:
+          sendResponse({ success: false, error: 'Unknown message type' });
+      }
+    } catch (e) {
+      console.error('[ScrollPay] Message handler error:', e);
+      sendResponse({ success: false, error: e.message });
+    }
+  })();
+  return true; // Keep message channel open for async response
+});
+
+// On install: open onboarding
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+  }
+  initFirebase();
+});
+
+// Init Firebase on service worker start
+initFirebase();
