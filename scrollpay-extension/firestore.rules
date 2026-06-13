@@ -48,5 +48,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // Global counters (signup number, etc.). Only the userCount field grows.
+    match /sp_meta/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['userCount'])
+        && request.resource.data.userCount is int
+        && request.resource.data.userCount >= 1;
+      allow update: if request.resource.data.userCount > resource.data.userCount;
+    }
   }
 }

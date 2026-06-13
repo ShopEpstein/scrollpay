@@ -53,6 +53,29 @@ async function loadUserData() {
     if (data.refCode) {
       document.getElementById('referral-link').textContent = `scrollpay.app/r/${data.refCode}`;
     }
+
+    // Downline stats
+    document.getElementById('referral-count').textContent = (data.referralCount || 0).toLocaleString();
+    document.getElementById('downline-size').textContent = (data.downlineSize || 0).toLocaleString();
+    document.getElementById('downline-xp').textContent = (data.downlineXp || 0).toLocaleString();
+
+    // Early adopter badge + referral note
+    const signupNumber = data.signupNumber || 999999;
+    const isEarlyAdopter = signupNumber <= 500;
+    const badge = document.getElementById('early-adopter-badge');
+    if (isEarlyAdopter) {
+      badge.style.display = 'block';
+      badge.textContent = signupNumber <= 100
+        ? `⚡ Founding Member #${signupNumber} — 1.5× referral XP`
+        : `⚡ Early Adopter #${signupNumber} — 1.5× referral XP`;
+    }
+
+    const noteEl = document.getElementById('referral-note');
+    if (isEarlyAdopter) {
+      noteEl.textContent = 'Earn 150 XP per direct recruit (+L2: 38 XP, +L3: 15 XP) — early adopter bonus active';
+    } else {
+      noteEl.textContent = 'Earn 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)';
+    }
   }
 
   // Load recent ads from local storage

@@ -198,6 +198,53 @@ body {
   font-size: 11px;
 }
 
+/* Early adopter badge */
+.early-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+/* Downline stats grid */
+.downline-stats {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dl-stat {
+  flex: 1;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dl-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.dl-lbl {
+  font-size: 9px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
 /* Referral */
 .referral-row {
   display: flex;
