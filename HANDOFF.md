@@ -34,6 +34,13 @@ Firebase Firestore.
 - `icons/` — 16/48/128 px
 - `seed/` — Admin SDK script to seed ad docs (`node seed.js`)
 
+Plus, at repo root:
+- `docs/` — marketing landing page (`index.html` + `privacy.html` + icon),
+  built for GitHub Pages hosting. The "Add to Chrome" buttons are placeholders
+  until the Web Store listing exists (search `TODO: replace href`).
+- `LAUNCH.md` — path-to-live checklist (GitHub Pages hosting, Chrome Web Store
+  submission steps, and ready-to-paste store listing copy).
+
 ## Backend state (LIVE)
 - Firebase project: **`scrollpay-1ce29`** (config baked into `background.js`).
 - **Cloud Firestore** enabled (NOT Realtime Database — the extension uses Firestore).
