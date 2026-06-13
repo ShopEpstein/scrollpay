@@ -10,10 +10,9 @@ not yet built.
 
 ## Repository
 - Repo: `ShopEpstein/scrollpay`
-- Active branch: `claude/funny-dirac-3818uh` (has all the latest work)
-- `main`: only has the initial source extraction (PR #1, squash-merged).
-  **The hardened rules, Firebase config swap, and seed script are only on the
-  branch — they still need to be merged into `main`.**
+- Default branch `main` is up to date with all work below (hardened rules,
+  `scrollpay-1ce29` config, seed script, vendored Firebase SDK, this doc).
+- Work branch: `claude/funny-dirac-3818uh`.
 
 ## File layout (`scrollpay-extension/`)
 - `manifest.json` — MV3 manifest
