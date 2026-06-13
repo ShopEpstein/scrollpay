@@ -1,0 +1,12 @@
+{
+  "name": "scrollpay-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-off script to seed ScrollPay ad documents into Firestore.",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
