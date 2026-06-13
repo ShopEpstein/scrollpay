@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrollPay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-row">
+        <span class="logo-text">SCROLLPAY</span>
+        <span class="status-badge"><span class="status-dot"></span> earning active</span>
+      </div>
+    </div>
+
+    <!-- Balance -->
+    <div class="balance-section">
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-amount"><span id="total-sats">—</span> <span class="sats-unit">sats</span></div>
+      <div class="balance-sub">
+        <span><span id="sats-today">—</span> sats today</span>
+        <span class="divider">·</span>
+        <span><span id="impressions-today">—</span> impressions</span>
+      </div>
+      <button class="withdraw-btn" id="withdraw-btn" disabled>Withdraw via Lightning</button>
+    </div>
+
+    <!-- Lightning Address -->
+    <div class="section">
+      <div class="section-label">Lightning Address</div>
+      <div class="lightning-row">
+        <input type="text" id="lightning-input" class="lightning-input" placeholder="you@walletofsatoshi.com" />
+        <button class="save-btn" id="save-lightning-btn">Save</button>
+      </div>
+    </div>
+
+    <!-- Recent Ads -->
+    <div class="section">
+      <div class="section-label">Recent Ads</div>
+      <div id="recent-ads-list" class="recent-ads-list">
+        <div class="empty-state">No ads seen yet — start browsing!</div>
+      </div>
+    </div>
+
+    <!-- Referral -->
+    <div class="section referral-section">
+      <div class="section-label">Referral Link</div>
+      <div class="referral-row">
+        <span id="referral-link" class="referral-link">Loading...</span>
+        <button class="copy-btn" id="copy-ref-btn">Copy</button>
+      </div>
+      <div class="referral-note">Earn 50 sats per friend who installs</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="popup-footer">
+      <a href="privacy.html" target="_blank" class="footer-link">Privacy Policy</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

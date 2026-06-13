@@ -1,0 +1,218 @@
+/* ScrollPay Widget Styles — All scoped to #scrollpay-widget */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+#scrollpay-widget {
+  all: initial;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  width: 280px !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+  z-index: 2147483647 !important;
+  overflow: hidden !important;
+  transform: translateX(320px) !important;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#scrollpay-widget.sp-visible {
+  transform: translateX(0) !important;
+}
+
+#scrollpay-widget.sp-hiding {
+  transform: translateX(320px) !important;
+  transition: transform 0.35s ease-in !important;
+}
+
+/* Drag Handle */
+#scrollpay-widget #sp-drag-handle {
+  all: initial;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  cursor: grab !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+#scrollpay-widget #sp-drag-handle:active {
+  cursor: grabbing !important;
+}
+
+#scrollpay-widget .sp-drag-dots {
+  font-size: 10px !important;
+  color: #9ca3af !important;
+  letter-spacing: 2px !important;
+  line-height: 1 !important;
+}
+
+#scrollpay-widget .sp-brand {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  color: #f97316 !important;
+  text-transform: uppercase !important;
+}
+
+#scrollpay-widget .sp-status {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: #16a34a !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+#scrollpay-widget .sp-dot {
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  background: #22c55e !important;
+  border-radius: 50% !important;
+  animation: sp-pulse 2s infinite !important;
+}
+
+@keyframes sp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Ad Area */
+#scrollpay-widget #sp-ad-area {
+  all: initial;
+  padding: 12px !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+#scrollpay-widget .sp-ad-content {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+
+#scrollpay-widget .sp-brand-logo {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+#scrollpay-widget .sp-brand-initial {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  flex-shrink: 0 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+#scrollpay-widget .sp-ad-text {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+#scrollpay-widget .sp-ad-headline {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #111827 !important;
+  line-height: 1.4 !important;
+}
+
+#scrollpay-widget .sp-cta-btn {
+  all: initial !important;
+  font-family: 'Inter', sans-serif !important;
+  display: inline-block !important;
+  padding: 5px 10px !important;
+  background: #f97316 !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+  white-space: nowrap !important;
+  align-self: flex-start !important;
+  box-sizing: border-box !important;
+}
+
+#scrollpay-widget .sp-cta-btn:hover {
+  background: #ea580c !important;
+}
+
+/* Footer */
+#scrollpay-widget #sp-footer {
+  all: initial;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  background: #f8f9fa !important;
+  border-top: 1px solid #e5e7eb !important;
+  box-sizing: border-box !important;
+}
+
+#scrollpay-widget .sp-earnings {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #16a34a !important;
+}
+
+#scrollpay-widget .sp-close-btn {
+  all: initial !important;
+  font-family: 'Inter', sans-serif !important;
+  cursor: pointer !important;
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  transition: background 0.15s !important;
+  line-height: 1 !important;
+}
+
+#scrollpay-widget .sp-close-btn:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+/* Progress Bar */
+#scrollpay-widget #sp-progress-bar {
+  all: initial;
+  display: block !important;
+  height: 3px !important;
+  background: #e5e7eb !important;
+  overflow: hidden !important;
+}
+
+#scrollpay-widget #sp-progress-fill {
+  display: block !important;
+  height: 100% !important;
+  width: 0% !important;
+  background: linear-gradient(90deg, #f97316, #fbbf24) !important;
+  border-radius: 0 2px 2px 0 !important;
+}
