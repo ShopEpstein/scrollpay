@@ -1,8 +1,11 @@
 // ScrollPay Background Service Worker
 // Handles all Firebase operations and messaging from content scripts
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import {
+  initializeApp,
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc,
+  collection, query, where, getDocs, increment, serverTimestamp
+} from './vendor/firebase/firebase-bundle.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",

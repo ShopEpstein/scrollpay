@@ -60,9 +60,13 @@ not yet built.
   `impressions`/`clicks`/`budgetUsed` on `sp_ads`, but rules block client writes
   to ads (`allow write: if false`), so those writes fail silently. Move to
   server-side to fix.
-- **Firebase SDK loads from a CDN** (`https://www.gstatic.com/firebasejs/...`)
-  inside the service worker. This can trip Chrome Web Store review under MV3
-  CSP. Vendor the SDK locally before submitting.
+- ~~Firebase SDK loads from a CDN~~ **RESOLVED.** The Firebase modular SDK is
+  now bundled locally at `scrollpay-extension/vendor/firebase/firebase-bundle.js`
+  (built from `firebase@10.7.1` with esbuild), and `background.js` imports from
+  it instead of `gstatic.com`. This satisfies MV3's `script-src 'self'` CSP, so
+  the service worker can start and Firestore works. To rebuild after a Firebase
+  version bump: `npm i firebase@<ver> esbuild`, re-export the same symbols from
+  an entry file, and `esbuild entry.js --bundle --format=esm --minify`.
 
 ## Security note
 A Firebase Admin service-account key was used once to run the seed script and
@@ -78,7 +82,7 @@ already done.
 3. **Build the withdrawal path** (Cloud Function + OpenNode) — the actual
    "earn Bitcoin" feature.
 4. **Move awarding server-side** to close the minting hole and make ad stats work.
-5. **Vendor the Firebase SDK locally**, then prep Chrome Web Store submission.
+5. Prep Chrome Web Store submission (Firebase SDK is already vendored locally).
 
 ## How to seed more ads
 From `scrollpay-extension/seed/`: save a service-account key as
