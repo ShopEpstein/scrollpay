@@ -5,12 +5,12 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBHxMmNQSKr2JgsPgIpbnLzaXXYTw8kBMk",
-  authDomain: "growthmonster.firebaseapp.com",
-  projectId: "growthmonster",
-  storageBucket: "growthmonster.firebasestorage.app",
-  messagingSenderId: "97804410543",
-  appId: "1:97804410543:web:ffdefa9ea29b62ce6afe5a"
+  apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
+  authDomain: "scrollpay-1ce29.firebaseapp.com",
+  projectId: "scrollpay-1ce29",
+  storageBucket: "scrollpay-1ce29.firebasestorage.app",
+  messagingSenderId: "710989126022",
+  appId: "1:710989126022:web:50324119c803af284f7407"
 };
 
 const DEFAULT_ADS = [
