@@ -403,7 +403,36 @@ body {
   margin-top: 3px;
 }
 
+/* Received transfers */
+.received-list { display: flex; flex-direction: column; gap: 6px; }
+.received-item {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.received-top { display: flex; justify-content: space-between; align-items: center; }
+.received-from { font-weight: 600; color: #111827; }
+.received-xp { font-weight: 700; color: #16a34a; font-size: 11px; }
+.received-note { color: #374151; margin-top: 4px; font-style: italic; }
+.received-time { color: #9ca3af; font-size: 10px; margin-top: 3px; }
+
 /* Gift XP */
+.gift-note-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color: #111827;
+  transition: border-color .15s;
+  margin-bottom: 6px;
+}
+.gift-note-input:focus { border-color: #f7931a; }
+
 .gift-row {
   display: flex;
   gap: 6px;

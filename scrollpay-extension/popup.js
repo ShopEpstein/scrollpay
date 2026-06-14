@@ -43,6 +43,7 @@ async function loadUserData() {
   // Load balance from background
   const response = await sendToBackground({ type: 'GET_BALANCE', userId });
   const data = response.data;
+  loadReceived(userId);
 
   if (data) {
     const totalXp = data.totalSats || 0;
@@ -218,13 +219,15 @@ document.getElementById('nickname-save-btn').addEventListener('click', async () 
 
 // Gift XP
 document.getElementById('gift-xp-btn').addEventListener('click', async () => {
-  const toEl  = document.getElementById('gift-to');
-  const amtEl = document.getElementById('gift-amount');
-  const msgEl = document.getElementById('gift-msg');
-  const btn   = document.getElementById('gift-xp-btn');
+  const toEl   = document.getElementById('gift-to');
+  const amtEl  = document.getElementById('gift-amount');
+  const noteEl = document.getElementById('gift-note');
+  const msgEl  = document.getElementById('gift-msg');
+  const btn    = document.getElementById('gift-xp-btn');
 
   const to     = toEl.value.trim();
   const amount = parseInt(amtEl.value, 10);
+  const note   = noteEl.value.trim();
 
   msgEl.style.display = 'none';
 
@@ -238,14 +241,15 @@ document.getElementById('gift-xp-btn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Sending…';
 
-  const res = await sendToBackground({ type: 'TRANSFER_XP', userId, to, amount });
+  const res = await sendToBackground({ type: 'TRANSFER_XP', userId, to, amount, note });
 
   btn.disabled = false;
   btn.textContent = 'Send XP';
 
   if (res.success) {
-    toEl.value  = '';
-    amtEl.value = '';
+    toEl.value   = '';
+    amtEl.value  = '';
+    noteEl.value = '';
     showGiftMsg(`✓ Sent ${res.amount} XP to ${res.toHandle}!`, true);
     loadUserData();
   } else {
@@ -258,6 +262,29 @@ document.getElementById('gift-xp-btn').addEventListener('click', async () => {
     msgEl.style.display = 'block';
   }
 });
+
+// Load received XP transfers (with messages)
+async function loadReceived(userId) {
+  const section = document.getElementById('received-section');
+  const list = document.getElementById('received-list');
+  const res = await sendToBackground({ type: 'GET_TRANSFERS', userId });
+  const transfers = res.transfers || [];
+  if (!transfers.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = transfers.slice(0, 5).map(t => {
+    const from = escapeHtml(t.fromHandle || 'Someone');
+    const note = t.note ? `<div class="received-note">${escapeHtml(t.note)}</div>` : '';
+    const time = t.createdAt ? new Date(t.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+    return `<div class="received-item">
+      <div class="received-top">
+        <span class="received-from">${from}</span>
+        <span class="received-xp">+${t.amount} XP</span>
+      </div>
+      ${note}
+      ${time ? `<div class="received-time">${time}</div>` : ''}
+    </div>`;
+  }).join('');
+}
 
 // Share invite link
 function getRefLink() {

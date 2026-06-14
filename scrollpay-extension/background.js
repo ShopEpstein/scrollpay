@@ -375,7 +375,24 @@ async function updateLightningAddress(userId, lightningAddress) {
 
 const NICKNAME_RE = /^[a-z0-9_]{3,20}$/;
 
-async function transferXp(fromUserId, to, amount) {
+async function getReceivedTransfers(userId) {
+  if (!db || !userId) return [];
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'sp_transfers'),
+      where('toUid', '==', userId)
+    ));
+    const transfers = [];
+    snap.forEach(d => transfers.push({ id: d.id, ...d.data() }));
+    transfers.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    return transfers.slice(0, 10);
+  } catch (e) {
+    console.error('[ScrollPay] getReceivedTransfers error:', e);
+    return [];
+  }
+}
+
+async function transferXp(fromUserId, to, amount, note = '') {
   if (!db || !fromUserId) return { success: false, error: 'Not ready' };
   const amt = Math.round(amount);
   if (!Number.isInteger(amt) || amt < 10) return { success: false, error: 'Minimum transfer is 10 XP.' };
@@ -400,18 +417,23 @@ async function transferXp(fromUserId, to, amount) {
     const fromSnap = await getDoc(fromRef);
     if (!fromSnap.exists()) return { success: false, error: 'Account not found.' };
 
-    const balance = fromSnap.data().totalSats || 0;
+    const fromData = fromSnap.data();
+    const balance = fromData.totalSats || 0;
     if (balance < amt) return { success: false, error: `Insufficient XP. You have ${balance} XP.` };
 
     const toData = recipientSnap.data();
     const toHandle = toData.nickname || `Miner #${toData.signupNumber || '?'}`;
+    const fromHandle = fromData.nickname || `Miner #${fromData.signupNumber || '?'}`;
 
     await updateDoc(fromRef, { totalSats: increment(-amt) });
     await updateDoc(doc(db, 'sp_users', toUid), { totalSats: increment(amt) });
 
     // Audit log (best-effort)
     addDoc(collection(db, 'sp_transfers'), {
-      fromUid: fromUserId, toUid, amount: amt, toHandle, createdAt: serverTimestamp()
+      fromUid: fromUserId, toUid, amount: amt,
+      fromHandle, toHandle,
+      note: note ? String(note).slice(0, 200) : '',
+      createdAt: serverTimestamp()
     }).catch(() => {});
 
     return { success: true, toHandle, amount: amt };
@@ -490,8 +512,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
         case 'TRANSFER_XP': {
-          const result = await transferXp(message.userId, message.to, message.amount);
+          const result = await transferXp(message.userId, message.to, message.amount, message.note || '');
           sendResponse(result);
+          break;
+        }
+        case 'GET_TRANSFERS': {
+          const transfers = await getReceivedTransfers(message.userId);
+          sendResponse({ success: true, transfers });
           break;
         }
         default:

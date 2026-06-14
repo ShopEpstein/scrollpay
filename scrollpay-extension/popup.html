@@ -107,6 +107,12 @@
       <p id="msg-status" class="msg-status" style="display:none"></p>
     </div>
 
+    <!-- Received Messages -->
+    <div class="section" id="received-section" style="display:none">
+      <div class="section-label">📨 Received</div>
+      <div id="received-list" class="received-list"></div>
+    </div>
+
     <!-- Gift XP -->
     <div class="section" id="gift-xp-section">
       <div class="section-label">Gift XP</div>
@@ -114,6 +120,7 @@
         <input type="text" id="gift-to" placeholder="Handle or ref code" autocomplete="off" />
         <input type="number" id="gift-amount" placeholder="XP" min="10" />
       </div>
+      <input type="text" id="gift-note" class="gift-note-input" placeholder="Add a message (optional)" maxlength="200" autocomplete="off" />
       <button class="btn-gift-xp" id="gift-xp-btn">Send XP</button>
       <p id="gift-msg" class="gift-msg" style="display:none"></p>
     </div>
