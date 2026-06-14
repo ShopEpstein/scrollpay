@@ -1,6 +1,5 @@
 const { admin, db, initError } = require('./_firebase');
 
-const DAILY_CAP = 5000;
 const MAX_PER_WRITE = 50;
 
 module.exports = async (req, res) => {
@@ -14,8 +13,8 @@ module.exports = async (req, res) => {
     const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
     const { amount, type } = req.body;
 
-    const requested = Math.min(parseInt(amount) || 0, MAX_PER_WRITE);
-    if (requested <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE);
+    if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
     const userRef = db.collection('sp_users').doc(decoded.uid);
     const snap = await userRef.get();
@@ -24,13 +23,6 @@ module.exports = async (req, res) => {
     const data = snap.data();
     const today = new Date().toDateString();
     const lastDate = data.lastActiveAt?.toDate?.()?.toDateString?.() || '';
-    const satsToday = lastDate === today ? (data.satsToday || 0) : 0;
-
-    if (satsToday >= DAILY_CAP) {
-      return res.status(200).json({ awarded: 0, capped: true, total: data.totalSats || 0 });
-    }
-
-    const awarded = Math.min(requested, DAILY_CAP - satsToday);
     const isToday = lastDate === today;
 
     const update = {
@@ -47,7 +39,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       awarded,
-      capped: (satsToday + awarded) >= DAILY_CAP,
+      capped: false,
       total: (data.totalSats || 0) + awarded,
     });
   } catch (err) {

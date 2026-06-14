@@ -802,9 +802,8 @@
           // Mirror in demo widget
           xpCount = userXpTotal;
           document.getElementById('dw-xp').textContent = userXpTotal.toLocaleString();
-          document.getElementById('farm-status').innerHTML = isCapped
-            ? '<span class="capped">⚡ Daily cap reached</span> — come back tomorrow to keep earning'
-            : '<span class="live">● earning XP</span> — watch ads in the bottom-right corner';
+          document.getElementById('farm-status').innerHTML =
+            '<span class="live">● earning XP</span> — watch ads in the bottom-right corner';
         }
       } catch (e) {}
     }
