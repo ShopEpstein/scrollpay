@@ -417,6 +417,15 @@
             <div class="farm-status" id="farm-status">
               <span class="live">● mining XP</span> — watch ads in the bottom-right corner
             </div>
+            <div id="farm-gift-area" style="margin-top:12px;">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:5px;">Gift XP</div>
+              <div style="display:flex;gap:6px;margin-bottom:5px;">
+                <input type="text" id="farm-gift-to" placeholder="Handle or ref code" autocomplete="off" style="flex:2;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;font-family:inherit;outline:none;" />
+                <input type="number" id="farm-gift-amount" placeholder="XP" min="10" style="flex:1;min-width:0;padding:7px 8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;font-family:inherit;outline:none;" />
+              </div>
+              <button id="farm-gift-btn" style="width:100%;padding:8px;background:#0f172a;color:#f7931a;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;">Send XP</button>
+              <p id="farm-gift-msg" style="font-size:11px;margin-top:4px;display:none;"></p>
+            </div>
             <button class="farm-signout" id="farm-signout-btn">Sign out</button>
           </div>
         </div>
@@ -1091,6 +1100,54 @@
         btn.textContent = '✓ Copied!';
         setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
       } catch (e) {}
+    });
+
+    document.getElementById('farm-gift-btn').addEventListener('click', async () => {
+      const toEl  = document.getElementById('farm-gift-to');
+      const amtEl = document.getElementById('farm-gift-amount');
+      const msgEl = document.getElementById('farm-gift-msg');
+      const btn   = document.getElementById('farm-gift-btn');
+
+      const to     = toEl.value.trim();
+      const amount = parseInt(amtEl.value, 10);
+      msgEl.style.display = 'none';
+
+      if (!to) { showMsg('Enter a handle or referral code.', false); return; }
+      if (!amount || amount < 10) { showMsg('Minimum transfer is 10 XP.', false); return; }
+      if (!currentUser) { showMsg('Sign in first.', false); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      try {
+        const token = await getToken();
+        const res = await fetch('/api/transfer-xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ to, amount })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toEl.value = '';
+          amtEl.value = '';
+          userXpTotal = Math.max(0, userXpTotal - amount);
+          document.getElementById('farm-xp-num').textContent = userXpTotal.toLocaleString();
+          showMsg(`✓ Sent ${data.amount} XP to ${data.toHandle}!`, true);
+        } else {
+          showMsg(data.error || 'Transfer failed.', false);
+        }
+      } catch (e) {
+        showMsg('Network error — try again.', false);
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Send XP';
+
+      function showMsg(text, ok) {
+        msgEl.textContent = text;
+        msgEl.style.color = ok ? '#16a34a' : '#dc2626';
+        msgEl.style.display = 'block';
+      }
     });
 
     // ── Init ─────────────────────────────────────────────────────

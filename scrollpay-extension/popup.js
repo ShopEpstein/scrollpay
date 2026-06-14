@@ -209,5 +209,48 @@ document.getElementById('nickname-save-btn').addEventListener('click', async () 
   }
 });
 
+// Gift XP
+document.getElementById('gift-xp-btn').addEventListener('click', async () => {
+  const toEl  = document.getElementById('gift-to');
+  const amtEl = document.getElementById('gift-amount');
+  const msgEl = document.getElementById('gift-msg');
+  const btn   = document.getElementById('gift-xp-btn');
+
+  const to     = toEl.value.trim();
+  const amount = parseInt(amtEl.value, 10);
+
+  msgEl.style.display = 'none';
+
+  if (!to) { showGiftMsg('Enter a handle or referral code.', false); return; }
+  if (!amount || amount < 10) { showGiftMsg('Minimum transfer is 10 XP.', false); return; }
+
+  const stored = await chrome.storage.local.get([USER_KEY]);
+  const userId = stored[USER_KEY];
+  if (!userId) { showGiftMsg('Not logged in.', false); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  const res = await sendToBackground({ type: 'TRANSFER_XP', userId, to, amount });
+
+  btn.disabled = false;
+  btn.textContent = 'Send XP';
+
+  if (res.success) {
+    toEl.value  = '';
+    amtEl.value = '';
+    showGiftMsg(`✓ Sent ${res.amount} XP to ${res.toHandle}!`, true);
+    loadUserData();
+  } else {
+    showGiftMsg(res.error || 'Transfer failed.', false);
+  }
+
+  function showGiftMsg(text, ok) {
+    msgEl.textContent = text;
+    msgEl.className = 'gift-msg ' + (ok ? 'gift-msg-ok' : 'gift-msg-err');
+    msgEl.style.display = 'block';
+  }
+});
+
 // Init
 loadUserData();
