@@ -403,6 +403,49 @@ body {
   margin-top: 3px;
 }
 
+/* Gift XP */
+.gift-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.gift-row input {
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color: #111827;
+  transition: border-color .15s;
+}
+
+.gift-row input:focus { border-color: #f7931a; }
+.gift-row input:first-child { flex: 2; }
+.gift-row input:last-child  { flex: 1; min-width: 0; }
+
+.btn-gift-xp {
+  width: 100%;
+  padding: 8px 16px;
+  background: #0f172a;
+  color: #f7931a;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-gift-xp:hover:not(:disabled) { background: #1e293b; }
+.btn-gift-xp:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gift-msg { font-size: 11px; margin-top: 5px; }
+.gift-msg-ok  { color: #16a34a; }
+.gift-msg-err { color: #dc2626; }
+
 .btn-sell-xp {
   width: 100%;
   padding: 10px 16px;

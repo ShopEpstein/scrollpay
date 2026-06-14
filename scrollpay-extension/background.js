@@ -369,6 +369,52 @@ async function updateLightningAddress(userId, lightningAddress) {
 
 const NICKNAME_RE = /^[a-z0-9_]{3,20}$/;
 
+async function transferXp(fromUserId, to, amount) {
+  if (!db || !fromUserId) return { success: false, error: 'Not ready' };
+  const amt = Math.round(amount);
+  if (!Number.isInteger(amt) || amt < 10) return { success: false, error: 'Minimum transfer is 10 XP.' };
+  try {
+    const toStr = String(to).trim();
+
+    // Resolve recipient: nickname (lowercase) then refCode (uppercase)
+    let recipientSnap = null;
+    const byNickname = await getDocs(query(collection(db, 'sp_users'), where('nickname', '==', toStr.toLowerCase())));
+    if (!byNickname.empty) {
+      recipientSnap = byNickname.docs[0];
+    } else {
+      const byRefCode = await getDocs(query(collection(db, 'sp_users'), where('refCode', '==', toStr.toUpperCase())));
+      if (!byRefCode.empty) recipientSnap = byRefCode.docs[0];
+    }
+
+    if (!recipientSnap) return { success: false, error: 'Recipient not found. Check the handle or referral code.' };
+    const toUid = recipientSnap.id;
+    if (toUid === fromUserId) return { success: false, error: 'Cannot transfer XP to yourself.' };
+
+    const fromRef = doc(db, 'sp_users', fromUserId);
+    const fromSnap = await getDoc(fromRef);
+    if (!fromSnap.exists()) return { success: false, error: 'Account not found.' };
+
+    const balance = fromSnap.data().totalSats || 0;
+    if (balance < amt) return { success: false, error: `Insufficient XP. You have ${balance} XP.` };
+
+    const toData = recipientSnap.data();
+    const toHandle = toData.nickname || `Miner #${toData.signupNumber || '?'}`;
+
+    await updateDoc(fromRef, { totalSats: increment(-amt) });
+    await updateDoc(doc(db, 'sp_users', toUid), { totalSats: increment(amt) });
+
+    // Audit log (best-effort)
+    addDoc(collection(db, 'sp_transfers'), {
+      fromUid: fromUserId, toUid, amount: amt, toHandle, createdAt: serverTimestamp()
+    }).catch(() => {});
+
+    return { success: true, toHandle, amount: amt };
+  } catch (e) {
+    console.error('[ScrollPay] transferXp error:', e);
+    return { success: false, error: e.message };
+  }
+}
+
 async function setNickname(userId, nickname) {
   if (!db || !userId) return { success: false, error: 'Not ready' };
   if (!NICKNAME_RE.test(nickname)) return { success: false, error: 'Handle must be 3–20 lowercase letters, numbers, or underscores.' };
@@ -434,6 +480,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         case 'SET_NICKNAME': {
           const result = await setNickname(message.userId, message.nickname);
+          sendResponse(result);
+          break;
+        }
+        case 'TRANSFER_XP': {
+          const result = await transferXp(message.userId, message.to, message.amount);
           sendResponse(result);
           break;
         }
