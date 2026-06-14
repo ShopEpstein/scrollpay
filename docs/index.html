@@ -139,7 +139,6 @@
     #demo-widget {
       position: fixed;
       bottom: 20px; right: 20px;
-      width: 280px;
       background: #fff;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
@@ -148,22 +147,37 @@
       overflow: hidden;
       display: flex; flex-direction: column;
       font-family: 'Inter', -apple-system, sans-serif;
-      transform: translateX(320px);
-      transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+      transform: translateX(calc(100% + 30px));
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s, width .2s ease;
       opacity: 0;
     }
+    #demo-widget.dw-sm { width: 200px; }
+    #demo-widget.dw-md { width: 280px; }
+    #demo-widget.dw-lg { width: 360px; }
     #demo-widget.dw-visible  { transform: translateX(0); opacity: 1; }
-    #demo-widget.dw-hiding   { transform: translateX(320px); opacity: 0; transition: transform .3s ease-in, opacity .3s; }
+    #demo-widget.dw-hiding   { transform: translateX(calc(100% + 30px)); opacity: 0; transition: transform .3s ease-in, opacity .3s; }
 
     #demo-widget #dw-handle {
       display: flex; align-items: center; justify-content: space-between;
       padding: 8px 12px;
       background: #f8f9fa;
       border-bottom: 1px solid #e5e7eb;
-      cursor: default; user-select: none;
+      cursor: default; user-select: none; gap: 8px;
     }
-    #demo-widget .dw-drag-dots { font-size: 10px; color: #9ca3af; letter-spacing: 2px; line-height: 1; }
-    #demo-widget .dw-brand { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #f97316; text-transform: uppercase; }
+    #demo-widget .dw-brand { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #f97316; text-transform: uppercase; flex-shrink: 0; }
+    #dw-size-btns { display: flex; gap: 3px; }
+    #dw-size-btns button {
+      background: none; border: 1px solid #d1d5db; border-radius: 4px;
+      font-size: 9px; font-weight: 700; color: #9ca3af;
+      padding: 2px 5px; cursor: pointer; font-family: inherit; line-height: 1.4;
+      transition: background .1s, color .1s, border-color .1s;
+    }
+    #dw-size-btns button.dw-sz-active { background: #f97316; border-color: #f97316; color: #fff; }
+    #dw-size-btns button:not(.dw-sz-active):hover { border-color: #f97316; color: #f97316; }
+    #demo-widget.dw-sm .dw-logo { width: 28px; height: 28px; font-size: 13px; }
+    #demo-widget.dw-lg .dw-logo { width: 44px; height: 44px; font-size: 20px; }
+    #demo-widget.dw-lg .dw-headline { font-size: 14px; }
+    #demo-widget.dw-lg #dw-ad-area { padding: 14px 16px; }
     #demo-widget .dw-status { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 500; color: #16a34a; }
     #demo-widget .dw-dot {
       display: inline-block; width: 6px; height: 6px;
@@ -346,8 +360,12 @@
   <!-- Demo widget — mirrors the real Chrome extension widget -->
   <div id="demo-widget" aria-label="ScrollPay demo widget">
     <div id="dw-handle">
-      <span class="dw-drag-dots">⠿⠿⠿</span>
       <span class="dw-brand">SCROLLPAY</span>
+      <div id="dw-size-btns">
+        <button data-size="sm">S</button>
+        <button data-size="md" class="dw-sz-active">M</button>
+        <button data-size="lg">L</button>
+      </div>
       <span class="dw-status"><span class="dw-dot"></span> <span id="dw-status-text">earning</span></span>
     </div>
     <div id="dw-ad-area">
@@ -401,9 +419,11 @@
     ];
 
     const AD_ROTATE_MS = 7000;
+    const SIZE_XP = { sm: 0.5, md: 1.0, lg: 1.5 };
     let ads = [...FALLBACK_ADS];
     let adIndex = 0;
     let xpCount = 0;
+    let xpMultiplier = 1.0;
 
     const fbApp = initializeApp(FIREBASE_CONFIG, 'landing');
     const db = getFirestore(fbApp);
@@ -500,8 +520,8 @@
 
     setInterval(() => {
       if (document.getElementById('demo-widget').classList.contains('dw-visible')) {
-        xpCount++;
-        document.getElementById('dw-xp').textContent = xpCount.toLocaleString();
+        xpCount += xpMultiplier;
+        document.getElementById('dw-xp').textContent = Math.floor(xpCount).toLocaleString();
       }
     }, 1000);
 
@@ -538,6 +558,22 @@
         btn.disabled = false;
         btn.textContent = 'Join the waitlist →';
       }
+    });
+
+    // ── Size selector ────────────────────────────────────────────
+
+    const widgetEl = document.getElementById('demo-widget');
+    widgetEl.classList.add('dw-md');
+
+    document.querySelectorAll('#dw-size-btns button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const size = btn.dataset.size;
+        document.querySelectorAll('#dw-size-btns button').forEach(b => b.classList.remove('dw-sz-active'));
+        btn.classList.add('dw-sz-active');
+        widgetEl.classList.remove('dw-sm', 'dw-md', 'dw-lg');
+        widgetEl.classList.add('dw-' + size);
+        xpMultiplier = SIZE_XP[size];
+      });
     });
 
     // ── Init ─────────────────────────────────────────────────────
