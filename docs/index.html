@@ -350,6 +350,16 @@
       ₿ You were invited! Use code <strong id="ref-banner-code" style="font-size:15px;letter-spacing:1px;color:var(--orange-dark)"></strong> during setup to give your friend a Bitcoin bonus.
     </div>
 
+    <!-- XP Halving Banner -->
+    <div id="halving-banner" style="background:#0f172a;border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f7931a;margin-bottom:4px;">⚡ XP Halving Event — Mine while rates are high</div>
+        <div style="color:#fff;font-size:15px;font-weight:700;"><span id="site-rate">—</span> XP per ad right now · drops to <span id="site-next-rate">—</span> XP in <span id="site-timer" style="color:#f7931a;font-variant-numeric:tabular-nums;">—:—:—</span></div>
+        <div style="margin-top:8px;background:#1e293b;border-radius:4px;height:4px;overflow:hidden;max-width:320px"><div id="site-bar" style="height:100%;background:linear-gradient(90deg,#f7931a,#fbbf24);transition:width 1s linear;border-radius:4px;"></div></div>
+      </div>
+      <a href="#get-started" style="background:#f7931a;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;white-space:nowrap;flex-shrink:0;">Install now →</a>
+    </div>
+
     <header class="hero">
       <span class="pill">₿ Mine Bitcoin with your attention</span>
       <h1>Get paid in Bitcoin<br /><span class="accent">for scrolling you already do.</span></h1>
@@ -616,6 +626,37 @@
         document.getElementById('ref-banner-code').textContent = ref.toUpperCase();
         document.getElementById('ref-banner').style.display = 'block';
       }
+    })();
+
+    // XP Halving countdown
+    (function () {
+      const START    = new Date('2026-06-14T21:25:00Z').getTime();
+      const INTERVAL = 24 * 60 * 60 * 1000;
+      const GENESIS  = 40;
+      const MAX      = 7;
+      function state() {
+        const el  = Math.max(0, Date.now() - START);
+        const n   = Math.min(Math.floor(el / INTERVAL), MAX);
+        const done = n >= MAX;
+        const rate = Math.max(1, Math.round(GENESIS / Math.pow(2, n)));
+        const next = Math.max(1, Math.round(GENESIS / Math.pow(2, n + 1)));
+        const ms   = done ? 0 : INTERVAL - (el % INTERVAL);
+        const pct  = done ? 100 : Math.round((el % INTERVAL) / INTERVAL * 100);
+        return { rate, next, ms, pct, done };
+      }
+      function fmt(ms) {
+        const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000), s = Math.floor(ms % 60000 / 1000);
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+      function tick() {
+        const s = state();
+        document.getElementById('site-rate').textContent = s.rate;
+        document.getElementById('site-next-rate').textContent = s.next;
+        document.getElementById('site-timer').textContent = s.done ? 'final rate' : fmt(s.ms);
+        document.getElementById('site-bar').style.width = s.pct + '%';
+      }
+      tick();
+      setInterval(tick, 1000);
     })();
   </script>
 

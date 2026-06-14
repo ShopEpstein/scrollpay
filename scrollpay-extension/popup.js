@@ -380,5 +380,47 @@ document.getElementById('msg-send-btn').addEventListener('click', async () => {
   }
 });
 
+// ── XP Halving Countdown ─────────────────────────────────────
+const HALVING_START_MS    = new Date('2026-06-14T21:25:00Z').getTime();
+const HALVING_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const GENESIS_XP_RATE     = 40;
+const MAX_HALVINGS         = 7;
+
+function halvingState() {
+  const elapsed  = Math.max(0, Date.now() - HALVING_START_MS);
+  const halvings = Math.min(Math.floor(elapsed / HALVING_INTERVAL_MS), MAX_HALVINGS);
+  const done     = halvings >= MAX_HALVINGS;
+  const rate     = Math.max(1, Math.round(GENESIS_XP_RATE / Math.pow(2, halvings)));
+  const nextRate = Math.max(1, Math.round(GENESIS_XP_RATE / Math.pow(2, halvings + 1)));
+  const msLeft   = done ? 0 : HALVING_INTERVAL_MS - (elapsed % HALVING_INTERVAL_MS);
+  const progress = done ? 1 : (elapsed % HALVING_INTERVAL_MS) / HALVING_INTERVAL_MS;
+  return { halvings, done, rate, nextRate, msLeft, progress };
+}
+
+function fmtMs(ms) {
+  if (ms <= 0) return '00:00:00';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function tickHalving() {
+  const s = halvingState();
+  document.getElementById('halving-current-rate').textContent = s.rate;
+  document.getElementById('halving-bar-fill').style.width = `${Math.round(s.progress * 100)}%`;
+  if (s.done) {
+    document.getElementById('halving-timer').textContent = 'Final rate';
+    document.getElementById('halving-footer').textContent = 'Halving complete — rate locked at 1 XP/ad';
+  } else {
+    document.getElementById('halving-timer').textContent = fmtMs(s.msLeft);
+    document.getElementById('halving-footer').textContent =
+      `Halving ${s.halvings + 1} of ${MAX_HALVINGS} · drops to ${s.nextRate} XP/ad`;
+  }
+}
+
+tickHalving();
+setInterval(tickHalving, 1000);
+
 // Init
 loadUserData();

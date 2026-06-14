@@ -59,6 +59,65 @@ body {
   50% { opacity: 0.4; }
 }
 
+/* XP Halving Card */
+.halving-card {
+  background: #0f172a;
+  padding: 14px 16px;
+  border-bottom: 1px solid #1e293b;
+}
+.halving-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.halving-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #f7931a;
+  margin-bottom: 3px;
+}
+.halving-rate {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.halving-timer-wrap { text-align: right; }
+.halving-timer-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+.halving-timer {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f7931a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+.halving-bar-track {
+  background: #1e293b;
+  border-radius: 4px;
+  height: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.halving-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f7931a, #fbbf24);
+  transition: width 1s linear;
+  border-radius: 4px;
+}
+.halving-footer {
+  font-size: 10px;
+  color: #64748b;
+  text-align: center;
+}
+
 /* Balance */
 .balance-section {
   padding: 20px 16px;

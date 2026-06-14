@@ -28,8 +28,21 @@ const DEFAULT_ADS = [
   }
 ];
 
+// ── XP Halving ────────────────────────────────────────────────
+// Starts at 40 XP/ad, halves every 24h for 7 periods → settles at 1 XP/ad.
+const HALVING_START_MS   = new Date('2026-06-14T21:25:00Z').getTime();
+const HALVING_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const GENESIS_XP_RATE    = 40;
+const MAX_HALVINGS        = 7;
+
+function getCurrentXpRate() {
+  const elapsed  = Math.max(0, Date.now() - HALVING_START_MS);
+  const halvings = Math.min(Math.floor(elapsed / HALVING_INTERVAL_MS), MAX_HALVINGS);
+  return Math.max(1, Math.round(GENESIS_XP_RATE / Math.pow(2, halvings)));
+}
+
 const POINTS_CONFIG = {
-  perImpression: 5,
+  get perImpression() { return getCurrentXpRate(); },
   perClick: 25,
   referralBonusL1: 100,       // direct recruit (paid in ≤50 XP writes)
   referralBonusL2: 25,        // L2 downline — your recruit recruits someone
@@ -494,6 +507,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'GET_BALANCE': {
           const data = await getUserBalance(message.userId);
           sendResponse({ success: true, data });
+          break;
+        }
+        case 'GET_XP_RATE': {
+          const rate = getCurrentXpRate();
+          const elapsed = Math.max(0, Date.now() - HALVING_START_MS);
+          const halvings = Math.min(Math.floor(elapsed / HALVING_INTERVAL_MS), MAX_HALVINGS);
+          const done = halvings >= MAX_HALVINGS;
+          const msUntilNext = done ? null : HALVING_INTERVAL_MS - (elapsed % HALVING_INTERVAL_MS);
+          const nextRate = done ? 1 : Math.max(1, Math.round(GENESIS_XP_RATE / Math.pow(2, halvings + 1)));
+          sendResponse({ success: true, rate, nextRate, halvings, done, msUntilNext, genesisRate: GENESIS_XP_RATE, maxHalvings: MAX_HALVINGS });
           break;
         }
         case 'CREATE_USER': {
