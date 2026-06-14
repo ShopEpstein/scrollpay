@@ -20,6 +20,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const ADMIN_EMAIL = 'contactfire757@gmail.com';
+function isAdmin() { return auth.currentUser?.email === ADMIN_EMAIL; }
+
 // In-progress campaign data collected across steps
 const draft = { brand: {}, ad: {}, budget: {} };
 
@@ -36,7 +39,9 @@ function showView(id) {
 
 onAuthStateChanged(auth, user => {
   if (user) {
-    document.getElementById('nav-email').textContent = user.email;
+    const isAdminUser = user.email === ADMIN_EMAIL;
+    document.getElementById('nav-email').textContent =
+      user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
   } else {
@@ -101,13 +106,26 @@ async function loadCampaigns() {
   container.innerHTML = '<div class="loading">Loading campaigns…</div>';
 
   try {
-    const q = query(
-      collection(db, 'sp_ads'),
-      where('ownerId', '==', auth.currentUser.uid)
-    );
-    const snap = await getDocs(q);
+    let rows = [];
+    const adminMode = isAdmin();
 
-    if (snap.empty) {
+    if (adminMode) {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch('/api/admin-campaigns', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to load');
+      rows = (await res.json()).campaigns || [];
+    } else {
+      const snap = await getDocs(query(
+        collection(db, 'sp_ads'),
+        where('ownerId', '==', auth.currentUser.uid)
+      ));
+      snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+      rows.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    }
+
+    if (rows.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">📢</div>
@@ -117,15 +135,12 @@ async function loadCampaigns() {
       return;
     }
 
-    const rows = [];
-    snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
-    rows.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
     container.innerHTML = `
       <table class="campaigns-table">
         <thead>
           <tr>
             <th>Campaign</th>
+            ${adminMode ? '<th>Owner</th>' : ''}
             <th>Impressions</th>
             <th>Clicks</th>
             <th>CTR</th>
@@ -133,7 +148,7 @@ async function loadCampaigns() {
             <th>Status</th>
           </tr>
         </thead>
-        <tbody>${rows.map(campaignRow).join('')}</tbody>
+        <tbody>${rows.map(c => campaignRow(c, adminMode)).join('')}</tbody>
       </table>`;
 
     container.querySelectorAll('.toggle-btn').forEach(btn => {
@@ -146,7 +161,7 @@ async function loadCampaigns() {
   }
 }
 
-function campaignRow(c) {
+function campaignRow(c, adminMode = false) {
   const imp = c.impressions || 0;
   const clk = c.clicks || 0;
   const ctr = imp > 0 ? ((clk / imp) * 100).toFixed(1) + '%' : '—';
@@ -160,6 +175,7 @@ function campaignRow(c) {
         <div class="camp-name">${esc(c.brandName)}</div>
         <div class="camp-headline">${esc(c.headline)}</div>
       </td>
+      ${adminMode ? `<td><div class="camp-owner" style="font-size:12px;color:#6b7280">${esc(c.ownerEmail || c.ownerId || '—')}</div></td>` : ''}
       <td>${imp.toLocaleString()}</td>
       <td>${clk.toLocaleString()}</td>
       <td>${ctr}</td>
@@ -181,8 +197,11 @@ function campaignRow(c) {
 async function toggleCampaign(adId, currentlyActive) {
   try {
     const token = await auth.currentUser.getIdToken();
-    const res = await fetch('/api/toggle-campaign', {
-      method: 'POST',
+    const [endpoint, method] = isAdmin()
+      ? ['/api/admin-campaigns', 'PATCH']
+      : ['/api/toggle-campaign', 'POST'];
+    const res = await fetch(endpoint, {
+      method,
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ adId, active: !currentlyActive }),
     });
