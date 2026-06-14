@@ -296,10 +296,6 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
 
   hide('launch-error');
 
-  if (!daily || daily < 100) return showError('launch-error', 'Minimum daily budget is 100 XP.');
-  if (!total || total < 500) return showError('launch-error', 'Minimum total budget is 500 XP.');
-  if (total < daily)        return showError('launch-error', 'Total budget must be at least as large as the daily budget.');
-
   btn.disabled = true;
   btn.textContent = 'Launching…';
 
@@ -313,8 +309,8 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
       headline: draft.ad.headline,
       ctaText: draft.ad.ctaText,
       ctaUrl: draft.ad.ctaUrl,
-      dailyBudgetXp: daily,
-      totalBudgetXp: total,
+      dailyBudgetXp: daily || 0,
+      totalBudgetXp: total || 0,
       budgetUsed: 0,
       impressions: 0,
       clicks: 0,
