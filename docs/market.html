@@ -147,6 +147,14 @@
     footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--muted); font-size: 13px; text-align: center; }
     footer a { color: var(--muted); }
 
+    .sales-feed { display: flex; flex-direction: column; gap: 8px; }
+    .sale-row { display: flex; align-items: center; gap: 10px; background: var(--green-light); border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 14px; }
+    .sale-check { font-size: 18px; flex-shrink: 0; }
+    .sale-info { flex: 1; min-width: 0; }
+    .sale-amount { font-size: 14px; font-weight: 700; color: #15803d; }
+    .sale-tx { font-family: monospace; font-size: 11px; color: #f7931a; word-break: break-all; display: block; margin-top: 2px; }
+    .sale-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
     .td-usd { color: var(--green); font-size: 12px; font-weight: 600; }
     .td-conversions { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.6; }
 
@@ -581,6 +589,16 @@
       </div>
     </div>
   </div>
+
+  <!-- Recent Sales -->
+  <section style="padding: 48px 0 0;">
+    <div class="wrap">
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:16px;">✓ Recent Sales</h2>
+      <div class="sales-feed" id="recent-sales">
+        <div style="color:var(--muted);font-size:14px;">Loading…</div>
+      </div>
+    </div>
+  </section>
 
   <footer>
     <div class="wrap">© <span id="year"></span> ScrollPay · <a href="/privacy">Privacy Policy</a></div>
@@ -1192,6 +1210,35 @@
     fetchRates();
     setInterval(fetchRates, 60000);
     loadOrderBook();
+    loadRecentSales();
+
+    async function loadRecentSales() {
+      const feed = document.getElementById('recent-sales');
+      try {
+        const res = await fetch('/api/xp-market?status=fulfilled');
+        if (!res.ok) { feed.innerHTML = ''; return; }
+        const data = await res.json();
+        const listings = data.listings || [];
+        if (!listings.length) { feed.innerHTML = '<div style="color:var(--muted);font-size:14px;">No completed sales yet.</div>'; return; }
+        feed.innerHTML = listings.map(l => {
+          const chain = (l.txChain || 'BTC').toUpperCase();
+          const txEl = l.txUrl
+            ? `<a href="${l.txUrl}" target="_blank" rel="noopener" class="sale-tx">${l.txHash}</a>`
+            : '';
+          const date = l.fulfilledAt?._seconds
+            ? new Date(l.fulfilledAt._seconds * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+          return `<div class="sale-row">
+            <span class="sale-check">✓</span>
+            <div class="sale-info">
+              <div class="sale-amount">${(l.xpAmount||0).toLocaleString()} XP · paid in ${chain}</div>
+              ${txEl}
+              ${date ? `<div class="sale-date">${date}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+      } catch (_) { feed.innerHTML = ''; }
+    }
   </script>
 
   <!-- Demo widget -->

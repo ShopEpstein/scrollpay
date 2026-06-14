@@ -12,6 +12,17 @@ module.exports = async (req, res) => {
     const decoded = await verifyToken(authHeader.slice(7));
     if (decoded.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
 
+    if (req.method === 'GET' && req.query.status === 'recent-fulfilled') {
+      const snap = await db.collection('sp_xp_listings')
+        .where('status', '==', 'fulfilled')
+        .limit(20)
+        .get();
+      const listings = [];
+      snap.forEach(d => listings.push({ id: d.id, ...d.data() }));
+      listings.sort((a, b) => (b.fulfilledAt?.seconds || 0) - (a.fulfilledAt?.seconds || 0));
+      return res.status(200).json({ listings });
+    }
+
     if (req.method === 'GET') {
       const status = req.query.status || 'open';
       const snap = await db.collection('sp_xp_listings')
@@ -58,6 +69,7 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'fulfill') {
+        const { txHash, txChain } = req.body;
         const userRef = db.collection('sp_users').doc(listing.userId);
         const userSnap = await userRef.get();
         if (!userSnap.exists) return res.status(404).json({ error: 'User not found' });
@@ -69,8 +81,20 @@ module.exports = async (req, res) => {
         await userRef.update({
           totalSats: admin.firestore.FieldValue.increment(-listing.xpAmount),
         });
+
+        const txChainNorm = (txChain || 'btc').toLowerCase();
+        const explorerBase = {
+          btc:  'https://mempool.space/tx/',
+          sol:  'https://solscan.io/tx/',
+          eth:  'https://etherscan.io/tx/',
+          usdc: 'https://etherscan.io/tx/',
+        }[txChainNorm] || 'https://mempool.space/tx/';
+
         await listingRef.update({
           status: 'fulfilled',
+          txHash: txHash || '',
+          txChain: txChainNorm,
+          txUrl: txHash ? explorerBase + txHash : '',
           fulfilledAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return res.status(200).json({ ok: true });

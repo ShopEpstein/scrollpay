@@ -6,6 +6,31 @@ const MIN_PRICE_SATS = 1;
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
 
+  if (req.method === 'GET' && req.query.status === 'fulfilled') {
+    try {
+      const snap = await db.collection('sp_xp_listings')
+        .where('status', '==', 'fulfilled')
+        .limit(20)
+        .get();
+      const listings = [];
+      snap.forEach(d => {
+        const data = d.data();
+        listings.push({
+          id: d.id,
+          xpAmount: data.xpAmount,
+          txHash: data.txHash || '',
+          txChain: data.txChain || 'btc',
+          txUrl: data.txUrl || '',
+          fulfilledAt: data.fulfilledAt,
+        });
+      });
+      listings.sort((a, b) => (b.fulfilledAt?.seconds || 0) - (a.fulfilledAt?.seconds || 0));
+      return res.status(200).json({ listings });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method === 'GET') {
     const { refCode } = req.query;
     if (refCode) {

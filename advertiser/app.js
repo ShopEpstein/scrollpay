@@ -50,7 +50,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) { loadStats(); loadXpMarket(); loadInbox(); }
+    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); }
   } else {
     showView('view-auth');
   }
@@ -674,25 +674,68 @@ async function loadXpMarket() {
 }
 
 async function handleXpAction(listingId, action) {
-  if (!confirm(action === 'fulfill'
-    ? 'Mark as fulfilled? This will deduct XP from the user\'s balance.'
-    : 'Cancel this listing?')) return;
+  let txHash = '', txChain = 'btc';
+  if (action === 'fulfill') {
+    txChain = prompt('Payment chain? (btc / sol / eth / usdc)', 'btc') || 'btc';
+    txHash  = prompt('Transaction hash / ID (paste from explorer):') || '';
+    if (!confirm(`Mark as fulfilled?\nChain: ${txChain.toUpperCase()}\nTx: ${txHash || '(none)'}\n\nThis will deduct XP from the user's balance.`)) return;
+  } else {
+    if (!confirm('Cancel this listing?')) return;
+  }
   try {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch('/api/admin-xp', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ listingId, action }),
+      body: JSON.stringify({ listingId, action, txHash, txChain }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');
     loadXpMarket();
+    loadFulfilledListings();
   } catch (err) {
     alert('Failed: ' + err.message);
   }
 }
 
-document.getElementById('xp-market-refresh')?.addEventListener('click', loadXpMarket);
+async function loadFulfilledListings() {
+  const section = document.getElementById('fulfilled-section');
+  const container = document.getElementById('fulfilled-container');
+  if (!container) return;
+  if (section) section.style.display = 'block';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-xp?status=recent-fulfilled', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) return;
+    const listings = data.listings || [];
+    if (!listings.length) {
+      container.innerHTML = '<div style="color:#6b7280;padding:12px 0;">No completed payouts yet.</div>';
+      return;
+    }
+    container.innerHTML = listings.map(l => {
+      const chain = (l.txChain || 'btc').toUpperCase();
+      const txLink = l.txUrl
+        ? `<a href="${esc(l.txUrl)}" target="_blank" rel="noopener" style="font-family:monospace;font-size:11px;color:#f7931a;word-break:break-all">${esc(l.txHash)}</a>`
+        : '<span style="color:#9ca3af;font-size:12px">No tx recorded</span>';
+      const date = l.fulfilledAt?._seconds
+        ? new Date(l.fulfilledAt._seconds * 1000).toLocaleDateString()
+        : '—';
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:8px;">
+        <span style="font-size:18px">✓</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:2px">${(l.xpAmount||0).toLocaleString()} XP · ${chain}</div>
+          <div style="margin-bottom:3px">${txLink}</div>
+          <div style="font-size:11px;color:#6b7280">${esc(l.userEmail||'')} · ${date}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (_) {}
+}
+
+document.getElementById('xp-market-refresh')?.addEventListener('click', () => { loadXpMarket(); loadFulfilledListings(); });
 
 // ── Admin Inbox ─────────────────────────────────────────────────
 
