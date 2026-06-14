@@ -51,6 +51,41 @@
   <!-- ── DASHBOARD VIEW ── -->
   <div id="view-dashboard" class="view hidden">
     <div class="page">
+
+      <!-- Admin-only: Stats Dashboard -->
+      <div id="stats-section" style="display:none;margin-bottom:48px;">
+        <div class="page-head" style="margin-bottom:20px;">
+          <h1>📊 Network Stats</h1>
+          <button id="stats-refresh" class="btn-ghost-sm">↻ Refresh</button>
+        </div>
+
+        <!-- Stat cards -->
+        <div id="stat-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;">
+          <div class="stat-card"><div class="stat-val" id="sc-total">—</div><div class="stat-lbl">Total signups</div></div>
+          <div class="stat-card"><div class="stat-val" id="sc-today">—</div><div class="stat-lbl">Active today</div></div>
+          <div class="stat-card"><div class="stat-val" id="sc-week">—</div><div class="stat-lbl">Active this week</div></div>
+          <div class="stat-card"><div class="stat-val" id="sc-xp">—</div><div class="stat-lbl">Total XP distributed</div></div>
+          <div class="stat-card"><div class="stat-val" id="sc-override">—</div><div class="stat-lbl">Override XP paid</div></div>
+        </div>
+
+        <!-- Two tables side by side -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">Recent signups</h2>
+            <div id="recent-signups-container"></div>
+          </div>
+          <div>
+            <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">Top earners</h2>
+            <div id="top-earners-container"></div>
+          </div>
+        </div>
+
+        <div>
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;">Top referrers</h2>
+          <div id="top-referrers-container"></div>
+        </div>
+      </div>
+
       <div class="page-head">
         <h1>Your Campaigns</h1>
         <button id="new-campaign-btn" class="btn-primary">+ New Campaign</button>

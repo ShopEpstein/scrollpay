@@ -44,7 +44,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) loadXpMarket();
+    if (isAdminUser) { loadStats(); loadXpMarket(); }
   } else {
     showView('view-auth');
   }
@@ -418,6 +418,74 @@ document.getElementById('edit-save').addEventListener('click', async () => {
     btn.textContent = 'Save changes';
   }
 });
+
+// ── Admin Stats (admin only) ────────────────────────────────────
+
+async function loadStats() {
+  document.getElementById('stats-section').style.display = 'block';
+  ['sc-total','sc-today','sc-week','sc-xp','sc-override'].forEach(id => {
+    document.getElementById(id).textContent = '…';
+  });
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-stats', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load stats');
+
+    document.getElementById('sc-total').textContent   = (data.totalUsers || 0).toLocaleString();
+    document.getElementById('sc-today').textContent   = (data.activeToday || 0).toLocaleString();
+    document.getElementById('sc-week').textContent    = (data.activeWeek || 0).toLocaleString();
+    document.getElementById('sc-xp').textContent      = (data.totalXp || 0).toLocaleString();
+    document.getElementById('sc-override').textContent = (data.totalOverrideXp || 0).toLocaleString();
+
+    document.getElementById('recent-signups-container').innerHTML = miniTable(
+      ['#', 'Email', 'XP', 'Impressions'],
+      (data.recentSignups || []).map(u => [
+        u.signupNumber,
+        u.email || u.id.slice(0,10) + '…',
+        (u.totalSats || 0).toLocaleString(),
+        (u.totalImpressions || 0).toLocaleString(),
+      ])
+    );
+
+    document.getElementById('top-earners-container').innerHTML = miniTable(
+      ['Email', 'XP', 'Override XP', 'Refs'],
+      (data.topEarners || []).map(u => [
+        u.email || u.id.slice(0,10) + '…',
+        (u.totalSats || 0).toLocaleString(),
+        (u.overrideXp || 0).toLocaleString(),
+        (u.referralCount || 0).toLocaleString(),
+      ])
+    );
+
+    document.getElementById('top-referrers-container').innerHTML = miniTable(
+      ['Email', 'Direct refs', 'Network size', 'Override XP earned'],
+      (data.topReferrers || []).map(u => [
+        u.email || u.id.slice(0,10) + '…',
+        (u.referralCount || 0).toLocaleString(),
+        (u.downlineSize || 0).toLocaleString(),
+        (u.overrideXp || 0).toLocaleString(),
+      ])
+    );
+  } catch (err) {
+    document.getElementById('stats-section').innerHTML +=
+      `<div class="err-msg">Failed to load stats: ${esc(err.message)}</div>`;
+  }
+}
+
+function miniTable(headers, rows) {
+  if (rows.length === 0) return '<div style="color:#6b7280;font-size:13px;padding:12px 0;">No data yet.</div>';
+  return `
+    <table class="mini-table">
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+document.getElementById('stats-refresh')?.addEventListener('click', loadStats);
 
 // ── XP Marketplace (admin only) ─────────────────────────────────
 
