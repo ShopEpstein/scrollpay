@@ -20,8 +20,26 @@ module.exports = async (req, res) => {
         .get();
       const listings = [];
       snap.forEach(d => listings.push({ id: d.id, ...d.data() }));
-      // Newest first — no composite index needed
       listings.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+      // Enrich with nickname + refCode from sp_users (batch lookup by unique userId)
+      const uids = [...new Set(listings.map(l => l.userId).filter(Boolean))];
+      const userMap = {};
+      await Promise.all(uids.map(async uid => {
+        try {
+          const userSnap = await db.collection('sp_users').doc(uid).get();
+          if (userSnap.exists) {
+            const u = userSnap.data();
+            userMap[uid] = { nickname: u.nickname || '', refCode: u.refCode || '' };
+          }
+        } catch (_) {}
+      }));
+      listings.forEach(l => {
+        const u = userMap[l.userId] || {};
+        l.nickname = u.nickname || '';
+        l.refCode  = u.refCode  || '';
+      });
+
       return res.status(200).json({ listings });
     }
 

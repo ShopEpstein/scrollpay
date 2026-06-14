@@ -442,19 +442,23 @@ async function loadStats() {
     document.getElementById('sc-override').textContent = (data.totalOverrideXp || 0).toLocaleString();
 
     document.getElementById('recent-signups-container').innerHTML = miniTable(
-      ['#', 'Email', 'XP', 'Impressions'],
+      ['#', 'Email', 'Handle', 'Ref Code', 'XP', 'Impressions'],
       (data.recentSignups || []).map(u => [
         u.signupNumber,
-        u.email || u.id.slice(0,10) + '…',
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
         (u.totalSats || 0).toLocaleString(),
         (u.totalImpressions || 0).toLocaleString(),
       ])
     );
 
     document.getElementById('top-earners-container').innerHTML = miniTable(
-      ['Email', 'XP', 'Override XP', 'Refs'],
+      ['Email', 'Handle', 'Ref Code', 'XP', 'Override XP', 'Refs'],
       (data.topEarners || []).map(u => [
-        u.email || u.id.slice(0,10) + '…',
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
         (u.totalSats || 0).toLocaleString(),
         (u.overrideXp || 0).toLocaleString(),
         (u.referralCount || 0).toLocaleString(),
@@ -462,9 +466,11 @@ async function loadStats() {
     );
 
     document.getElementById('top-referrers-container').innerHTML = miniTable(
-      ['Email', 'Direct refs', 'Network size', 'Override XP earned'],
+      ['Email', 'Handle', 'Ref Code', 'Direct refs', 'Network size', 'Override XP earned'],
       (data.topReferrers || []).map(u => [
-        u.email || u.id.slice(0,10) + '…',
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
         (u.referralCount || 0).toLocaleString(),
         (u.downlineSize || 0).toLocaleString(),
         (u.overrideXp || 0).toLocaleString(),
@@ -478,11 +484,21 @@ async function loadStats() {
 
 function miniTable(headers, rows) {
   if (rows.length === 0) return '<div style="color:#6b7280;font-size:13px;padding:12px 0;">No data yet.</div>';
+  // Cells starting with '<' are treated as trusted HTML (admin-only view); others are escaped
+  const cell = c => { const s = String(c); return `<td>${s.startsWith('<') ? s : esc(s)}</td>`; };
   return `
     <table class="mini-table">
       <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tbody>${rows.map(r => `<tr>${r.map(cell).join('')}</tr>`).join('')}</tbody>
     </table>`;
+}
+
+function copyAddr(addr) {
+  navigator.clipboard.writeText(addr).then(() => {
+    const prev = event.target.textContent;
+    event.target.textContent = '✓';
+    setTimeout(() => { event.target.textContent = prev; }, 1500);
+  }).catch(() => prompt('Copy address:', addr));
 }
 
 document.getElementById('stats-refresh')?.addEventListener('click', loadStats);
@@ -513,9 +529,10 @@ async function loadXpMarket() {
       <table class="campaigns-table">
         <thead>
           <tr>
-            <th>User</th>
+            <th>Contact</th>
+            <th>Handle / Ref</th>
             <th>XP to sell</th>
-            <th>Sats requested</th>
+            <th>Sats to pay</th>
             <th>BTC / Lightning address</th>
             <th>Actions</th>
           </tr>
@@ -523,10 +540,19 @@ async function loadXpMarket() {
         <tbody>
           ${listings.map(l => `
             <tr>
-              <td style="font-size:12px;color:#6b7280">${esc(l.userEmail || l.userId || '—')}</td>
+              <td style="font-size:12px">
+                ${l.userEmail ? `<a href="mailto:${esc(l.userEmail)}" style="color:#f7931a">${esc(l.userEmail)}</a>` : '<span style="color:#9ca3af">—</span>'}
+              </td>
+              <td style="font-size:12px;color:#6b7280">
+                ${l.nickname ? `<strong style="color:#111">${esc(l.nickname)}</strong><br>` : ''}
+                <span style="font-family:monospace;font-size:11px">${esc(l.refCode || '—')}</span>
+              </td>
               <td><strong>${(l.xpAmount || 0).toLocaleString()} XP</strong></td>
-              <td style="color:#f7931a;font-weight:600">${(l.satsRequested || 0).toLocaleString()} sats</td>
-              <td style="font-size:12px;font-family:monospace;word-break:break-all">${esc(l.btcAddress || '—')}</td>
+              <td style="color:#f7931a;font-weight:700;font-size:15px">${(l.satsRequested || 0).toLocaleString()} sats</td>
+              <td style="font-size:12px;font-family:monospace;word-break:break-all">
+                ${esc(l.btcAddress || '—')}
+                ${l.btcAddress ? `<button onclick="copyAddr('${esc(l.btcAddress)}')" style="margin-left:6px;padding:2px 7px;font-size:11px;cursor:pointer;border:1px solid #e5e7eb;border-radius:4px;background:#f9fafb">📋</button>` : ''}
+              </td>
               <td style="white-space:nowrap">
                 <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill">✓ Fulfill</button>
                 <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="margin-left:6px">✕ Cancel</button>

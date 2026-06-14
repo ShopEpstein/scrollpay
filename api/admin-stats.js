@@ -39,6 +39,8 @@ module.exports = async (req, res) => {
       allUsers.push({
         id:            docSnap.id,
         email:         d.email || '',
+        nickname:      d.nickname || '',
+        refCode:       d.refCode || '',
         signupNumber:  d.signupNumber || 0,
         totalSats:     d.totalSats || 0,
         overrideXp:    d.overrideXp || 0,
@@ -47,7 +49,6 @@ module.exports = async (req, res) => {
         totalImpressions: d.totalImpressions || 0,
         lastActiveAt:  d.lastActiveAt?.toDate?.()?.toISOString?.() || null,
         installedAt:   d.installedAt?.toDate?.()?.toISOString?.() || null,
-        refCode:       d.refCode || '',
       });
     });
 
