@@ -114,8 +114,9 @@ async function loadCampaigns() {
       const res = await fetch('/api/admin-campaigns', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
-      if (!res.ok) throw new Error((await res.json()).error || 'Failed to load');
-      rows = (await res.json()).campaigns || [];
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load');
+      rows = data.campaigns || [];
     } else {
       const snap = await getDocs(query(
         collection(db, 'sp_ads'),

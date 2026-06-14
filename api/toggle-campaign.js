@@ -1,6 +1,7 @@
-const { admin, db } = require('./_firebase');
+const { admin, db, initError } = require('./_firebase');
 
 module.exports = async (req, res) => {
+  if (initError) return res.status(500).json({ error: initError.message });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const authHeader = req.headers.authorization || '';
