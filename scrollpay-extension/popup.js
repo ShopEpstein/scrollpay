@@ -3,6 +3,9 @@
 const USER_KEY = 'scrollpay_user_id';
 const IMPRESSIONS_KEY = 'scrollpay_recent_impressions';
 
+// Cached refCode so the send-button handler can access it without re-fetching
+let _cachedRefCode = null;
+
 // XP is stored internally under the legacy `totalSats`/`satsToday` fields.
 // 1 XP = 1 entry in the prize draw.
 
@@ -54,6 +57,10 @@ async function loadUserData() {
     if (data.refCode) {
       document.getElementById('referral-link').textContent = `scrollpay.app/r/${data.refCode}`;
     }
+
+    // Cache refCode and load support messages
+    _cachedRefCode = data.refCode || null;
+    loadMessages(_cachedRefCode);
 
     // Downline stats
     document.getElementById('referral-count').textContent = (data.referralCount || 0).toLocaleString();
@@ -282,6 +289,68 @@ document.getElementById('share-copy-btn').addEventListener('click', () => {
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   }).catch(() => {});
+});
+
+// ── Inbox / Support Messages ──────────────────────────────────
+const MSG_API = 'https://scrollpay.app/api/inbox';
+
+async function loadMessages(refCode) {
+  const section = document.getElementById('messages-section');
+  const list = document.getElementById('msg-list');
+  if (!refCode) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  try {
+    const res = await fetch(`${MSG_API}?refCode=${encodeURIComponent(refCode)}`);
+    const data = await res.json();
+    const msgs = data.messages || [];
+    if (!msgs.length) {
+      list.innerHTML = '<div class="msg-empty">No messages yet — ask us anything!</div>';
+      return;
+    }
+    list.innerHTML = msgs.map(m => {
+      const cls = m.from === 'admin' ? 'from-admin' : 'from-user';
+      const who = m.from === 'admin' ? 'ScrollPay' : 'You';
+      const time = m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div>
+        <div class="msg-bubble ${cls}">${escMsg(m.text)}</div>
+        <div class="msg-time" style="text-align:${m.from==='admin'?'right':'left'}">${who} · ${time}</div>
+      </div>`;
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  } catch (_) {}
+}
+
+function escMsg(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('msg-send-btn').addEventListener('click', async () => {
+  const refCode = _cachedRefCode;
+  const input = document.getElementById('msg-input');
+  const status = document.getElementById('msg-status');
+  const text = input.value.trim();
+  if (!refCode || !text) return;
+  const btn = document.getElementById('msg-send-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(MSG_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refCode, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error');
+    input.value = '';
+    status.textContent = '✓ Sent!';
+    status.className = 'msg-status ok';
+    status.style.display = 'block';
+    setTimeout(() => { status.style.display = 'none'; }, 2000);
+    await loadMessages(refCode);
+  } catch (err) {
+    status.textContent = err.message;
+    status.className = 'msg-status err';
+    status.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // Init

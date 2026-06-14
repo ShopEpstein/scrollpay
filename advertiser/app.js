@@ -50,7 +50,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) { loadStats(); loadXpMarket(); }
+    if (isAdminUser) { loadStats(); loadXpMarket(); loadInbox(); }
   } else {
     showView('view-auth');
   }
@@ -615,6 +615,111 @@ async function handleXpAction(listingId, action) {
 }
 
 document.getElementById('xp-market-refresh')?.addEventListener('click', loadXpMarket);
+
+// ── Admin Inbox ─────────────────────────────────────────────────
+
+async function loadInbox() {
+  const section = document.getElementById('inbox-section');
+  const container = document.getElementById('inbox-container');
+  section.style.display = 'block';
+  container.innerHTML = '<div class="loading">Loading messages…</div>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-inbox', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load inbox');
+
+    const threads = data.threads || [];
+
+    // Count total unread
+    let totalUnread = 0;
+    threads.forEach(t => { totalUnread += t.unreadCount || 0; });
+    const badge = document.getElementById('inbox-unread-badge');
+    if (totalUnread > 0) {
+      badge.textContent = totalUnread + ' unread';
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (threads.length === 0) {
+      container.innerHTML = '<div style="color:#6b7280;padding:16px 0;">No messages yet.</div>';
+      return;
+    }
+
+    container.innerHTML = threads.map(thread => {
+      const unreadPill = thread.unreadCount > 0
+        ? `<span style="background:#ef4444;color:#fff;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;">${thread.unreadCount} new</span>`
+        : '';
+      const emailLink = thread.userEmail
+        ? `<a href="mailto:${esc(thread.userEmail)}" style="color:#f7931a;font-weight:600;font-size:13px;">${esc(thread.userEmail)}</a>`
+        : '<span style="color:#9ca3af;font-size:13px;">—</span>';
+      const handleBadge = thread.userHandle
+        ? `<span style="font-size:12px;color:#374151;font-weight:600;margin-left:8px;">${esc(thread.userHandle)}</span>`
+        : '';
+      const refBadge = `<span style="font-family:monospace;font-size:11px;color:#9ca3af;margin-left:6px;">${esc(thread.refCode)}</span>`;
+
+      const bubbles = thread.messages.map(m => {
+        const isAdmin = m.from === 'admin';
+        const bubbleStyle = isAdmin
+          ? 'background:#f7931a;color:white;border-radius:12px 12px 2px 12px;padding:8px 12px;align-self:flex-end;max-width:80%;font-size:13px;'
+          : 'background:#f3f4f6;border-radius:12px 12px 12px 2px;padding:8px 12px;align-self:flex-start;max-width:80%;font-size:13px;';
+        const timeAlign = isAdmin ? 'right' : 'left';
+        const time = m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const who = isAdmin ? 'ScrollPay' : (thread.userHandle || 'User');
+        return `<div>
+          <div style="${bubbleStyle}">${esc(m.text)}</div>
+          <div style="font-size:10px;color:#9ca3af;text-align:${timeAlign};margin-top:2px;">${esc(who)} · ${time}</div>
+        </div>`;
+      }).join('');
+
+      const uid = esc(thread.userId);
+      const ref = esc(thread.refCode);
+
+      return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:12px;">
+          ${emailLink}${handleBadge}${refBadge}${unreadPill}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin:12px 0;">
+          ${bubbles}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <textarea data-uid="${uid}" data-ref="${ref}" placeholder="Reply…" style="flex:1;resize:none;height:60px;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;outline:none;" onfocus="this.style.borderColor='#f7931a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+          <button onclick="sendAdminReply('${uid}','${ref}',this,this.previousElementSibling)" style="padding:0 18px;background:#f7931a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;align-self:flex-end;height:40px;" onmouseover="this.style.background='#e6851a'" onmouseout="this.style.background='#f7931a'">Send</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div class="err-msg" style="padding:16px">Failed to load inbox: ${esc(err.message)}</div>`;
+  }
+}
+
+async function sendAdminReply(userId, refCode, btn, textarea) {
+  const text = textarea.value.trim();
+  if (!text) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-inbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ userId, refCode, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send');
+    await loadInbox();
+  } catch (err) {
+    alert('Failed to send reply: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Send';
+  }
+}
+
+document.getElementById('inbox-refresh')?.addEventListener('click', loadInbox);
 
 // ── Helpers ─────────────────────────────────────────────────────
 
