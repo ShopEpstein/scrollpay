@@ -29,10 +29,16 @@ const draft = { brand: {}, ad: {}, budget: {} };
 // ── View switching ──────────────────────────────────────────────
 
 function showView(id) {
-  ['view-auth', 'view-dashboard', 'view-create'].forEach(v =>
-    document.getElementById(v).classList.toggle('hidden', v !== id)
-  );
-  document.getElementById('main-nav').classList.toggle('hidden', id === 'view-auth');
+  ['view-auth', 'view-dashboard', 'view-create'].forEach(v => {
+    const el = document.getElementById(v);
+    const show = v === id;
+    el.style.display = show ? '' : 'none';
+    el.classList.toggle('hidden', !show);
+  });
+  const nav = document.getElementById('main-nav');
+  const showNav = id !== 'view-auth';
+  nav.style.display = showNav ? '' : 'none';
+  nav.classList.toggle('hidden', !showNav);
 }
 
 // ── Auth ────────────────────────────────────────────────────────
