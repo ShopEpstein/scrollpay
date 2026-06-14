@@ -3,6 +3,7 @@
     { "source": "/r/:code", "destination": "/?ref=:code", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/privacy",          "destination": "/docs/privacy.html" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
     { "source": "/advertiser/(.*)", "destination": "/advertiser/$1" },
     { "source": "/",                "destination": "/docs/index.html" },
