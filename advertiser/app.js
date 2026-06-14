@@ -716,23 +716,50 @@ async function loadFulfilledListings() {
       return;
     }
     container.innerHTML = listings.map(l => {
-      const chain = (l.txChain || 'btc').toUpperCase();
+      const chain = (l.txChain || '').toUpperCase() || '—';
       const txLink = l.txUrl
         ? `<a href="${esc(l.txUrl)}" target="_blank" rel="noopener" style="font-family:monospace;font-size:11px;color:#f7931a;word-break:break-all">${esc(l.txHash)}</a>`
-        : '<span style="color:#9ca3af;font-size:12px">No tx recorded</span>';
+        : '';
       const date = l.fulfilledAt?._seconds
         ? new Date(l.fulfilledAt._seconds * 1000).toLocaleDateString()
         : '—';
+      const addTxBtn = !l.txHash
+        ? `<button class="add-tx-btn" data-listing-id="${l.id}" style="margin-top:5px;padding:4px 10px;background:#f7931a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">+ Add tx hash</button>`
+        : '';
       return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:8px;">
         <span style="font-size:18px">✓</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:2px">${(l.xpAmount||0).toLocaleString()} XP · ${chain}</div>
-          <div style="margin-bottom:3px">${txLink}</div>
+          <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:2px">${(l.xpAmount||0).toLocaleString()} XP${chain !== '—' ? ' · ' + chain : ''}</div>
+          ${txLink ? `<div style="margin-bottom:3px">${txLink}</div>` : ''}
           <div style="font-size:11px;color:#6b7280">${esc(l.userEmail||'')} · ${date}</div>
+          ${addTxBtn}
         </div>
       </div>`;
     }).join('');
+
+    container.querySelectorAll('.add-tx-btn').forEach(btn => {
+      btn.addEventListener('click', () => addTxToListing(btn.dataset.listingId));
+    });
   } catch (_) {}
+}
+
+async function addTxToListing(listingId) {
+  const txChain = prompt('Chain? (btc / sol / eth / usdc)', 'sol') || 'sol';
+  const txHash  = prompt('Transaction hash:');
+  if (!txHash) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-xp', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ listingId, action: 'update-tx', txHash: txHash.trim(), txChain }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    loadFulfilledListings();
+  } catch (err) {
+    alert('Failed: ' + err.message);
+  }
 }
 
 document.getElementById('xp-market-refresh')?.addEventListener('click', () => { loadXpMarket(); loadFulfilledListings(); });

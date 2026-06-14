@@ -64,8 +64,28 @@ module.exports = async (req, res) => {
       if (!listingSnap.exists) return res.status(404).json({ error: 'Listing not found' });
 
       const listing = listingSnap.data();
-      if (listing.status !== 'open') {
-        return res.status(400).json({ error: `Listing is already ${listing.status}` });
+
+      if (action === 'update-tx') {
+        const { txHash, txChain } = req.body;
+        const txChainNorm = (txChain || 'btc').toLowerCase();
+        const explorerBase = {
+          btc:  'https://mempool.space/tx/',
+          sol:  'https://solscan.io/tx/',
+          eth:  'https://etherscan.io/tx/',
+          usdc: 'https://etherscan.io/tx/',
+        }[txChainNorm] || 'https://mempool.space/tx/';
+        await listingRef.update({
+          txHash: txHash || '',
+          txChain: txChainNorm,
+          txUrl: txHash ? explorerBase + txHash : '',
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === 'fulfill' || action === 'cancel') {
+        if (listing.status !== 'open') {
+          return res.status(400).json({ error: `Listing is already ${listing.status}` });
+        }
       }
 
       if (action === 'fulfill') {
