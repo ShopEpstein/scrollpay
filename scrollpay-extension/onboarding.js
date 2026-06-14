@@ -130,12 +130,17 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
   }
 });
 
-// Init: check if already onboarded
+// Init: check if already onboarded, and pre-fill any captured referral code
 (async function init() {
-  const result = await chrome.storage.local.get([USER_KEY]);
+  const result = await chrome.storage.local.get([USER_KEY, 'scrollpay_pending_ref']);
   if (result[USER_KEY]) {
-    // Already set up — skip to Twitter
     chrome.tabs.create({ url: 'https://twitter.com' });
     window.close();
+    return;
+  }
+  if (result.scrollpay_pending_ref) {
+    const refInput = document.getElementById('refcode-input');
+    if (refInput) refInput.value = result.scrollpay_pending_ref;
+    await chrome.storage.local.remove(['scrollpay_pending_ref']);
   }
 })();

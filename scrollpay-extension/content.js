@@ -13,7 +13,19 @@
   const DISMISS_KEY = 'scrollpay_dismissed_until';
   const USER_KEY = 'scrollpay_user_id';
   const WIDGET_SIZE_KEY = 'scrollpay_widget_size';
+  const REF_CODE_KEY = 'scrollpay_ref_code';
+  const PENDING_REF_KEY = 'scrollpay_pending_ref';
   const COOLDOWN_MS = 10 * 60 * 1000;   // close button hides widget for 10 min
+
+  // Capture referral code when the user visits the landing page
+  // (runs even before the widget is initialised / user is onboarded)
+  ;(function captureRefFromUrl() {
+    const h = window.location.hostname;
+    if (h === 'scrollpay.app' || h === 'scrollpay-ten.vercel.app') {
+      const ref = new URLSearchParams(window.location.search).get('ref');
+      if (ref) chrome.storage.local.set({ [PENDING_REF_KEY]: ref.toUpperCase() });
+    }
+  })();
 
   // Continuous-earning tunables
   const XP_PER_TICK = 1;                // base XP earned per active second (scaled by size)
@@ -124,6 +136,7 @@
         <span class="sp-earnings" id="sp-earnings-label">🎟️ <span id="sp-sats-count">0</span> XP earned</span>
         <div class="sp-footer-controls">
           <div class="sp-size-controls" role="group" aria-label="Widget size">${sizeBtns}</div>
+          <button class="sp-share-btn" id="sp-share-btn" aria-label="Copy referral link" title="Copy referral link">🔗</button>
           <button class="sp-close-btn" id="sp-close-btn" aria-label="Close widget">✕</button>
         </div>
       </div>
@@ -307,6 +320,23 @@
     await setDismissed();
   }
 
+  // --- Share button ---
+  async function handleShareClick() {
+    const btn = document.getElementById('sp-share-btn');
+    try {
+      const stored = await chrome.storage.local.get([REF_CODE_KEY]);
+      const refCode = stored[REF_CODE_KEY];
+      if (!refCode) return;
+      await navigator.clipboard.writeText(`https://scrollpay.app/r/${refCode}`);
+      if (btn) {
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = '🔗'; }, 2000);
+      }
+    } catch (e) {
+      console.error('[ScrollPay] Share failed:', e);
+    }
+  }
+
   // --- CTA click ---
   async function handleCtaClick() {
     if (!currentAd) return;
@@ -350,6 +380,8 @@
     if (closeBtn) closeBtn.addEventListener('click', dismissWidget);
     const ctaBtn = document.getElementById('sp-cta-btn');
     if (ctaBtn) ctaBtn.addEventListener('click', handleCtaClick);
+    const shareBtn = document.getElementById('sp-share-btn');
+    if (shareBtn) shareBtn.addEventListener('click', handleShareClick);
 
     // Load and apply saved widget size
     const sizeResult = await chrome.storage.local.get([WIDGET_SIZE_KEY]);
