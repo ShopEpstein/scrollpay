@@ -10,8 +10,6 @@ module.exports = async (req, res) => {
     try {
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', 'open')
-        .orderBy('pricePerXp', 'asc')   // cheapest first — natural order book
-        .orderBy('createdAt', 'asc')
         .limit(100)
         .get();
       const listings = [];
@@ -24,6 +22,11 @@ module.exports = async (req, res) => {
           satsRequested: data.satsRequested,
           createdAt: data.createdAt,
         });
+      });
+      // Cheapest first; ties broken by creation time — no composite index needed
+      listings.sort((a, b) => {
+        if (a.pricePerXp !== b.pricePerXp) return a.pricePerXp - b.pricePerXp;
+        return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
       });
       return res.status(200).json({ listings });
     } catch (err) {
