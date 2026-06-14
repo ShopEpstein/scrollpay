@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrollPay XP Market — Sell Your XP for Bitcoin</title>
+  <meta name="description" content="Sell your ScrollPay XP for Bitcoin (sats). Your attention earned it — cash out anytime." />
+  <link rel="icon" href="icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #f97316;
+      --orange-dark: #ea580c;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #f3f4f6;
+      --cream: #fff7ed;
+      --btc: #f7931a;
+      --btc-light: #fef3e2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: var(--ink); background: #fff; line-height: 1.5; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+    .brand { font-weight: 800; letter-spacing: 0.5px; text-decoration: none; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-links { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav-links a:hover { color: var(--ink); }
+
+    .hero { text-align: center; padding: 56px 0 40px; }
+    .pill {
+      display: inline-block; background: var(--btc-light); color: #92400e;
+      border: 1px solid #fcd34d; border-radius: 999px;
+      padding: 6px 14px; font-size: 13px; font-weight: 600; margin-bottom: 20px;
+    }
+    .hero h1 { font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+    .hero h1 .accent { color: var(--btc); }
+    .hero p.sub { font-size: 17px; color: var(--muted); max-width: 540px; margin: 16px auto 0; }
+
+    /* Rate card */
+    .rate-card {
+      display: flex; align-items: center; justify-content: center; gap: 40px;
+      background: var(--btc-light); border: 1px solid #fcd34d;
+      border-radius: 16px; padding: 28px 40px; margin: 36px 0;
+      flex-wrap: wrap;
+    }
+    .rate-item { text-align: center; }
+    .rate-val { font-size: 32px; font-weight: 800; color: var(--btc); }
+    .rate-lbl { font-size: 13px; color: #92400e; margin-top: 4px; font-weight: 500; }
+    .rate-divider { font-size: 28px; color: #d97706; }
+
+    /* Form */
+    .sell-section { max-width: 560px; margin: 0 auto; }
+    .sell-section h2 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    .sell-section .sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+
+    .form-card {
+      background: #fff; border: 1.5px solid #e5e7eb;
+      border-radius: 16px; padding: 32px;
+    }
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .field input {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid #e5e7eb; border-radius: 10px;
+      font-size: 15px; font-family: inherit; color: var(--ink);
+      outline: none; transition: border-color .15s;
+    }
+    .field input:focus { border-color: var(--btc); box-shadow: 0 0 0 3px rgba(247,147,26,.12); }
+    .field .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+    .payout-preview {
+      background: #f9fafb; border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 20px; font-size: 14px; display: none;
+    }
+    .payout-preview.visible { display: block; }
+    .payout-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .payout-row:last-child { margin-bottom: 0; font-weight: 700; color: var(--btc); }
+    .payout-row span:first-child { color: var(--muted); }
+
+    .btn-submit {
+      width: 100%; padding: 14px;
+      background: var(--btc); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-submit:hover:not(:disabled) { background: #e6851a; }
+    .btn-submit:disabled { opacity: .6; cursor: default; }
+
+    .msg { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 500; display: none; }
+    .msg.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; display: block; }
+    .msg.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+
+    /* Open listings */
+    .listings-section { margin: 60px 0 40px; }
+    .listings-section h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .listings-section .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+    .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .listing-chip {
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 16px; text-align: center;
+    }
+    .listing-chip .xp-amt { font-size: 22px; font-weight: 800; color: var(--orange); }
+    .listing-chip .xp-lbl { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .listing-chip .sats-amt { font-size: 14px; font-weight: 600; color: var(--btc); }
+    .listing-chip .sats-lbl { font-size: 11px; color: var(--muted); }
+    .listings-empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+
+    /* FAQ */
+    .faq-section { max-width: 680px; margin: 0 auto 60px; }
+    .faq-section h2 { font-size: 22px; font-weight: 800; margin-bottom: 20px; }
+    .faq details { border-bottom: 1px solid var(--line); padding: 16px 4px; }
+    .faq summary { font-weight: 600; cursor: pointer; font-size: 15px; list-style: none; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; float: right; color: var(--btc); font-weight: 700; }
+    .faq details[open] summary::after { content: '−'; }
+    .faq p { color: var(--muted); margin-top: 10px; font-size: 14px; }
+
+    footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--muted); font-size: 13px; text-align: center; }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 30px; }
+      .rate-card { padding: 20px; gap: 24px; }
+      .rate-val { font-size: 24px; }
+      .form-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="/"><img src="icon128.png" alt="ScrollPay" /> SCROLLPAY</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/advertiser">Advertise</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <span class="pill">₿ Your attention → Bitcoin</span>
+      <h1>Sell your XP<br /><span class="accent">for Bitcoin.</span></h1>
+      <p class="sub">XP you earned while browsing can be sold directly to advertisers who need it to run campaigns. No exchange needed — we pay in sats.</p>
+    </header>
+
+    <div class="rate-card">
+      <div class="rate-item">
+        <div class="rate-val" id="rate-xp">1,000 XP</div>
+        <div class="rate-lbl">You sell</div>
+      </div>
+      <div class="rate-divider">→</div>
+      <div class="rate-item">
+        <div class="rate-val" id="rate-sats">10,000 sats</div>
+        <div class="rate-lbl">You receive</div>
+      </div>
+      <div class="rate-divider" style="opacity:.3">≈</div>
+      <div class="rate-item">
+        <div class="rate-val" id="rate-usd">$10</div>
+        <div class="rate-lbl">At $100k BTC</div>
+      </div>
+    </div>
+
+    <div class="sell-section">
+      <h2>Create a sell listing</h2>
+      <p class="sub">Your referral code identifies your account. We'll verify your balance before creating the listing.</p>
+
+      <div class="form-card">
+        <div class="field">
+          <label>Your referral code</label>
+          <input type="text" id="ref-code" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
+          <div class="hint">Find this in your ScrollPay extension popup, or in your referral link.</div>
+        </div>
+        <div class="field">
+          <label>XP to sell</label>
+          <input type="number" id="xp-amount" placeholder="e.g. 1000" min="100" step="100" />
+          <div class="hint">Minimum 100 XP</div>
+        </div>
+        <div class="field">
+          <label>Bitcoin / Lightning address</label>
+          <input type="text" id="btc-address" placeholder="yourname@walletofsatoshi.com or bc1q..." />
+          <div class="hint">Lightning addresses (user@wallet.com) are fastest. On-chain BTC addresses also accepted.</div>
+        </div>
+
+        <div class="payout-preview" id="payout-preview">
+          <div class="payout-row"><span>XP to sell</span><span id="preview-xp">—</span></div>
+          <div class="payout-row"><span>Rate</span><span id="preview-rate">—</span></div>
+          <div class="payout-row"><span>You receive</span><span id="preview-sats">—</span></div>
+        </div>
+
+        <button class="btn-submit" id="submit-btn">Submit listing</button>
+        <div class="msg" id="form-msg"></div>
+      </div>
+    </div>
+
+    <div class="listings-section">
+      <h2>Open listings</h2>
+      <p class="sub">XP available to buy. Advertisers: contact <a href="mailto:buy@scrollpay.app" style="color:var(--btc)">buy@scrollpay.app</a> to purchase.</p>
+      <div class="listings-grid" id="listings-grid">
+        <div class="listings-empty">Loading…</div>
+      </div>
+    </div>
+
+    <div class="faq-section">
+      <h2>How it works</h2>
+      <div class="faq">
+        <details open>
+          <summary>How do I get paid?</summary>
+          <p>Once your listing is matched, we send sats to the Bitcoin or Lightning address you provided. Lightning payments arrive in seconds. On-chain payments confirm within an hour.</p>
+        </details>
+        <details>
+          <summary>How long does it take?</summary>
+          <p>We process listings within 24–48 hours. You'll receive an email confirmation once your XP has been exchanged and the sats have been sent.</p>
+        </details>
+        <details>
+          <summary>What is the current rate?</summary>
+          <p>1 XP = 10 sats. At $100,000 BTC that's $0.01 per XP. The rate may change as the market matures — your listing locks in today's rate at the time of submission.</p>
+        </details>
+        <details>
+          <summary>Who buys the XP?</summary>
+          <p>Advertisers running campaigns on ScrollPay purchase XP to fund their ad budgets. Every XP you sell goes directly into an active campaign — so your attention keeps powering the cycle.</p>
+        </details>
+        <details>
+          <summary>Is there a minimum?</summary>
+          <p>Yes — 100 XP minimum per listing. You can only have one open listing at a time.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap">© <span id="year"></span> ScrollPay · <a href="/privacy">Privacy Policy</a></div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    let ratePerXp = 10; // default, overridden by API
+
+    // Load rate + open listings
+    async function loadListings() {
+      try {
+        const res = await fetch('/api/xp-market');
+        const data = await res.json();
+        ratePerXp = data.ratePerXp || 10;
+
+        // Update rate card
+        const exampleXp = 1000;
+        document.getElementById('rate-xp').textContent = exampleXp.toLocaleString() + ' XP';
+        document.getElementById('rate-sats').textContent = (exampleXp * ratePerXp).toLocaleString() + ' sats';
+        document.getElementById('rate-usd').textContent = '$' + ((exampleXp * ratePerXp) / 100000000 * 100000).toFixed(0);
+
+        const grid = document.getElementById('listings-grid');
+        const listings = data.listings || [];
+        if (listings.length === 0) {
+          grid.innerHTML = '<div class="listings-empty">No open listings right now. Be the first to sell!</div>';
+          return;
+        }
+        grid.innerHTML = listings.map(l => `
+          <div class="listing-chip">
+            <div class="xp-amt">${(l.xpAmount || 0).toLocaleString()}</div>
+            <div class="xp-lbl">XP</div>
+            <div class="sats-amt">${(l.satsRequested || 0).toLocaleString()} sats</div>
+            <div class="sats-lbl">asking</div>
+          </div>`).join('');
+      } catch (e) {
+        document.getElementById('listings-grid').innerHTML = '<div class="listings-empty">Could not load listings.</div>';
+      }
+    }
+
+    // Live payout preview
+    document.getElementById('xp-amount').addEventListener('input', function () {
+      const amt = parseInt(this.value) || 0;
+      const preview = document.getElementById('payout-preview');
+      if (amt >= 100) {
+        const sats = amt * ratePerXp;
+        document.getElementById('preview-xp').textContent = amt.toLocaleString() + ' XP';
+        document.getElementById('preview-rate').textContent = `${ratePerXp} sats / XP`;
+        document.getElementById('preview-sats').textContent = sats.toLocaleString() + ' sats';
+        preview.classList.add('visible');
+      } else {
+        preview.classList.remove('visible');
+      }
+    });
+
+    // Pre-fill ref code from URL param
+    (function () {
+      const ref = new URLSearchParams(window.location.search).get('ref');
+      if (ref) document.getElementById('ref-code').value = ref.toUpperCase();
+    })();
+
+    // Submit listing
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const refCode   = document.getElementById('ref-code').value.trim();
+      const xpAmount  = parseInt(document.getElementById('xp-amount').value);
+      const btcAddress = document.getElementById('btc-address').value.trim();
+      const btn = document.getElementById('submit-btn');
+      const msg = document.getElementById('form-msg');
+
+      msg.className = 'msg';
+      msg.style.display = 'none';
+
+      if (!refCode || !xpAmount || !btcAddress) {
+        msg.textContent = 'Please fill in all fields.';
+        msg.className = 'msg error';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+
+      try {
+        const res = await fetch('/api/xp-market', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refCode, xpAmount, btcAddress }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        msg.textContent = `✓ Listing created! You'll receive ${data.satsRequested.toLocaleString()} sats within 24–48 hours at the address you provided.`;
+        msg.className = 'msg success';
+        document.getElementById('ref-code').value = '';
+        document.getElementById('xp-amount').value = '';
+        document.getElementById('btc-address').value = '';
+        document.getElementById('payout-preview').classList.remove('visible');
+        loadListings();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'msg error';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit listing';
+      }
+    });
+
+    loadListings();
+  </script>
+</body>
+</html>

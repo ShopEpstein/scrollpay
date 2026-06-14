@@ -44,6 +44,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
+    if (isAdminUser) loadXpMarket();
   } else {
     showView('view-auth');
   }
@@ -351,6 +352,85 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
     btn.textContent = '🚀 Launch Campaign';
   }
 });
+
+// ── XP Marketplace (admin only) ─────────────────────────────────
+
+async function loadXpMarket() {
+  const section = document.getElementById('xp-market-section');
+  const container = document.getElementById('xp-market-container');
+  section.style.display = 'block';
+  container.innerHTML = '<div class="loading">Loading sell requests…</div>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-xp?status=open', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+
+    const listings = data.listings || [];
+    if (listings.length === 0) {
+      container.innerHTML = '<div style="color:#6b7280;padding:16px 0;">No open sell requests.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="campaigns-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>XP to sell</th>
+            <th>Sats requested</th>
+            <th>BTC / Lightning address</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${listings.map(l => `
+            <tr>
+              <td style="font-size:12px;color:#6b7280">${esc(l.userEmail || l.userId || '—')}</td>
+              <td><strong>${(l.xpAmount || 0).toLocaleString()} XP</strong></td>
+              <td style="color:#f7931a;font-weight:600">${(l.satsRequested || 0).toLocaleString()} sats</td>
+              <td style="font-size:12px;font-family:monospace;word-break:break-all">${esc(l.btcAddress || '—')}</td>
+              <td style="white-space:nowrap">
+                <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill">✓ Fulfill</button>
+                <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="margin-left:6px">✕ Cancel</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    container.querySelectorAll('[data-listing-id]').forEach(btn => {
+      btn.addEventListener('click', () =>
+        handleXpAction(btn.dataset.listingId, btn.dataset.action)
+      );
+    });
+  } catch (err) {
+    container.innerHTML = `<div class="err-msg" style="padding:16px">Failed to load: ${esc(err.message)}</div>`;
+  }
+}
+
+async function handleXpAction(listingId, action) {
+  if (!confirm(action === 'fulfill'
+    ? 'Mark as fulfilled? This will deduct XP from the user\'s balance.'
+    : 'Cancel this listing?')) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-xp', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ listingId, action }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    loadXpMarket();
+  } catch (err) {
+    alert('Failed: ' + err.message);
+  }
+}
+
+document.getElementById('xp-market-refresh')?.addEventListener('click', loadXpMarket);
 
 // ── Helpers ─────────────────────────────────────────────────────
 

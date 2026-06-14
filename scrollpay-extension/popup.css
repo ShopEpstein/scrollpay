@@ -306,3 +306,18 @@ body {
 .footer-link:hover {
   color: #6b7280;
 }
+
+.btn-sell-xp {
+  width: 100%;
+  padding: 10px 16px;
+  background: #f7931a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-sell-xp:hover { background: #e6851a; }
