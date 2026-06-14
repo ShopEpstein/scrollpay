@@ -1,8 +1,9 @@
-const { admin, db } = require('./_firebase');
+const { admin, db, initError } = require('./_firebase');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
 module.exports = async (req, res) => {
+  if (initError) return res.status(500).json({ error: initError.message });
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
