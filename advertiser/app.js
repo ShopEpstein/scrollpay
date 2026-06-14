@@ -499,17 +499,31 @@ function miniTable(headers, rows) {
     </table>`;
 }
 
-function copyAddr(addr) {
+function copyAddr(addr, btn) {
   navigator.clipboard.writeText(addr).then(() => {
-    const prev = event.target.textContent;
-    event.target.textContent = '✓';
-    setTimeout(() => { event.target.textContent = prev; }, 1500);
+    if (btn) { const p = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = p; }, 1500); }
   }).catch(() => prompt('Copy address:', addr));
 }
 
 document.getElementById('stats-refresh')?.addEventListener('click', loadStats);
 
 // ── XP Marketplace (admin only) ─────────────────────────────────
+
+let btcUsd = 0;
+async function fetchBtcRate() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const d = await r.json();
+    btcUsd = d.bitcoin?.usd || 0;
+  } catch (_) {}
+}
+function satsToUsdStr(sats) {
+  if (!btcUsd || !sats) return '';
+  const usd = sats * btcUsd / 1e8;
+  return usd >= 1
+    ? ' ≈ $' + usd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+    : ' ≈ $' + usd.toFixed(4);
+}
 
 async function loadXpMarket() {
   const section = document.getElementById('xp-market-section');
@@ -518,6 +532,7 @@ async function loadXpMarket() {
   container.innerHTML = '<div class="loading">Loading sell requests…</div>';
 
   try {
+    await fetchBtcRate();
     const token = await auth.currentUser.getIdToken();
     const res = await fetch('/api/admin-xp?status=open', {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -531,41 +546,44 @@ async function loadXpMarket() {
       return;
     }
 
-    container.innerHTML = `
-      <table class="campaigns-table">
-        <thead>
-          <tr>
-            <th>Contact</th>
-            <th>Handle / Ref</th>
-            <th>XP to sell</th>
-            <th>Sats to pay</th>
-            <th>BTC / Lightning address</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${listings.map(l => `
-            <tr>
-              <td style="font-size:12px">
-                ${l.userEmail ? `<a href="mailto:${esc(l.userEmail)}" style="color:#f7931a">${esc(l.userEmail)}</a>` : '<span style="color:#9ca3af">—</span>'}
-              </td>
-              <td style="font-size:12px;color:#6b7280">
-                ${l.nickname ? `<strong style="color:#111">${esc(l.nickname)}</strong><br>` : ''}
-                <span style="font-family:monospace;font-size:11px">${esc(l.refCode || '—')}</span>
-              </td>
-              <td><strong>${(l.xpAmount || 0).toLocaleString()} XP</strong></td>
-              <td style="color:#f7931a;font-weight:700;font-size:15px">${(l.satsRequested || 0).toLocaleString()} sats</td>
-              <td style="font-size:12px;font-family:monospace;word-break:break-all">
-                ${esc(l.btcAddress || '—')}
-                ${l.btcAddress ? `<button onclick="copyAddr('${esc(l.btcAddress)}')" style="margin-left:6px;padding:2px 7px;font-size:11px;cursor:pointer;border:1px solid #e5e7eb;border-radius:4px;background:#f9fafb">📋</button>` : ''}
-              </td>
-              <td style="white-space:nowrap">
-                <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill">✓ Fulfill</button>
-                <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="margin-left:6px">✕ Cancel</button>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
+    container.innerHTML = listings.map(l => {
+      const sats = l.satsRequested || 0;
+      const usdStr = satsToUsdStr(sats);
+      const bal = l.balance !== null && l.balance !== undefined ? `${l.balance.toLocaleString()} XP` : '—';
+      const addrSafe = esc(l.btcAddress || '—');
+      const addrOnclick = l.btcAddress ? l.btcAddress.replace(/'/g, "\\'") : '';
+      return `<div class="payout-card" style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div>
+            ${l.userEmail ? `<a href="mailto:${esc(l.userEmail)}" style="color:#f7931a;font-size:13px;font-weight:600">${esc(l.userEmail)}</a>` : '<span style="color:#9ca3af;font-size:13px">—</span>'}
+            ${l.nickname ? `<span style="font-size:12px;color:#374151;margin-left:8px;font-weight:600">${esc(l.nickname)}</span>` : ''}
+            <span style="font-family:monospace;font-size:11px;color:#9ca3af;margin-left:6px">${esc(l.refCode || '')}</span>
+          </div>
+          <div style="font-size:11px;color:#9ca3af">Balance: <strong style="color:#374151">${bal}</strong></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div style="background:#f9fafb;border-radius:8px;padding:8px 12px;">
+            <div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Selling</div>
+            <div style="font-size:18px;font-weight:800;color:#111;margin-top:2px">${(l.xpAmount || 0).toLocaleString()} XP</div>
+            <div style="font-size:11px;color:#6b7280">${(l.pricePerXp || 0).toLocaleString()} sats/XP</div>
+          </div>
+          <div style="background:#fff7ed;border-radius:8px;padding:8px 12px;border:1px solid #fed7aa;">
+            <div style="font-size:10px;color:#9a3412;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Pay out</div>
+            <div style="font-size:18px;font-weight:800;color:#f7931a;margin-top:2px">${sats.toLocaleString()} sats</div>
+            <div style="font-size:11px;color:#9a3412">${usdStr || 'fetching rate…'}</div>
+          </div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Send to</span>
+          <span style="font-size:12px;font-family:monospace;word-break:break-all;flex:1;color:#0f172a">${addrSafe}</span>
+          ${l.btcAddress ? `<button onclick="copyAddr('${addrOnclick}',this)" style="flex-shrink:0;padding:4px 10px;font-size:12px;cursor:pointer;border:1px solid #cbd5e1;border-radius:6px;background:#fff;white-space:nowrap">📋 Copy</button>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill" style="flex:1">✓ Fulfill</button>
+          <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="flex:1">✕ Cancel</button>
+        </div>
+      </div>`;
+    }).join('');
 
     container.querySelectorAll('[data-listing-id]').forEach(btn => {
       btn.addEventListener('click', () =>

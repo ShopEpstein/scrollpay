@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
           const userSnap = await db.collection('sp_users').doc(uid).get();
           if (userSnap.exists) {
             const u = userSnap.data();
-            userMap[uid] = { nickname: u.nickname || '', refCode: u.refCode || '' };
+            userMap[uid] = { nickname: u.nickname || '', refCode: u.refCode || '', balance: u.totalSats || 0 };
           }
         } catch (_) {}
       }));
@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
         const u = userMap[l.userId] || {};
         l.nickname = u.nickname || '';
         l.refCode  = u.refCode  || '';
+        l.balance  = u.balance  ?? null;
       });
 
       return res.status(200).json({ listings });
