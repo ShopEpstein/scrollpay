@@ -33,6 +33,7 @@ async function loadUserData() {
     document.getElementById('impressions-today').textContent = '0';
     document.getElementById('draw-entries').textContent = '0';
     document.getElementById('referral-link').textContent = 'Complete onboarding first';
+    loadLeaderboard(null);
     return;
   }
 
@@ -87,6 +88,9 @@ async function loadUserData() {
 
   // Load recent ads from local storage
   renderRecentAds(recentImpressions);
+
+  // Leaderboard (fire after user data loads so we can highlight the user's row)
+  loadLeaderboard(data.nickname || null);
 }
 
 function renderRecentAds(impressions) {
@@ -143,6 +147,33 @@ document.getElementById('sell-xp-btn').addEventListener('click', async () => {
   }
   chrome.tabs.create({ url });
 });
+
+// Leaderboard
+const POPUP_MEDALS = ['🥇', '🥈', '🥉'];
+
+async function loadLeaderboard(myHandle) {
+  const list = document.getElementById('leaderboard-list');
+  try {
+    const res = await fetch('https://scrollpay.app/api/leaderboard');
+    const data = await res.json();
+    const leaders = (data.leaders || []).slice(0, 10);
+    if (leaders.length === 0) {
+      list.innerHTML = '<div class="empty-state">No miners yet!</div>';
+      return;
+    }
+    list.innerHTML = leaders.map((l, i) => {
+      const isMe = myHandle && l.handle === myHandle;
+      const medal = i < 3 ? POPUP_MEDALS[i] : l.rank;
+      return `<div class="lb-row${isMe ? ' lb-me' : ''}">
+        <span class="lb-rank">${medal}</span>
+        <span class="lb-handle${l.hasNickname ? (isMe ? ' me' : '') : ' anon'}">${escapeHtml(l.handle)}</span>
+        <span class="lb-xp">₿ ${l.xp.toLocaleString()}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state">Could not load.</div>';
+  }
+}
 
 // Nickname save
 document.getElementById('nickname-save-btn').addEventListener('click', async () => {

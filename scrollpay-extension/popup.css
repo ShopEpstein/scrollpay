@@ -307,6 +307,49 @@ body {
   color: #6b7280;
 }
 
+/* Leaderboard */
+.leaderboard-list { display: flex; flex-direction: column; gap: 3px; }
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.lb-row.lb-me { background: #fff7ed; }
+
+.lb-rank {
+  font-size: 13px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.lb-handle {
+  flex: 1;
+  font-weight: 600;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-handle.anon { font-weight: 400; font-style: italic; color: #9ca3af; }
+.lb-handle.me { color: #f7931a; }
+
+.lb-xp {
+  font-size: 10px;
+  font-weight: 700;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
 /* Nickname / Miner Handle */
 .nickname-section { padding-bottom: 10px; }
 
