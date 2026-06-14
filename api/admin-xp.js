@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
@@ -9,18 +9,38 @@ module.exports = async (req, res) => {
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     if (decoded.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
 
     if (req.method === 'GET') {
       const status = req.query.status || 'open';
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', status)
-        .orderBy('createdAt', 'desc')
         .limit(100)
         .get();
       const listings = [];
       snap.forEach(d => listings.push({ id: d.id, ...d.data() }));
+      listings.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+      // Enrich with nickname + refCode from sp_users (batch lookup by unique userId)
+      const uids = [...new Set(listings.map(l => l.userId).filter(Boolean))];
+      const userMap = {};
+      await Promise.all(uids.map(async uid => {
+        try {
+          const userSnap = await db.collection('sp_users').doc(uid).get();
+          if (userSnap.exists) {
+            const u = userSnap.data();
+            userMap[uid] = { nickname: u.nickname || '', refCode: u.refCode || '', balance: u.totalSats || 0 };
+          }
+        } catch (_) {}
+      }));
+      listings.forEach(l => {
+        const u = userMap[l.userId] || {};
+        l.nickname = u.nickname || '';
+        l.refCode  = u.refCode  || '';
+        l.balance  = u.balance  ?? null;
+      });
+
       return res.status(200).json({ listings });
     }
 

@@ -121,7 +121,7 @@
       <div id="sp-drag-handle" aria-label="Drag to move">
         <span class="sp-drag-dots">⠿⠿⠿</span>
         <span class="sp-brand">SCROLLPAY</span>
-        <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">earning</span></span>
+        <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">mining</span></span>
       </div>
       <div id="sp-ad-area">
         <div class="sp-ad-content">
@@ -133,7 +133,7 @@
         </div>
       </div>
       <div id="sp-footer">
-        <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP earned</span>
+        <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP mined</span>
         <div class="sp-footer-controls">
           <div class="sp-size-controls" role="group" aria-label="Widget size">${sizeBtns}</div>
           <button class="sp-share-btn" id="sp-share-btn" aria-label="Copy referral link" title="Copy referral link">🔗</button>
@@ -208,7 +208,7 @@
         pendingXp += whole;
         setXpDisplay(displayedXp);
       }
-      const rateLabel = xpMultiplier !== 1.0 ? `earning ${xpMultiplier}×` : 'earning';
+      const rateLabel = xpMultiplier !== 1.0 ? `mining ${xpMultiplier}×` : 'mining';
       setStatus(rateLabel);
     } else if (capped) {
       setStatus('daily max');
@@ -284,28 +284,53 @@
     let dragging = false;
     let startX, startY, startRight, startBottom;
 
-    handle.addEventListener('mousedown', (e) => {
+    function dragStart(clientX, clientY) {
       dragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      startX = clientX;
+      startY = clientY;
       const rect = widget.getBoundingClientRect();
       startRight = window.innerWidth - rect.right;
       startBottom = window.innerHeight - rect.bottom;
-      widget.style.transition = 'none';
+      // Must use setProperty with 'important' — the widget CSS uses !important
+      // on these properties, which defeats plain style.right = '...' assignment.
+      widget.style.setProperty('transition', 'none', 'important');
+    }
+
+    function dragMove(clientX, clientY) {
+      if (!dragging) return;
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      const newRight  = Math.max(0, Math.min(startRight  - dx, window.innerWidth  - widget.offsetWidth));
+      const newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - widget.offsetHeight));
+      widget.style.setProperty('right',  newRight  + 'px', 'important');
+      widget.style.setProperty('bottom', newBottom + 'px', 'important');
+    }
+
+    function dragEnd() {
+      if (!dragging) return;
+      dragging = false;
+      widget.style.removeProperty('transition');
+    }
+
+    // Mouse
+    handle.addEventListener('mousedown', (e) => {
+      dragStart(e.clientX, e.clientY);
       e.preventDefault();
     });
+    document.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
+    document.addEventListener('mouseup', dragEnd);
 
-    document.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      let newRight = Math.max(0, Math.min(startRight - dx, window.innerWidth - widget.offsetWidth));
-      let newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - widget.offsetHeight));
-      widget.style.right = newRight + 'px';
-      widget.style.bottom = newBottom + 'px';
-    });
-
-    document.addEventListener('mouseup', () => { dragging = false; });
+    // Touch (trackpads, touchscreens)
+    handle.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      dragStart(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      dragMove(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener('touchend', dragEnd);
   }
 
   // --- Dismiss ---

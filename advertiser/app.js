@@ -29,10 +29,16 @@ const draft = { brand: {}, ad: {}, budget: {} };
 // ── View switching ──────────────────────────────────────────────
 
 function showView(id) {
-  ['view-auth', 'view-dashboard', 'view-create'].forEach(v =>
-    document.getElementById(v).classList.toggle('hidden', v !== id)
-  );
-  document.getElementById('main-nav').classList.toggle('hidden', id === 'view-auth');
+  ['view-auth', 'view-dashboard', 'view-create'].forEach(v => {
+    const el = document.getElementById(v);
+    const show = v === id;
+    el.style.display = show ? '' : 'none';
+    el.classList.toggle('hidden', !show);
+  });
+  const nav = document.getElementById('main-nav');
+  const showNav = id !== 'view-auth';
+  nav.style.display = showNav ? '' : 'none';
+  nav.classList.toggle('hidden', !showNav);
 }
 
 // ── Auth ────────────────────────────────────────────────────────
@@ -44,7 +50,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) loadXpMarket();
+    if (isAdminUser) { loadStats(); loadXpMarket(); loadInbox(); }
   } else {
     showView('view-auth');
   }
@@ -419,7 +425,105 @@ document.getElementById('edit-save').addEventListener('click', async () => {
   }
 });
 
+// ── Admin Stats (admin only) ────────────────────────────────────
+
+async function loadStats() {
+  document.getElementById('stats-section').style.display = 'block';
+  ['sc-total','sc-today','sc-week','sc-xp','sc-override'].forEach(id => {
+    document.getElementById(id).textContent = '…';
+  });
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-stats', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load stats');
+
+    document.getElementById('sc-total').textContent   = (data.totalUsers || 0).toLocaleString();
+    document.getElementById('sc-today').textContent   = (data.activeToday || 0).toLocaleString();
+    document.getElementById('sc-week').textContent    = (data.activeWeek || 0).toLocaleString();
+    document.getElementById('sc-xp').textContent      = (data.totalXp || 0).toLocaleString();
+    document.getElementById('sc-override').textContent = (data.totalOverrideXp || 0).toLocaleString();
+
+    document.getElementById('recent-signups-container').innerHTML = miniTable(
+      ['#', 'Email', 'Handle', 'Ref Code', 'XP', 'Impressions'],
+      (data.recentSignups || []).map(u => [
+        u.signupNumber,
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
+        (u.totalSats || 0).toLocaleString(),
+        (u.totalImpressions || 0).toLocaleString(),
+      ])
+    );
+
+    document.getElementById('top-earners-container').innerHTML = miniTable(
+      ['Email', 'Handle', 'Ref Code', 'XP', 'Override XP', 'Refs'],
+      (data.topEarners || []).map(u => [
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
+        (u.totalSats || 0).toLocaleString(),
+        (u.overrideXp || 0).toLocaleString(),
+        (u.referralCount || 0).toLocaleString(),
+      ])
+    );
+
+    document.getElementById('top-referrers-container').innerHTML = miniTable(
+      ['Email', 'Handle', 'Ref Code', 'Direct refs', 'Network size', 'Override XP earned'],
+      (data.topReferrers || []).map(u => [
+        u.email ? `<a href="mailto:${esc(u.email)}" style="color:inherit">${esc(u.email)}</a>` : u.id.slice(0,10) + '…',
+        u.nickname || '—',
+        u.refCode  || '—',
+        (u.referralCount || 0).toLocaleString(),
+        (u.downlineSize || 0).toLocaleString(),
+        (u.overrideXp || 0).toLocaleString(),
+      ])
+    );
+  } catch (err) {
+    document.getElementById('stats-section').innerHTML +=
+      `<div class="err-msg">Failed to load stats: ${esc(err.message)}</div>`;
+  }
+}
+
+function miniTable(headers, rows) {
+  if (rows.length === 0) return '<div style="color:#6b7280;font-size:13px;padding:12px 0;">No data yet.</div>';
+  // Cells starting with '<' are treated as trusted HTML (admin-only view); others are escaped
+  const cell = c => { const s = String(c); return `<td>${s.startsWith('<') ? s : esc(s)}</td>`; };
+  return `
+    <table class="mini-table">
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(cell).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function copyAddr(addr, btn) {
+  navigator.clipboard.writeText(addr).then(() => {
+    if (btn) { const p = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = p; }, 1500); }
+  }).catch(() => prompt('Copy address:', addr));
+}
+
+document.getElementById('stats-refresh')?.addEventListener('click', loadStats);
+
 // ── XP Marketplace (admin only) ─────────────────────────────────
+
+let btcUsd = 0;
+async function fetchBtcRate() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const d = await r.json();
+    btcUsd = d.bitcoin?.usd || 0;
+  } catch (_) {}
+}
+function satsToUsdStr(sats) {
+  if (!btcUsd || !sats) return '';
+  const usd = sats * btcUsd / 1e8;
+  return usd >= 1
+    ? ' ≈ $' + usd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+    : ' ≈ $' + usd.toFixed(4);
+}
 
 async function loadXpMarket() {
   const section = document.getElementById('xp-market-section');
@@ -428,6 +532,7 @@ async function loadXpMarket() {
   container.innerHTML = '<div class="loading">Loading sell requests…</div>';
 
   try {
+    await fetchBtcRate();
     const token = await auth.currentUser.getIdToken();
     const res = await fetch('/api/admin-xp?status=open', {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -441,31 +546,44 @@ async function loadXpMarket() {
       return;
     }
 
-    container.innerHTML = `
-      <table class="campaigns-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>XP to sell</th>
-            <th>Sats requested</th>
-            <th>BTC / Lightning address</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${listings.map(l => `
-            <tr>
-              <td style="font-size:12px;color:#6b7280">${esc(l.userEmail || l.userId || '—')}</td>
-              <td><strong>${(l.xpAmount || 0).toLocaleString()} XP</strong></td>
-              <td style="color:#f7931a;font-weight:600">${(l.satsRequested || 0).toLocaleString()} sats</td>
-              <td style="font-size:12px;font-family:monospace;word-break:break-all">${esc(l.btcAddress || '—')}</td>
-              <td style="white-space:nowrap">
-                <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill">✓ Fulfill</button>
-                <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="margin-left:6px">✕ Cancel</button>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
+    container.innerHTML = listings.map(l => {
+      const sats = l.satsRequested || 0;
+      const usdStr = satsToUsdStr(sats);
+      const bal = l.balance !== null && l.balance !== undefined ? `${l.balance.toLocaleString()} XP` : '—';
+      const addrSafe = esc(l.btcAddress || '—');
+      const addrOnclick = l.btcAddress ? l.btcAddress.replace(/'/g, "\\'") : '';
+      return `<div class="payout-card" style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div>
+            ${l.userEmail ? `<a href="mailto:${esc(l.userEmail)}" style="color:#f7931a;font-size:13px;font-weight:600">${esc(l.userEmail)}</a>` : '<span style="color:#9ca3af;font-size:13px">—</span>'}
+            ${l.nickname ? `<span style="font-size:12px;color:#374151;margin-left:8px;font-weight:600">${esc(l.nickname)}</span>` : ''}
+            <span style="font-family:monospace;font-size:11px;color:#9ca3af;margin-left:6px">${esc(l.refCode || '')}</span>
+          </div>
+          <div style="font-size:11px;color:#9ca3af">Balance: <strong style="color:#374151">${bal}</strong></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div style="background:#f9fafb;border-radius:8px;padding:8px 12px;">
+            <div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Selling</div>
+            <div style="font-size:18px;font-weight:800;color:#111;margin-top:2px">${(l.xpAmount || 0).toLocaleString()} XP</div>
+            <div style="font-size:11px;color:#6b7280">${(l.pricePerXp || 0).toLocaleString()} sats/XP</div>
+          </div>
+          <div style="background:#fff7ed;border-radius:8px;padding:8px 12px;border:1px solid #fed7aa;">
+            <div style="font-size:10px;color:#9a3412;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Pay out</div>
+            <div style="font-size:18px;font-weight:800;color:#f7931a;margin-top:2px">${sats.toLocaleString()} sats</div>
+            <div style="font-size:11px;color:#9a3412">${usdStr || 'fetching rate…'}</div>
+          </div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Send to</span>
+          <span style="font-size:12px;font-family:monospace;word-break:break-all;flex:1;color:#0f172a">${addrSafe}</span>
+          ${l.btcAddress ? `<button onclick="copyAddr('${addrOnclick}',this)" style="flex-shrink:0;padding:4px 10px;font-size:12px;cursor:pointer;border:1px solid #cbd5e1;border-radius:6px;background:#fff;white-space:nowrap">📋 Copy</button>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="toggle-btn live" data-listing-id="${l.id}" data-action="fulfill" style="flex:1">✓ Fulfill</button>
+          <button class="toggle-btn paused" data-listing-id="${l.id}" data-action="cancel" style="flex:1">✕ Cancel</button>
+        </div>
+      </div>`;
+    }).join('');
 
     container.querySelectorAll('[data-listing-id]').forEach(btn => {
       btn.addEventListener('click', () =>
@@ -497,6 +615,111 @@ async function handleXpAction(listingId, action) {
 }
 
 document.getElementById('xp-market-refresh')?.addEventListener('click', loadXpMarket);
+
+// ── Admin Inbox ─────────────────────────────────────────────────
+
+async function loadInbox() {
+  const section = document.getElementById('inbox-section');
+  const container = document.getElementById('inbox-container');
+  section.style.display = 'block';
+  container.innerHTML = '<div class="loading">Loading messages…</div>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-inbox', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load inbox');
+
+    const threads = data.threads || [];
+
+    // Count total unread
+    let totalUnread = 0;
+    threads.forEach(t => { totalUnread += t.unreadCount || 0; });
+    const badge = document.getElementById('inbox-unread-badge');
+    if (totalUnread > 0) {
+      badge.textContent = totalUnread + ' unread';
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (threads.length === 0) {
+      container.innerHTML = '<div style="color:#6b7280;padding:16px 0;">No messages yet.</div>';
+      return;
+    }
+
+    container.innerHTML = threads.map(thread => {
+      const unreadPill = thread.unreadCount > 0
+        ? `<span style="background:#ef4444;color:#fff;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;">${thread.unreadCount} new</span>`
+        : '';
+      const emailLink = thread.userEmail
+        ? `<a href="mailto:${esc(thread.userEmail)}" style="color:#f7931a;font-weight:600;font-size:13px;">${esc(thread.userEmail)}</a>`
+        : '<span style="color:#9ca3af;font-size:13px;">—</span>';
+      const handleBadge = thread.userHandle
+        ? `<span style="font-size:12px;color:#374151;font-weight:600;margin-left:8px;">${esc(thread.userHandle)}</span>`
+        : '';
+      const refBadge = `<span style="font-family:monospace;font-size:11px;color:#9ca3af;margin-left:6px;">${esc(thread.refCode)}</span>`;
+
+      const bubbles = thread.messages.map(m => {
+        const isAdmin = m.from === 'admin';
+        const bubbleStyle = isAdmin
+          ? 'background:#f7931a;color:white;border-radius:12px 12px 2px 12px;padding:8px 12px;align-self:flex-end;max-width:80%;font-size:13px;'
+          : 'background:#f3f4f6;border-radius:12px 12px 12px 2px;padding:8px 12px;align-self:flex-start;max-width:80%;font-size:13px;';
+        const timeAlign = isAdmin ? 'right' : 'left';
+        const time = m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const who = isAdmin ? 'ScrollPay' : (thread.userHandle || 'User');
+        return `<div>
+          <div style="${bubbleStyle}">${esc(m.text)}</div>
+          <div style="font-size:10px;color:#9ca3af;text-align:${timeAlign};margin-top:2px;">${esc(who)} · ${time}</div>
+        </div>`;
+      }).join('');
+
+      const uid = esc(thread.userId);
+      const ref = esc(thread.refCode);
+
+      return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:12px;">
+          ${emailLink}${handleBadge}${refBadge}${unreadPill}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin:12px 0;">
+          ${bubbles}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <textarea data-uid="${uid}" data-ref="${ref}" placeholder="Reply…" style="flex:1;resize:none;height:60px;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;outline:none;" onfocus="this.style.borderColor='#f7931a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+          <button onclick="sendAdminReply('${uid}','${ref}',this,this.previousElementSibling)" style="padding:0 18px;background:#f7931a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;align-self:flex-end;height:40px;" onmouseover="this.style.background='#e6851a'" onmouseout="this.style.background='#f7931a'">Send</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div class="err-msg" style="padding:16px">Failed to load inbox: ${esc(err.message)}</div>`;
+  }
+}
+
+async function sendAdminReply(userId, refCode, btn, textarea) {
+  const text = textarea.value.trim();
+  if (!text) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-inbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ userId, refCode, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send');
+    await loadInbox();
+  } catch (err) {
+    alert('Failed to send reply: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Send';
+  }
+}
+
+document.getElementById('inbox-refresh')?.addEventListener('click', loadInbox);
 
 // ── Helpers ─────────────────────────────────────────────────────
 

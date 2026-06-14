@@ -307,6 +307,145 @@ body {
   color: #6b7280;
 }
 
+/* Leaderboard */
+.leaderboard-list { display: flex; flex-direction: column; gap: 3px; }
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.lb-row.lb-me { background: #fff7ed; }
+
+.lb-rank {
+  font-size: 13px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.lb-handle {
+  flex: 1;
+  font-weight: 600;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-handle.anon { font-weight: 400; font-style: italic; color: #9ca3af; }
+.lb-handle.me { color: #f7931a; }
+
+.lb-xp {
+  font-size: 10px;
+  font-weight: 700;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+/* Nickname / Miner Handle */
+.nickname-section { padding-bottom: 10px; }
+
+.nickname-badge {
+  display: inline-block;
+  background: #0f172a;
+  color: #f7931a;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.nickname-locked {
+  font-size: 10px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.nickname-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.nickname-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color: #111827;
+  transition: border-color .15s;
+}
+
+.nickname-row input:focus { border-color: #f7931a; }
+
+.nickname-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.nickname-err {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 3px;
+}
+
+/* Gift XP */
+.gift-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.gift-row input {
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color: #111827;
+  transition: border-color .15s;
+}
+
+.gift-row input:focus { border-color: #f7931a; }
+.gift-row input:first-child { flex: 2; }
+.gift-row input:last-child  { flex: 1; min-width: 0; }
+
+.btn-gift-xp {
+  width: 100%;
+  padding: 8px 16px;
+  background: #0f172a;
+  color: #f7931a;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-gift-xp:hover:not(:disabled) { background: #1e293b; }
+.btn-gift-xp:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gift-msg { font-size: 11px; margin-top: 5px; }
+.gift-msg-ok  { color: #16a34a; }
+.gift-msg-err { color: #dc2626; }
+
 .btn-sell-xp {
   width: 100%;
   padding: 10px 16px;
@@ -321,3 +460,55 @@ body {
   transition: background .15s;
 }
 .btn-sell-xp:hover { background: #e6851a; }
+
+/* Share & Earn */
+.share-section .share-note {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.share-btns {
+  display: flex;
+  gap: 6px;
+}
+.btn-share-native {
+  flex: 1;
+  padding: 8px 12px;
+  background: #0f172a;
+  color: #f7931a;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-share-native:hover { background: #1e293b; }
+
+/* Messaging */
+.msg-list {
+  max-height: 160px; overflow-y: auto; margin-bottom: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.msg-bubble { padding: 6px 10px; border-radius: 10px; font-size: 12px; max-width: 85%; }
+.msg-bubble.from-user { background: #f3f4f6; align-self: flex-start; border-radius: 10px 10px 10px 2px; }
+.msg-bubble.from-admin { background: #f7931a; color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
+.msg-time { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+.msg-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 12px 0; }
+.msg-compose { display: flex; flex-direction: column; gap: 5px; }
+.msg-compose textarea {
+  width: 100%; padding: 7px 10px; border: 1.5px solid #e5e7eb; border-radius: 8px;
+  font-size: 12px; font-family: inherit; outline: none; resize: none; color: #111827;
+  transition: border-color .15s;
+}
+.msg-compose textarea:focus { border-color: #f7931a; }
+.btn-msg-send {
+  padding: 7px 14px; background: #f7931a; color: #fff; border: none;
+  border-radius: 8px; font-size: 12px; font-weight: 700; font-family: inherit;
+  cursor: pointer; align-self: flex-end;
+}
+.btn-msg-send:hover { background: #e6851a; }
+.msg-status { font-size: 11px; margin-top: 4px; }
+.msg-status.ok { color: #16a34a; }
+.msg-status.err { color: #dc2626; }

@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const POINTS_CONFIG = {
   referralBonusL1: 100,
@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     const uid = decoded.uid;
     const userRef = db.collection('sp_users').doc(uid);
     const snap = await userRef.get();

@@ -14,7 +14,24 @@
     <div class="header">
       <div class="logo-row">
         <span class="logo-text">SCROLLPAY</span>
-        <span class="status-badge"><span class="status-dot"></span> earning XP</span>
+        <span class="status-badge"><span class="status-dot"></span> mining XP</span>
+      </div>
+    </div>
+
+    <!-- Miner Handle -->
+    <div class="section nickname-section">
+      <div class="section-label">Miner Handle</div>
+      <div id="nickname-display" style="display:none">
+        <span class="nickname-badge" id="nickname-value"></span>
+        <div class="nickname-locked">Permanent — cannot be changed</div>
+      </div>
+      <div id="nickname-set-form">
+        <div class="nickname-row">
+          <input type="text" id="nickname-input" placeholder="e.g. satoshi_21" maxlength="20" />
+          <button class="copy-btn" id="nickname-save-btn">Set</button>
+        </div>
+        <div class="nickname-hint">Lowercase, numbers, underscores · 3–20 chars · Permanent</div>
+        <p id="nickname-error" class="nickname-err" style="display:none"></p>
       </div>
     </div>
 
@@ -34,7 +51,7 @@
       <div class="section-label">Weekly BTC Draw</div>
       <div class="draw-card">
         <div class="draw-entries">₿ <span id="draw-entries">0</span> XP in the draw</div>
-        <div class="draw-note">Every XP = 1 entry. Winner paid in Bitcoin each week.</div>
+        <div class="draw-note">Every XP = 1 lottery entry. Others can buy your XP to stack their own odds.</div>
       </div>
     </div>
 
@@ -68,7 +85,47 @@
         <span id="referral-link" class="referral-link">Loading...</span>
         <button class="copy-btn" id="copy-ref-btn">Copy</button>
       </div>
-      <div class="referral-note" id="referral-note">Earn 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)</div>
+      <div class="referral-note" id="referral-note">Mine 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)</div>
+    </div>
+
+    <!-- Top Miners Leaderboard -->
+    <div class="section">
+      <div class="section-label">Top Miners</div>
+      <div id="leaderboard-list" class="leaderboard-list">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="section" id="messages-section" style="display:none">
+      <div class="section-label">💬 Support</div>
+      <div id="msg-list" class="msg-list"></div>
+      <div class="msg-compose">
+        <textarea id="msg-input" placeholder="Message ScrollPay support…" maxlength="1000" rows="2"></textarea>
+        <button class="btn-msg-send" id="msg-send-btn">Send</button>
+      </div>
+      <p id="msg-status" class="msg-status" style="display:none"></p>
+    </div>
+
+    <!-- Gift XP -->
+    <div class="section" id="gift-xp-section">
+      <div class="section-label">Gift XP</div>
+      <div class="gift-row">
+        <input type="text" id="gift-to" placeholder="Handle or ref code" autocomplete="off" />
+        <input type="number" id="gift-amount" placeholder="XP" min="10" />
+      </div>
+      <button class="btn-gift-xp" id="gift-xp-btn">Send XP</button>
+      <p id="gift-msg" class="gift-msg" style="display:none"></p>
+    </div>
+
+    <!-- Share & Earn -->
+    <div class="section share-section">
+      <div class="section-label">Share &amp; Earn</div>
+      <div class="share-note">+100 XP when a friend installs · +25 XP L2 · +10 XP L3</div>
+      <div class="share-btns">
+        <button class="btn-share-native" id="share-native-btn">↑ Share invite link</button>
+        <button class="copy-btn" id="share-copy-btn">Copy</button>
+      </div>
     </div>
 
     <!-- Sell XP -->

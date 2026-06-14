@@ -1,6 +1,17 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const MAX_PER_WRITE = 50;
+
+// Awards override XP to a referrer (fire-and-forget — never blocks the caller).
+function awardOverrideXp(referrerId, override) {
+  if (!referrerId || !(override > 0)) return;
+  const ref = db.collection('sp_users').doc(referrerId);
+  ref.update({
+    totalSats:  admin.firestore.FieldValue.increment(override),
+    overrideXp: admin.firestore.FieldValue.increment(override),
+    lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
+  }).catch(() => {});
+}
 
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
@@ -10,7 +21,7 @@ module.exports = async (req, res) => {
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     const { amount, type } = req.body;
 
     const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE);
@@ -37,8 +48,13 @@ module.exports = async (req, res) => {
 
     await userRef.update(update);
 
+    // Override XP: referrer earns 1 XP per 10 XP their recruit earns
+    const override = Math.floor(awarded / 10);
+    awardOverrideXp(data.referrerId || '', override);
+
     return res.status(200).json({
       awarded,
+      overrideAwarded: override,
       capped: false,
       total: (data.totalSats || 0) + awarded,
     });
