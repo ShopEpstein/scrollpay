@@ -460,3 +460,28 @@ body {
   transition: background .15s;
 }
 .btn-sell-xp:hover { background: #e6851a; }
+
+/* Share & Earn */
+.share-section .share-note {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.share-btns {
+  display: flex;
+  gap: 6px;
+}
+.btn-share-native {
+  flex: 1;
+  padding: 8px 12px;
+  background: #0f172a;
+  color: #f7931a;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-share-native:hover { background: #1e293b; }

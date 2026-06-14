@@ -150,6 +150,194 @@
     .td-usd { color: var(--green); font-size: 12px; font-weight: 600; }
     .td-conversions { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.6; }
 
+    /* Action buttons in order book */
+    .ob-actions { white-space: nowrap; }
+    .btn-offer {
+      padding: 4px 9px; font-size: 11px; font-weight: 600; border-radius: 5px;
+      border: 1.5px solid var(--btc); color: var(--btc); background: #fff;
+      cursor: pointer; font-family: inherit; transition: background .12s, color .12s; margin-right: 4px;
+    }
+    .btn-offer:hover { background: var(--btc); color: #fff; }
+    .btn-chat {
+      padding: 4px 8px; font-size: 13px; border-radius: 5px;
+      border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer;
+      transition: border-color .12s; font-family: inherit;
+    }
+    .btn-chat:hover { border-color: var(--btc); }
+    .btn-share-listing {
+      padding: 4px 8px; font-size: 13px; border-radius: 5px;
+      border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer;
+      transition: border-color .12s; font-family: inherit;
+    }
+    .btn-share-listing:hover { border-color: #6366f1; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 9000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 16px; width: 100%; max-width: 420px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--line);
+    }
+    .modal-head h3 { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: var(--muted); line-height: 1; padding: 2px 6px; border-radius: 4px;
+    }
+    .modal-close:hover { background: #f3f4f6; }
+    .modal-body { padding: 18px 20px; }
+    .m-field { margin-bottom: 14px; }
+    .m-field label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    .m-field input, .m-field textarea {
+      width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb;
+      border-radius: 8px; font-size: 13px; font-family: inherit;
+      outline: none; color: var(--ink); transition: border-color .15s;
+    }
+    .m-field input:focus, .m-field textarea:focus { border-color: var(--btc); }
+    .m-field textarea { resize: vertical; min-height: 64px; }
+    .m-field .m-hint { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .modal-msg { font-size: 12px; margin-top: 8px; padding: 8px 10px; border-radius: 6px; display: none; }
+    .modal-msg.ok  { background: var(--green-light); color: var(--green); display: block; }
+    .modal-msg.err { background: #fef2f2; color: #b91c1c; display: block; }
+    .btn-modal-submit {
+      width: 100%; padding: 10px; background: var(--btc); color: #fff;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-modal-submit:hover:not(:disabled) { background: #e6851a; }
+    .btn-modal-submit:disabled { opacity: .6; cursor: default; }
+    .modal-listing-info {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 14px; font-size: 13px;
+    }
+    .modal-listing-info strong { color: var(--btc); }
+
+    /* Chat */
+    .chat-msgs {
+      min-height: 160px; max-height: 280px; overflow-y: auto;
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-msg { font-size: 12px; line-height: 1.5; }
+    .chat-msg .chat-handle { font-weight: 700; color: var(--btc); margin-right: 5px; }
+    .chat-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 24px 0; }
+    .chat-input-row { display: flex; gap: 6px; }
+    .chat-input-row input:first-child { width: 90px; flex-shrink: 0; }
+    .chat-input-row input:nth-child(2) { flex: 1; }
+    .btn-chat-send {
+      padding: 9px 14px; background: #0f172a; color: #f7931a; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+    }
+    .btn-chat-send:hover { background: #1e293b; }
+
+    /* Share banner */
+    .share-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border-radius: 14px; padding: 18px 24px; margin: 24px 0;
+      color: #fff;
+    }
+    .share-banner-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .share-banner-text p { font-size: 12px; color: #94a3b8; }
+    .share-banner-btns { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    .btn-share-copy {
+      padding: 8px 14px; background: var(--btc); color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: background .15s;
+    }
+    .btn-share-copy:hover { background: #e6851a; }
+    .btn-share-native {
+      padding: 8px 14px; background: transparent; color: #f8fafc;
+      border: 1.5px solid #334155; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color .15s;
+    }
+    .btn-share-native:hover { border-color: var(--btc); color: var(--btc); }
+
+    /* Manage offers section */
+    .manage-section {
+      margin: 40px 0 20px; background: #fff; border: 1.5px solid #e5e7eb;
+      border-radius: 14px; overflow: hidden;
+    }
+    .manage-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--line); background: #f9fafb;
+    }
+    .manage-head h2 { font-size: 15px; font-weight: 700; }
+    .manage-lookup { display: flex; gap: 8px; align-items: center; padding: 16px 20px; }
+    .manage-lookup input {
+      flex: 1; max-width: 220px; padding: 8px 12px; border: 1.5px solid #e5e7eb;
+      border-radius: 8px; font-size: 13px; font-family: inherit; outline: none;
+    }
+    .manage-lookup input:focus { border-color: var(--btc); }
+    .manage-lookup select {
+      padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-size: 13px; font-family: inherit; background: #fff; outline: none;
+    }
+    .manage-lookup select:focus { border-color: var(--btc); }
+    .btn-lookup {
+      padding: 8px 16px; background: #0f172a; color: #f7931a; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-lookup:hover { background: #1e293b; }
+    .offer-list { padding: 0 20px 20px; }
+    .offer-card {
+      border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 10px; background: #fff;
+    }
+    .offer-card .offer-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .offer-from { font-size: 13px; font-weight: 700; }
+    .offer-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .offer-status.pending   { background: #fef3c7; color: #92400e; }
+    .offer-status.accepted  { background: #dcfce7; color: #166534; }
+    .offer-status.rejected  { background: #fee2e2; color: #991b1b; }
+    .offer-status.countered { background: #ede9fe; color: #5b21b6; }
+    .offer-details { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .offer-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-offer-action {
+      padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 6px;
+      cursor: pointer; font-family: inherit; border: none;
+    }
+    .btn-accept { background: #dcfce7; color: #166534; }
+    .btn-accept:hover { background: #bbf7d0; }
+    .btn-reject { background: #fee2e2; color: #991b1b; }
+    .btn-reject:hover { background: #fecaca; }
+    .btn-counter { background: #ede9fe; color: #5b21b6; }
+    .btn-counter:hover { background: #ddd6fe; }
+
+    /* Floating share button */
+    #float-share {
+      position: fixed; bottom: 20px; left: 20px;
+      background: #0f172a; color: #f7931a; border: none;
+      border-radius: 50px; padding: 10px 18px;
+      font-size: 13px; font-weight: 700; font-family: inherit;
+      cursor: pointer; z-index: 8000; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      display: flex; align-items: center; gap: 6px;
+      transition: background .15s, transform .15s;
+    }
+    #float-share:hover { background: #1e293b; transform: scale(1.04); }
+
+    /* Chat input/message sub-styles */
+    .chat-input-row input {
+      padding: 9px 12px; border: 1.5px solid #e5e7eb;
+      border-radius: 8px; font-size: 13px; font-family: inherit;
+      outline: none; color: var(--ink); transition: border-color .15s;
+    }
+    .chat-input-row input:focus { border-color: var(--btc); }
+    .chat-msg .chat-time { font-size: 10px; color: var(--muted); margin-left: 4px; }
+    .chat-msg .chat-text { margin-top: 2px; font-size: 12px; color: var(--ink); }
+    .modal-msg.success, .modal-msg.ok  { background: var(--green-light); color: var(--green); display: block; }
+    .modal-msg.error,   .modal-msg.err { background: #fef2f2; color: #b91c1c; display: block; }
+
     @media (max-width: 720px) {
       .hero h1 { font-size: 28px; }
       .market-layout { grid-template-columns: 1fr; }
@@ -232,6 +420,18 @@
       <p class="sub">Mined XP while browsing? List it for sale. Advertisers buy it to fund campaigns. Community members buy it to stack lottery entries. The market sets the rate — anyone can buy.</p>
     </header>
 
+    <!-- Share banner -->
+    <div class="share-banner">
+      <div class="share-banner-text">
+        <h3>📣 Earn 100 XP per referral</h3>
+        <p>Share ScrollPay and get 100 XP when a friend installs. Plus 25 XP when they recruit, 10 XP for the level below.</p>
+      </div>
+      <div class="share-banner-btns">
+        <button class="btn-share-copy" id="share-ref-copy">🔗 Copy invite link</button>
+        <button class="btn-share-native" id="share-ref-native">↑ Share</button>
+      </div>
+    </div>
+
     <!-- Market stats -->
     <div class="stats-bar" id="stats-bar">
       <div class="stat-cell"><div class="stat-val" id="stat-best">—</div><div class="stat-lbl">Best ask (sats/XP)</div></div>
@@ -277,6 +477,7 @@
               <th>Price (sats / XP)</th>
               <th>XP amount</th>
               <th>Total</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="ob-body">
@@ -330,6 +531,30 @@
       </div>
     </div>
 
+    <!-- Manage offers / check incoming -->
+    <div class="manage-section">
+      <div class="manage-head">
+        <h2>📬 My Offers</h2>
+        <span style="font-size:12px;color:var(--muted)">Check offers on your listings or offers you've sent</span>
+      </div>
+      <div class="manage-lookup">
+        <input type="text" id="manage-ref" placeholder="Your referral code" maxlength="10" style="text-transform:uppercase" autocomplete="off" />
+        <select id="manage-role">
+          <option value="seller">I'm selling (incoming offers)</option>
+          <option value="buyer">I made offers (outgoing)</option>
+        </select>
+        <button class="btn-lookup" id="manage-load-btn">Check</button>
+      </div>
+      <div id="manage-listing-select" style="display:none;padding:0 20px 12px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Select listing</label>
+        <select id="manage-listing-id" style="padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;outline:none;width:100%;max-width:360px;"></select>
+        <button class="btn-lookup" style="margin-left:8px;" id="manage-listing-btn">Load offers</button>
+      </div>
+      <div class="offer-list" id="offer-list">
+        <div style="font-size:13px;color:var(--muted);padding:8px 0;">Enter your referral code above to see offers.</div>
+      </div>
+    </div>
+
     <div class="faq-section">
       <h2>How it works</h2>
       <div class="faq">
@@ -360,6 +585,78 @@
   <footer>
     <div class="wrap">© <span id="year"></span> ScrollPay · <a href="/privacy">Privacy Policy</a></div>
   </footer>
+
+  <!-- Floating share button -->
+  <button id="float-share">🔗 Share &amp; Earn</button>
+
+  <!-- Offer modal -->
+  <div class="modal-overlay" id="offer-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Make an Offer</h3>
+        <button class="modal-close" id="offer-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-listing-info" id="offer-listing-info"></div>
+        <div class="m-field">
+          <label>Your referral code</label>
+          <input type="text" id="offer-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" autocomplete="off" />
+          <div class="m-hint">Used to identify you as the buyer.</div>
+        </div>
+        <div class="m-field">
+          <label>Your price (sats / XP)</label>
+          <input type="number" id="offer-price" placeholder="e.g. 80" min="1" />
+          <div class="m-hint" id="offer-price-hint"></div>
+        </div>
+        <div class="m-field">
+          <label>Message to seller <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <textarea id="offer-message" placeholder="Hi, I'd like to buy your XP at a slightly lower rate…" maxlength="500"></textarea>
+        </div>
+        <button class="btn-modal-submit" id="offer-submit-btn">Send Offer</button>
+        <div class="modal-msg" id="offer-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat modal -->
+  <div class="modal-overlay" id="chat-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>💬 Listing Chat</h3>
+        <button class="modal-close" id="chat-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-listing-info" id="chat-listing-info"></div>
+        <div class="chat-msgs" id="chat-msgs">
+          <div class="chat-empty">Loading messages…</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-handle" placeholder="Your handle" maxlength="30" autocomplete="off" />
+          <input type="text" id="chat-text" placeholder="Message…" maxlength="400" />
+          <button class="btn-chat-send" id="chat-send-btn">Send</button>
+        </div>
+        <div class="modal-msg" id="chat-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Counter-offer modal -->
+  <div class="modal-overlay" id="counter-modal">
+    <div class="modal" style="max-width:340px">
+      <div class="modal-head">
+        <h3>Counter Offer</h3>
+        <button class="modal-close" id="counter-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="m-field">
+          <label>Your counter price (sats / XP)</label>
+          <input type="number" id="counter-price" placeholder="e.g. 90" min="1" />
+        </div>
+        <button class="btn-modal-submit" id="counter-submit-btn">Send Counter</button>
+        <div class="modal-msg" id="counter-msg"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -407,12 +704,15 @@
 
     // ── Order book ───────────────────────────────────────────────
     let lastListings = [];
+    let listingMap = {};
 
     function renderOrderBookRows(listings) {
       lastListings = listings;
+      listingMap = {};
+      listings.forEach(l => { listingMap[l.id] = l; });
       const tbody = document.getElementById('ob-body');
       if (!listings.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
         return;
       }
       tbody.innerHTML = listings.map(l => {
@@ -423,6 +723,7 @@
         const convLine = usd !== null
           ? `<div class="td-conversions">${fmtUsd(usd)} · ${fmtEth(eth)} · ${fmtSol(sol)} · ${fmtUsd(usd)} USDC</div>`
           : '';
+        const lid = l.id.replace(/'/g, "\\'");
         return `
           <tr>
             <td class="td-price">${(l.pricePerXp || 0).toLocaleString()} sats</td>
@@ -430,6 +731,11 @@
             <td class="td-total">
               ${sats.toLocaleString()} sats
               ${convLine}
+            </td>
+            <td class="ob-actions">
+              <button class="btn-offer" onclick="openOfferModal('${lid}')">Offer</button>
+              <button class="btn-chat" onclick="openChatModal('${lid}')">💬</button>
+              <button class="btn-share-listing" onclick="shareListing('${lid}')">🔗</button>
             </td>
           </tr>`;
       }).join('');
@@ -458,7 +764,7 @@
         renderOrderBookRows(listings);
       } catch (e) {
         document.getElementById('ob-body').innerHTML =
-          '<tr><td colspan="3" class="ob-empty">Failed to load order book.</td></tr>';
+          '<tr><td colspan="4" class="ob-empty">Failed to load order book.</td></tr>';
       }
     }
 
@@ -535,6 +841,351 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'List for sale →';
+      }
+    });
+
+    // ── Offer / Chat / Share / Manage ────────────────────────────
+    let currentListing = null;
+    let chatPollInterval = null;
+    let pendingCounterOfferId = null;
+    let pendingCounterRefCode = null;
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+    });
+    document.getElementById('offer-modal-close').addEventListener('click', () => closeModal('offer-modal'));
+    document.getElementById('chat-modal-close').addEventListener('click', () => {
+      closeModal('chat-modal');
+      if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+    });
+    document.getElementById('counter-modal-close').addEventListener('click', () => closeModal('counter-modal'));
+
+    // ── Offer modal ──────────────────────────────────────────────
+    function openOfferModal(listingId) {
+      currentListing = listingMap[listingId];
+      if (!currentListing) return;
+      const total = (currentListing.xpAmount || 0) * (currentListing.pricePerXp || 0);
+      document.getElementById('offer-listing-info').innerHTML =
+        `<strong>${(currentListing.xpAmount||0).toLocaleString()} XP</strong> @ ${(currentListing.pricePerXp||0).toLocaleString()} sats/XP &nbsp;·&nbsp; Total: ${total.toLocaleString()} sats`;
+      document.getElementById('offer-price').value = '';
+      document.getElementById('offer-message').value = '';
+      document.getElementById('offer-price-hint').textContent =
+        `Seller is asking ${(currentListing.pricePerXp||0).toLocaleString()} sats/XP — bid lower to negotiate`;
+      const msgEl = document.getElementById('offer-msg');
+      msgEl.textContent = ''; msgEl.className = 'modal-msg';
+      const btn = document.getElementById('offer-submit-btn');
+      btn.disabled = false; btn.textContent = 'Send Offer';
+      openModal('offer-modal');
+    }
+
+    document.getElementById('offer-submit-btn').addEventListener('click', async () => {
+      const refCode = document.getElementById('offer-ref').value.trim();
+      const price   = parseInt(document.getElementById('offer-price').value);
+      const message = document.getElementById('offer-message').value.trim();
+      const msgEl   = document.getElementById('offer-msg');
+      if (!refCode) { msgEl.textContent = 'Enter your referral code.'; msgEl.className = 'modal-msg error'; return; }
+      if (!price || price < 1) { msgEl.textContent = 'Enter a valid price (≥ 1 sat/XP).'; msgEl.className = 'modal-msg error'; return; }
+      const btn = document.getElementById('offer-submit-btn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const res = await fetch('/api/make-offer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: currentListing.id, buyerRefCode: refCode, proposedPricePerXp: price, message }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        msgEl.textContent = '✓ Offer sent! The seller will review it.';
+        msgEl.className = 'modal-msg success';
+        btn.textContent = 'Offer Sent ✓';
+      } catch (err) {
+        msgEl.textContent = err.message;
+        msgEl.className = 'modal-msg error';
+        btn.disabled = false; btn.textContent = 'Send Offer';
+      }
+    });
+
+    // ── Chat modal ───────────────────────────────────────────────
+    function openChatModal(listingId) {
+      currentListing = listingMap[listingId];
+      if (!currentListing) return;
+      document.getElementById('chat-listing-info').innerHTML =
+        `<strong>${(currentListing.xpAmount||0).toLocaleString()} XP</strong> @ ${(currentListing.pricePerXp||0).toLocaleString()} sats/XP`;
+      document.getElementById('chat-msgs').innerHTML = '<div class="chat-empty">Loading…</div>';
+      document.getElementById('chat-text').value = '';
+      const msgEl = document.getElementById('chat-msg');
+      msgEl.textContent = ''; msgEl.className = 'modal-msg';
+      openModal('chat-modal');
+      loadChatMessages();
+      if (chatPollInterval) clearInterval(chatPollInterval);
+      chatPollInterval = setInterval(loadChatMessages, 3000);
+    }
+
+    async function loadChatMessages() {
+      if (!currentListing) return;
+      try {
+        const res = await fetch(`/api/chat-message?listingId=${encodeURIComponent(currentListing.id)}`);
+        const data = await res.json();
+        const msgs = data.messages || [];
+        const box = document.getElementById('chat-msgs');
+        if (!msgs.length) {
+          box.innerHTML = '<div class="chat-empty">No messages yet — start the conversation.</div>';
+          return;
+        }
+        const atBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 40;
+        box.innerHTML = msgs.map(m => {
+          const time = m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+          return `<div class="chat-msg"><span class="chat-handle">${escHtml(m.handle)}</span><span class="chat-time">${escHtml(time)}</span><div class="chat-text">${escHtml(m.text)}</div></div>`;
+        }).join('');
+        if (atBottom) box.scrollTop = box.scrollHeight;
+      } catch (_) {}
+    }
+
+    document.getElementById('chat-send-btn').addEventListener('click', sendChatMsg);
+    document.getElementById('chat-text').addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMsg(); });
+
+    async function sendChatMsg() {
+      const handle = document.getElementById('chat-handle').value.trim() || 'Anonymous';
+      const text   = document.getElementById('chat-text').value.trim();
+      const msgEl  = document.getElementById('chat-msg');
+      if (!text || !currentListing) return;
+      try {
+        const res = await fetch('/api/chat-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: currentListing.id, handle, text }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error sending message');
+        document.getElementById('chat-text').value = '';
+        msgEl.textContent = '';
+        await loadChatMessages();
+      } catch (err) {
+        msgEl.textContent = err.message;
+        msgEl.className = 'modal-msg error';
+      }
+    }
+
+    // ── Share ────────────────────────────────────────────────────
+    function getInviteUrl() {
+      const ref = (document.getElementById('ref-code').value.trim() ||
+                   document.getElementById('manage-ref').value.trim() || '').toUpperCase();
+      return `${location.origin}/?ref=${ref || 'SCROLLPAY'}`;
+    }
+
+    function shareListing(listingId) {
+      const l   = listingMap[listingId];
+      const url = `${location.origin}/market?listing=${encodeURIComponent(listingId)}`;
+      const title = l
+        ? `Buy ${(l.xpAmount||0).toLocaleString()} XP @ ${(l.pricePerXp||0).toLocaleString()} sats/XP — ScrollPay`
+        : 'XP Listing on ScrollPay';
+      if (navigator.share) {
+        navigator.share({ title, text: 'Check out this XP listing!', url }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url)
+          .then(() => alert('Listing link copied!'))
+          .catch(() => prompt('Copy link:', url));
+      }
+    }
+
+    document.getElementById('share-ref-copy').addEventListener('click', () => {
+      const url = getInviteUrl();
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('share-ref-copy');
+        const prev = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = prev; }, 2000);
+      }).catch(() => prompt('Copy your invite link:', url));
+    });
+
+    document.getElementById('share-ref-native').addEventListener('click', () => {
+      const url = getInviteUrl();
+      if (navigator.share) {
+        navigator.share({ title: 'Join ScrollPay — mine XP while you browse!', text: 'Earn Bitcoin by browsing. Use my invite link:', url }).catch(() => {});
+      } else {
+        document.getElementById('share-ref-copy').click();
+      }
+    });
+
+    document.getElementById('float-share').addEventListener('click', () => {
+      const url = getInviteUrl();
+      if (navigator.share) {
+        navigator.share({ title: 'ScrollPay — mine Bitcoin while you browse', text: 'Join ScrollPay and earn XP:', url }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url).then(() => {
+          const btn = document.getElementById('float-share');
+          btn.textContent = '✓ Copied!';
+          setTimeout(() => { btn.innerHTML = '🔗 Share &amp; Earn'; }, 2000);
+        }).catch(() => prompt('Copy your invite link:', url));
+      }
+    });
+
+    // ── Manage offers ────────────────────────────────────────────
+    document.getElementById('manage-load-btn').addEventListener('click', async () => {
+      const refCode = document.getElementById('manage-ref').value.trim().toUpperCase();
+      const role    = document.getElementById('manage-role').value;
+      if (!refCode) { showManageMsg('Enter your referral code.'); return; }
+      const btn = document.getElementById('manage-load-btn');
+      btn.disabled = true; btn.textContent = 'Loading…';
+      try {
+        if (role === 'seller') {
+          const res  = await fetch(`/api/xp-market?refCode=${encodeURIComponent(refCode)}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error');
+          const listings = data.listings || [];
+          if (!listings.length) {
+            showManageMsg('No open listings found for this referral code.');
+            document.getElementById('manage-listing-select').style.display = 'none';
+            return;
+          }
+          const sel = document.getElementById('manage-listing-id');
+          sel.innerHTML = listings.map(l =>
+            `<option value="${escHtml(l.id)}">${(l.xpAmount||0).toLocaleString()} XP @ ${(l.pricePerXp||0).toLocaleString()} sats/XP</option>`
+          ).join('');
+          document.getElementById('manage-listing-select').style.display = 'block';
+          showManageMsg('Select a listing above and click "Load offers".');
+        } else {
+          document.getElementById('manage-listing-select').style.display = 'none';
+          await loadBuyerOffers(refCode);
+        }
+      } catch (err) {
+        showManageMsg(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Check';
+      }
+    });
+
+    document.getElementById('manage-listing-btn').addEventListener('click', async () => {
+      const refCode    = document.getElementById('manage-ref').value.trim().toUpperCase();
+      const listingId  = document.getElementById('manage-listing-id').value;
+      if (!listingId) return;
+      const btn = document.getElementById('manage-listing-btn');
+      btn.disabled = true; btn.textContent = 'Loading…';
+      try {
+        const res  = await fetch(`/api/make-offer?listingId=${encodeURIComponent(listingId)}&sellerRefCode=${encodeURIComponent(refCode)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+        renderOfferList(data.offers || [], 'seller', refCode);
+      } catch (err) {
+        showManageMsg(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Load offers';
+      }
+    });
+
+    async function loadBuyerOffers(refCode) {
+      const res  = await fetch(`/api/make-offer?buyerRefCode=${encodeURIComponent(refCode)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      renderOfferList(data.offers || [], 'buyer', refCode);
+    }
+
+    function showManageMsg(txt) {
+      document.getElementById('offer-list').innerHTML =
+        `<div style="font-size:13px;color:var(--muted);padding:8px 0;">${escHtml(txt)}</div>`;
+    }
+
+    function statusBadge(status) {
+      const cls = ['pending','accepted','rejected','countered'].includes(status) ? status : '';
+      return `<span class="offer-status ${cls}">${escHtml(status)}</span>`;
+    }
+
+    function renderOfferList(offers, role, refCode) {
+      const list = document.getElementById('offer-list');
+      if (!offers.length) {
+        list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No offers yet.</div>';
+        return;
+      }
+      const safeRef = refCode.replace(/'/g, "\\'");
+      list.innerHTML = offers.map(o => {
+        const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '';
+        const oid  = o.id.replace(/'/g, "\\'");
+        let actions = '';
+        if (role === 'seller' && o.status === 'pending') {
+          actions = `
+            <button class="btn-offer-action btn-accept" onclick="respondOffer('${oid}','${safeRef}','accept')">✓ Accept</button>
+            <button class="btn-offer-action btn-reject" onclick="respondOffer('${oid}','${safeRef}','reject')">✗ Reject</button>
+            <button class="btn-offer-action btn-counter" onclick="openCounterModal('${oid}','${safeRef}')">↕ Counter</button>`;
+        } else if (role === 'buyer' && o.status === 'countered') {
+          actions = `
+            <button class="btn-offer-action btn-accept" onclick="respondOffer('${oid}','${safeRef}','accept')">✓ Accept counter</button>
+            <button class="btn-offer-action btn-reject" onclick="respondOffer('${oid}','${safeRef}','reject')">✗ Reject</button>`;
+        }
+        const counterLine = o.counterPricePerXp
+          ? `<span style="font-size:11px;color:#6366f1;font-weight:600"> · counter: ${Number(o.counterPricePerXp).toLocaleString()} sats/XP</span>` : '';
+        const msgLine = o.message
+          ? `<div style="font-size:12px;color:#475569;margin-top:4px;padding:4px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #e2e8f0">"${escHtml(o.message)}"</div>` : '';
+        const fromLine = (role === 'seller' && o.buyerHandle)
+          ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">From: ${escHtml(o.buyerHandle)}</div>` : '';
+        return `<div class="offer-card">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            ${statusBadge(o.status)}
+            <span style="font-size:13px;font-weight:600">${(o.xpAmount||0).toLocaleString()} XP @ ${(o.proposedPricePerXp||0).toLocaleString()} sats/XP${counterLine}</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:auto">${escHtml(date)}</span>
+          </div>
+          ${fromLine}${msgLine}
+          <div class="offer-actions">${actions}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function respondOffer(offerId, refCode, action) {
+      try {
+        const res  = await fetch('/api/respond-offer', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offerId, refCode, action }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+        const role = document.getElementById('manage-role').value;
+        if (role === 'seller') document.getElementById('manage-listing-btn').click();
+        else await loadBuyerOffers(refCode);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function openCounterModal(offerId, refCode) {
+      pendingCounterOfferId = offerId;
+      pendingCounterRefCode = refCode;
+      document.getElementById('counter-price').value = '';
+      const msgEl = document.getElementById('counter-msg');
+      msgEl.textContent = ''; msgEl.className = 'modal-msg';
+      openModal('counter-modal');
+    }
+
+    document.getElementById('counter-submit-btn').addEventListener('click', async () => {
+      const price = parseInt(document.getElementById('counter-price').value);
+      const msgEl = document.getElementById('counter-msg');
+      if (!price || price < 1) { msgEl.textContent = 'Enter a valid price.'; msgEl.className = 'modal-msg error'; return; }
+      const btn = document.getElementById('counter-submit-btn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const res  = await fetch('/api/respond-offer', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offerId: pendingCounterOfferId, refCode: pendingCounterRefCode, action: 'counter', counterPricePerXp: price }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+        msgEl.textContent = '✓ Counter offer sent!';
+        msgEl.className = 'modal-msg success';
+        setTimeout(() => {
+          closeModal('counter-modal');
+          document.getElementById('manage-listing-btn').click();
+        }, 1200);
+      } catch (err) {
+        msgEl.textContent = err.message;
+        msgEl.className = 'modal-msg error';
+        btn.disabled = false; btn.textContent = 'Send Counter';
       }
     });
 

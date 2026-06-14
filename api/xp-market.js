@@ -7,6 +7,28 @@ module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
 
   if (req.method === 'GET') {
+    const { refCode } = req.query;
+    if (refCode) {
+      try {
+        const userSnap = await db.collection('sp_users')
+          .where('refCode', '==', refCode.toUpperCase().trim()).limit(1).get();
+        if (userSnap.empty) return res.status(404).json({ error: 'Referral code not found.' });
+        const uid = userSnap.docs[0].id;
+        const snap = await db.collection('sp_xp_listings')
+          .where('userId', '==', uid)
+          .where('status', '==', 'open')
+          .limit(20)
+          .get();
+        const listings = [];
+        snap.forEach(d => {
+          const data = d.data();
+          listings.push({ id: d.id, xpAmount: data.xpAmount, pricePerXp: data.pricePerXp, satsRequested: data.satsRequested });
+        });
+        return res.status(200).json({ listings });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
     try {
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', 'open')

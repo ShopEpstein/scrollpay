@@ -252,5 +252,37 @@ document.getElementById('gift-xp-btn').addEventListener('click', async () => {
   }
 });
 
+// Share invite link
+function getRefLink() {
+  const linkText = document.getElementById('referral-link').textContent;
+  if (!linkText || linkText === 'Loading...' || linkText === 'Complete onboarding first') {
+    return 'https://scrollpay.app';
+  }
+  return linkText.startsWith('http') ? linkText : `https://${linkText}`;
+}
+
+document.getElementById('share-native-btn').addEventListener('click', () => {
+  const url = getRefLink();
+  if (navigator.share) {
+    navigator.share({ title: 'ScrollPay — mine Bitcoin while you browse', text: 'Join me on ScrollPay and earn XP:', url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('share-native-btn');
+      btn.textContent = '✓ Link copied!';
+      setTimeout(() => { btn.textContent = '↑ Share invite link'; }, 2000);
+    }).catch(() => {});
+  }
+});
+
+document.getElementById('share-copy-btn').addEventListener('click', () => {
+  const url = getRefLink();
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {});
+});
+
 // Init
 loadUserData();
