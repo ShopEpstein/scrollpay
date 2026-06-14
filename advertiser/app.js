@@ -153,10 +153,13 @@ async function loadCampaigns() {
         <tbody>${rows.map(c => campaignRow(c, adminMode)).join('')}</tbody>
       </table>`;
 
-    container.querySelectorAll('.toggle-btn').forEach(btn => {
+    container.querySelectorAll('.toggle-btn:not(.edit-btn)').forEach(btn => {
       btn.addEventListener('click', () =>
         toggleCampaign(btn.dataset.id, btn.dataset.active === 'true')
       );
+    });
+    container.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditModal(btn.dataset.id, rows));
     });
   } catch (err) {
     container.innerHTML = `<div class="err-msg" style="padding:20px">Failed to load: ${esc(err.message)}</div>`;
@@ -187,11 +190,12 @@ function campaignRow(c, adminMode = false) {
           <div class="budget-text">${used.toLocaleString()} / ${total.toLocaleString()} XP</div>
         </div>
       </td>
-      <td>
+      <td style="white-space:nowrap">
         <button class="toggle-btn ${c.active ? 'live' : 'paused'}"
                 data-id="${c.id}" data-active="${!!c.active}">
           ${c.active ? '● Live' : '○ Paused'}
         </button>
+        ${adminMode ? `<button class="toggle-btn paused edit-btn" data-id="${c.id}" style="margin-left:6px">✏️ Edit</button>` : ''}
       </td>
     </tr>`;
 }
@@ -350,6 +354,68 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
     showError('launch-error', 'Launch failed: ' + err.message);
     btn.disabled = false;
     btn.textContent = '🚀 Launch Campaign';
+  }
+});
+
+// ── Edit campaign modal (admin only) ────────────────────────────
+
+function openEditModal(adId, rows) {
+  const c = rows.find(r => r.id === adId);
+  if (!c) return;
+  document.getElementById('edit-ad-id').value       = adId;
+  document.getElementById('edit-brand-name').value  = c.brandName || '';
+  document.getElementById('edit-headline').value    = c.headline || '';
+  document.getElementById('edit-cta-text').value    = c.ctaText || '';
+  document.getElementById('edit-cta-url').value     = c.ctaUrl || '';
+  document.getElementById('edit-brand-logo').value  = c.brandLogo || '';
+  document.getElementById('edit-daily-budget').value = c.dailyBudgetXp || 0;
+  document.getElementById('edit-total-budget').value = c.totalBudgetXp || 0;
+  hide('edit-error');
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.add('hidden');
+}
+
+document.getElementById('edit-modal-close').addEventListener('click', closeEditModal);
+document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEditModal();
+});
+
+document.getElementById('edit-save').addEventListener('click', async () => {
+  const adId = document.getElementById('edit-ad-id').value;
+  const btn  = document.getElementById('edit-save');
+  hide('edit-error');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-campaigns', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        adId,
+        brandName:    document.getElementById('edit-brand-name').value.trim(),
+        headline:     document.getElementById('edit-headline').value.trim(),
+        ctaText:      document.getElementById('edit-cta-text').value.trim(),
+        ctaUrl:       document.getElementById('edit-cta-url').value.trim(),
+        brandLogo:    document.getElementById('edit-brand-logo').value.trim(),
+        dailyBudgetXp: parseInt(document.getElementById('edit-daily-budget').value) || 0,
+        totalBudgetXp: parseInt(document.getElementById('edit-total-budget').value) || 0,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+    closeEditModal();
+    loadCampaigns();
+  } catch (err) {
+    showError('edit-error', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
   }
 });
 
