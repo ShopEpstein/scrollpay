@@ -428,13 +428,17 @@
     const fbApp = initializeApp(FIREBASE_CONFIG, 'landing');
     const db = getFirestore(fbApp);
 
-    // Load live ads from Firestore (picks up any booked campaigns automatically)
+    // Load live ads from Firestore, then fill in any fallbacks not already present
     async function loadAds() {
       try {
         const snap = await getDocs(query(collection(db, 'sp_ads'), where('active', '==', true)));
         if (!snap.empty) {
           const live = [];
           snap.forEach(d => live.push({ id: d.id, ...d.data() }));
+          const liveNames = new Set(live.map(a => (a.brandName || '').toLowerCase()));
+          FALLBACK_ADS.forEach(f => {
+            if (!liveNames.has((f.brandName || '').toLowerCase())) live.push(f);
+          });
           ads = live;
         }
       } catch (_) { /* use fallback */ }
