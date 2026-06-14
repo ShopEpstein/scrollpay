@@ -423,3 +423,31 @@ nav {
   .card { padding: 20px 16px; }
   .preview-widget { width: 100%; }
 }
+
+/* ── Edit modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  background: #fff; border-radius: 16px;
+  width: 100%; max-width: 520px;
+  padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-head h2 { font-size: 18px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; font-size: 18px; cursor: pointer;
+  color: var(--muted); padding: 4px 8px; border-radius: 6px;
+}
+.modal-close:hover { background: var(--bg); color: var(--ink); }
+.modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+}

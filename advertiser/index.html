@@ -184,6 +184,29 @@
     </div>
   </div>
 
+  <!-- Edit campaign modal (admin only) -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Edit Campaign</h2>
+        <button id="edit-modal-close" class="modal-close">✕</button>
+      </div>
+      <input type="hidden" id="edit-ad-id" />
+      <div class="field"><label>Brand name</label><input type="text" id="edit-brand-name" /></div>
+      <div class="field"><label>Headline</label><input type="text" id="edit-headline" maxlength="80" /></div>
+      <div class="field"><label>CTA button text</label><input type="text" id="edit-cta-text" maxlength="25" /></div>
+      <div class="field"><label>Destination URL</label><input type="url" id="edit-cta-url" /></div>
+      <div class="field"><label>Logo URL <span class="opt">(optional)</span></label><input type="url" id="edit-brand-logo" /></div>
+      <div class="field"><label>Daily budget (XP)</label><input type="number" id="edit-daily-budget" min="0" step="100" /></div>
+      <div class="field"><label>Total budget (XP)</label><input type="number" id="edit-total-budget" min="0" step="500" /></div>
+      <p id="edit-error" class="err-msg hidden"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="edit-cancel">Cancel</button>
+        <button class="btn-primary" id="edit-save">Save changes</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/advertiser/app.js"></script>
 </body>
 </html>
