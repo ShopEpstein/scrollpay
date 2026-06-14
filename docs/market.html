@@ -133,6 +133,60 @@
       .stats-bar { flex-wrap: wrap; }
       .stat-cell { min-width: 50%; border-bottom: 1px solid #e5e7eb; }
     }
+
+    /* ── Demo widget ── */
+    #demo-widget {
+      position: fixed; bottom: 20px; right: 20px;
+      width: 280px; background: #fff;
+      border: 1px solid #e5e7eb; border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.14), 0 1px 4px rgba(0,0,0,.06);
+      z-index: 9999; overflow: hidden;
+      display: flex; flex-direction: column;
+      font-family: 'Inter', -apple-system, sans-serif;
+      transform: translateX(calc(100% + 30px)); opacity: 0;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+    }
+    #demo-widget.dw-visible  { transform: translateX(0); opacity: 1; }
+    #demo-widget.dw-hiding   { transform: translateX(calc(100% + 30px)); opacity: 0; transition: transform .3s ease-in, opacity .3s; }
+    #dw-handle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; background: #0f172a;
+      border-bottom: 1px solid #1e293b; gap: 8px;
+    }
+    .dw-brand { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #f7931a; }
+    .dw-status { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 500; color: #22c55e; }
+    .dw-dot { display: inline-block; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: dw-pulse 2s infinite; }
+    @keyframes dw-pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+    #dw-ad-area { padding: 12px; }
+    .dw-ad-content { display: flex; align-items: flex-start; gap: 10px; }
+    .dw-logo {
+      width: 36px; height: 36px; flex-shrink: 0; border-radius: 8px;
+      background: linear-gradient(135deg,#f7931a,#e6851a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff; overflow: hidden;
+    }
+    .dw-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .dw-ad-text { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .dw-headline { font-size: 12px; font-weight: 500; color: #111827; line-height: 1.4; }
+    .dw-cta {
+      display: inline-block; padding: 5px 10px;
+      background: #f7931a; color: #fff; font-size: 11px; font-weight: 600;
+      border-radius: 6px; text-decoration: none; align-self: flex-start; transition: background .15s;
+    }
+    .dw-cta:hover { background: #e6851a; }
+    #dw-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; background: #0f172a; border-top: 1px solid #1e293b;
+    }
+    .dw-earnings { font-size: 11px; font-weight: 600; color: #22c55e; }
+    .dw-close {
+      background: none; border: none; cursor: pointer;
+      color: #64748b; font-size: 12px; padding: 2px 6px;
+      border-radius: 4px; font-family: inherit;
+    }
+    .dw-close:hover { background: #1e293b; color: #f8fafc; }
+    #dw-progress { height: 3px; background: #e5e7eb; }
+    #dw-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#f7931a,#fbbf24); border-radius: 0 2px 2px 0; }
   </style>
 </head>
 <body>
@@ -363,6 +417,117 @@
     });
 
     loadOrderBook();
+  </script>
+
+  <!-- Demo widget -->
+  <div id="demo-widget" aria-label="ScrollPay demo widget">
+    <div id="dw-handle">
+      <span class="dw-brand">SCROLLPAY</span>
+      <span class="dw-status"><span class="dw-dot"></span> <span id="dw-status-text">mining</span></span>
+    </div>
+    <div id="dw-ad-area">
+      <div class="dw-ad-content">
+        <div class="dw-logo" id="dw-logo">S</div>
+        <div class="dw-ad-text">
+          <div class="dw-headline" id="dw-headline">Loading ad…</div>
+          <a class="dw-cta" id="dw-cta" href="#" target="_blank" rel="noopener noreferrer">Learn more</a>
+        </div>
+      </div>
+    </div>
+    <div id="dw-footer">
+      <span class="dw-earnings">₿ <span id="dw-xp">0</span> XP mined</span>
+      <button class="dw-close" id="dw-close" aria-label="Hide widget">✕</button>
+    </div>
+    <div id="dw-progress"><div id="dw-progress-fill"></div></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
+      authDomain: "scrollpay-1ce29.firebaseapp.com",
+      projectId: "scrollpay-1ce29",
+      storageBucket: "scrollpay-1ce29.firebasestorage.app",
+      messagingSenderId: "710989126022",
+      appId: "1:710989126022:web:50324119c803af284f7407"
+    };
+
+    const FALLBACK_ADS = [
+      { brandName: 'ScrollPay', brandLogo: '', headline: 'Sell your mined XP here — or list it in the market.', ctaText: 'List now', ctaUrl: '#' },
+      { brandName: 'ScrollPay', brandLogo: '', headline: 'Never scroll for free. Mine XP while you browse.', ctaText: 'Get the extension', ctaUrl: 'https://scrollpay.app' }
+    ];
+
+    const AD_ROTATE_MS = 7000;
+    let ads = [...FALLBACK_ADS];
+    let adIndex = 0;
+    let xpCount = 0;
+
+    const db = getFirestore(initializeApp(FIREBASE_CONFIG, 'market-widget'));
+
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function renderAd(ad) {
+      document.getElementById('dw-headline').textContent = ad.headline || '';
+      const cta = document.getElementById('dw-cta');
+      cta.textContent = ad.ctaText || 'Learn more';
+      cta.href = ad.ctaUrl || '#';
+      const logo = document.getElementById('dw-logo');
+      if (ad.brandLogo) {
+        logo.innerHTML = `<img src="${esc(ad.brandLogo)}" alt="${esc(ad.brandName)}" onerror="this.parentElement.textContent='${esc((ad.brandName||'S')[0])}'" />`;
+      } else {
+        logo.textContent = (ad.brandName || 'S')[0].toUpperCase();
+      }
+    }
+
+    function restartProgress() {
+      const fill = document.getElementById('dw-progress-fill');
+      fill.style.transition = 'none'; fill.style.width = '0%';
+      fill.getBoundingClientRect();
+      fill.style.transition = `width ${AD_ROTATE_MS}ms linear`; fill.style.width = '100%';
+    }
+
+    function rotateAd() {
+      adIndex = (adIndex + 1) % ads.length;
+      renderAd(ads[adIndex]);
+      restartProgress();
+    }
+
+    async function loadAds() {
+      try {
+        const snap = await getDocs(query(collection(db, 'sp_ads'), where('active', '==', true)));
+        if (!snap.empty) {
+          const live = [];
+          snap.forEach(d => live.push({ id: d.id, ...d.data() }));
+          ads = live;
+        }
+      } catch (_) {}
+      renderAd(ads[0]);
+      restartProgress();
+    }
+
+    const widget = document.getElementById('demo-widget');
+
+    function showWidget() { widget.classList.remove('dw-hiding'); widget.classList.add('dw-visible'); }
+    function hideWidget() { widget.classList.add('dw-hiding'); widget.classList.remove('dw-visible'); }
+
+    document.getElementById('dw-close').addEventListener('click', () => {
+      hideWidget();
+      setTimeout(showWidget, 8000);
+    });
+
+    setInterval(() => {
+      if (widget.classList.contains('dw-visible')) {
+        xpCount++;
+        document.getElementById('dw-xp').textContent = xpCount.toLocaleString();
+      }
+    }, 1000);
+
+    setInterval(rotateAd, AD_ROTATE_MS);
+
+    setTimeout(showWidget, 800);
+    loadAds();
   </script>
 </body>
 </html>
