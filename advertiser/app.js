@@ -747,12 +747,15 @@ async function addTxToListing(listingId) {
   const txChain = prompt('Chain? (btc / sol / eth / usdc)', 'sol') || 'sol';
   const txHash  = prompt('Transaction hash:');
   if (!txHash) return;
+  const xpOverride = prompt('Correct the XP amount if needed (leave blank to keep as-is):');
   try {
     const token = await auth.currentUser.getIdToken();
+    const body = { listingId, action: 'update-tx', txHash: txHash.trim(), txChain };
+    if (xpOverride && parseInt(xpOverride) > 0) body.xpAmount = parseInt(xpOverride);
     const res = await fetch('/api/admin-xp', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ listingId, action: 'update-tx', txHash: txHash.trim(), txChain }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');

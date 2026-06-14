@@ -66,7 +66,7 @@ module.exports = async (req, res) => {
       const listing = listingSnap.data();
 
       if (action === 'update-tx') {
-        const { txHash, txChain } = req.body;
+        const { txHash, txChain, xpAmount } = req.body;
         const txChainNorm = (txChain || 'btc').toLowerCase();
         const explorerBase = {
           btc:  'https://mempool.space/tx/',
@@ -74,11 +74,13 @@ module.exports = async (req, res) => {
           eth:  'https://etherscan.io/tx/',
           usdc: 'https://etherscan.io/tx/',
         }[txChainNorm] || 'https://mempool.space/tx/';
-        await listingRef.update({
+        const update = {
           txHash: txHash || '',
           txChain: txChainNorm,
           txUrl: txHash ? explorerBase + txHash : '',
-        });
+        };
+        if (xpAmount && parseInt(xpAmount) > 0) update.xpAmount = parseInt(xpAmount);
+        await listingRef.update(update);
         return res.status(200).json({ ok: true });
       }
 
