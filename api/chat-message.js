@@ -37,15 +37,19 @@ module.exports = async (req, res) => {
     if (!cleaned) return res.status(400).json({ error: 'Message cannot be empty.' });
     const safeHandle = String(handle || 'Anonymous').trim().slice(0, 30) || 'Anonymous';
     try {
-      // Rate-limit: no more than 5 messages per listing per minute from same handle
-      const oneMinAgo = new Date(Date.now() - 60000);
+      // Rate-limit: no more than 5 messages per listing per minute from same handle.
+      // Single where clause avoids composite index requirement; filter in memory.
+      const cutoff = Date.now() - 60000;
       const recent = await db.collection('sp_chat')
         .where('listingId', '==', listingId)
-        .where('handle', '==', safeHandle)
-        .where('createdAt', '>', oneMinAgo)
-        .limit(5)
+        .limit(50)
         .get();
-      if (recent.size >= 5) return res.status(429).json({ error: 'Slow down — wait a moment before sending more.' });
+      let fromHandle = 0;
+      recent.forEach(d => {
+        const data = d.data();
+        if (data.handle === safeHandle && (data.createdAt?.toMillis?.() || 0) > cutoff) fromHandle++;
+      });
+      if (fromHandle >= 5) return res.status(429).json({ error: 'Slow down — wait a moment before sending more.' });
 
       await db.collection('sp_chat').add({
         listingId,
