@@ -52,8 +52,8 @@
   align-items: center !important;
   justify-content: space-between !important;
   padding: 8px 12px !important;
-  background: #f8f9fa !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  background: #0f172a !important;
+  border-bottom: 1px solid #1e293b !important;
   cursor: grab !important;
   user-select: none !important;
   box-sizing: border-box !important;
@@ -65,7 +65,7 @@
 
 #scrollpay-widget .sp-drag-dots {
   font-size: 10px !important;
-  color: #9ca3af !important;
+  color: #475569 !important;
   letter-spacing: 2px !important;
   line-height: 1 !important;
 }
@@ -75,7 +75,7 @@
   font-size: 10px !important;
   font-weight: 700 !important;
   letter-spacing: 1.5px !important;
-  color: #f97316 !important;
+  color: #f7931a !important;
   text-transform: uppercase !important;
 }
 
@@ -134,7 +134,7 @@
   width: 36px !important;
   height: 36px !important;
   border-radius: 8px !important;
-  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  background: linear-gradient(135deg, #f7931a, #e6851a) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -165,7 +165,7 @@
   font-family: 'Inter', sans-serif !important;
   display: inline-block !important;
   padding: 5px 10px !important;
-  background: #f97316 !important;
+  background: #f7931a !important;
   color: #fff !important;
   font-size: 11px !important;
   font-weight: 600 !important;
@@ -178,7 +178,7 @@
 }
 
 #scrollpay-widget .sp-cta-btn:hover {
-  background: #ea580c !important;
+  background: #e6851a !important;
 }
 
 /* Footer */
@@ -188,8 +188,8 @@
   align-items: center !important;
   justify-content: space-between !important;
   padding: 8px 12px !important;
-  background: #f8f9fa !important;
-  border-top: 1px solid #e5e7eb !important;
+  background: #0f172a !important;
+  border-top: 1px solid #1e293b !important;
   box-sizing: border-box !important;
 }
 
@@ -218,7 +218,7 @@
   font-family: 'Inter', sans-serif !important;
   font-size: 9px !important;
   font-weight: 600 !important;
-  color: #9ca3af !important;
+  color: #64748b !important;
   background: transparent !important;
   cursor: pointer !important;
   padding: 2px 4px !important;
@@ -229,12 +229,12 @@
 }
 
 #scrollpay-widget .sp-size-btn:hover {
-  background: #e5e7eb !important;
-  color: #374151 !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
 }
 
 #scrollpay-widget .sp-size-btn.sp-size-active {
-  background: #f97316 !important;
+  background: #f7931a !important;
   color: #fff !important;
 }
 
@@ -242,7 +242,7 @@
   all: initial !important;
   font-family: 'Inter', sans-serif !important;
   cursor: pointer !important;
-  color: #9ca3af !important;
+  color: #64748b !important;
   font-size: 13px !important;
   padding: 2px 5px !important;
   border-radius: 4px !important;
@@ -251,15 +251,15 @@
 }
 
 #scrollpay-widget .sp-share-btn:hover {
-  background: #e5e7eb !important;
-  color: #374151 !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
 }
 
 #scrollpay-widget .sp-close-btn {
   all: initial !important;
   font-family: 'Inter', sans-serif !important;
   cursor: pointer !important;
-  color: #9ca3af !important;
+  color: #64748b !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   padding: 2px 6px !important;
@@ -269,8 +269,8 @@
 }
 
 #scrollpay-widget .sp-close-btn:hover {
-  background: #e5e7eb !important;
-  color: #374151 !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
 }
 
 /* Progress Bar */
@@ -286,6 +286,6 @@
   display: block !important;
   height: 100% !important;
   width: 0% !important;
-  background: linear-gradient(90deg, #f97316, #fbbf24) !important;
+  background: linear-gradient(90deg, #f7931a, #fbbf24) !important;
   border-radius: 0 2px 2px 0 !important;
 }
