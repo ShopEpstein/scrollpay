@@ -133,7 +133,7 @@
         </div>
       </div>
       <div id="sp-footer">
-        <span class="sp-earnings" id="sp-earnings-label">🎟️ <span id="sp-sats-count">0</span> XP earned</span>
+        <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP earned</span>
         <div class="sp-footer-controls">
           <div class="sp-size-controls" role="group" aria-label="Widget size">${sizeBtns}</div>
           <button class="sp-share-btn" id="sp-share-btn" aria-label="Copy referral link" title="Copy referral link">🔗</button>
