@@ -4,8 +4,7 @@ import {
   signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import {
-  getFirestore, collection, doc, addDoc, getDocs, updateDoc,
-  query, where, orderBy, serverTimestamp
+  getFirestore, collection, doc, getDocs, query, where
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -181,7 +180,13 @@ function campaignRow(c) {
 
 async function toggleCampaign(adId, currentlyActive) {
   try {
-    await updateDoc(doc(db, 'sp_ads', adId), { active: !currentlyActive });
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/toggle-campaign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ adId, active: !currentlyActive }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
     loadCampaigns();
   } catch (err) {
     alert('Failed to update campaign: ' + err.message);
@@ -300,23 +305,23 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
   btn.textContent = 'Launching…';
 
   try {
-    await addDoc(collection(db, 'sp_ads'), {
-      ownerId: auth.currentUser.uid,
-      ownerEmail: auth.currentUser.email,
-      brandName: draft.brand.name,
-      brandLogo: draft.brand.logo || '',
-      brandWebsite: draft.brand.website || '',
-      headline: draft.ad.headline,
-      ctaText: draft.ad.ctaText,
-      ctaUrl: draft.ad.ctaUrl,
-      dailyBudgetXp: daily || 0,
-      totalBudgetXp: total || 0,
-      budgetUsed: 0,
-      impressions: 0,
-      clicks: 0,
-      active: true,
-      createdAt: serverTimestamp()
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/create-campaign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        brandName: draft.brand.name,
+        brandLogo: draft.brand.logo || '',
+        brandWebsite: draft.brand.website || '',
+        headline: draft.ad.headline,
+        ctaText: draft.ad.ctaText,
+        ctaUrl: draft.ad.ctaUrl,
+        dailyBudgetXp: daily || 0,
+        totalBudgetXp: total || 0,
+      }),
     });
+
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
 
     showView('view-dashboard');
     loadCampaigns();
