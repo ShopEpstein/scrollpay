@@ -20,8 +20,29 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'PATCH') {
-      const { adId, ...updates } = req.body;
+      const { adId, action, rejectionReason, ...updates } = req.body;
       if (!adId) return res.status(400).json({ error: 'Missing adId' });
+
+      if (action === 'approve') {
+        await db.collection('sp_ads').doc(adId).update({
+          status: 'approved',
+          active: true,
+          rejectionReason: admin.firestore.FieldValue.delete(),
+          approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === 'reject') {
+        await db.collection('sp_ads').doc(adId).update({
+          status: 'rejected',
+          active: false,
+          rejectionReason: rejectionReason || '',
+          rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
       delete updates.ownerId;
       delete updates.ownerEmail;
       delete updates.createdAt;

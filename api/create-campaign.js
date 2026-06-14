@@ -29,7 +29,8 @@ module.exports = async (req, res) => {
       budgetUsed: 0,
       impressions: 0,
       clicks: 0,
-      active: true,
+      active: false,
+      status: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 

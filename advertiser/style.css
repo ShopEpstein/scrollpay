@@ -508,3 +508,15 @@ nav {
   #stat-cards { grid-template-columns: repeat(2, 1fr); }
   #stats-section > div:nth-child(3) { grid-template-columns: 1fr; }
 }
+
+/* Campaign approval status badges */
+.camp-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.camp-status.pending  { background: #fef3c7; color: #92400e; }
+.camp-status.rejected { background: #fee2e2; color: #991b1b; }
+.camp-status.approved { background: #dcfce7; color: #15803d; }

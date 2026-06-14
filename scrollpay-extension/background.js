@@ -84,7 +84,13 @@ async function getActiveAds(domain) {
     }
 
     const ads = [];
-    snapshot.forEach(d => ads.push({ id: d.id, ...d.data() }));
+    snapshot.forEach(d => {
+      const data = d.data();
+      // Only serve campaigns that have been explicitly approved
+      if (!data.status || data.status === 'approved') {
+        ads.push({ id: d.id, ...data });
+      }
+    });
 
     adCache[domain] = { ads, fetchedAt: Date.now() };
     return ads;

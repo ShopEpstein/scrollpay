@@ -159,7 +159,7 @@ async function loadCampaigns() {
         <tbody>${rows.map(c => campaignRow(c, adminMode)).join('')}</tbody>
       </table>`;
 
-    container.querySelectorAll('.toggle-btn:not(.edit-btn)').forEach(btn => {
+    container.querySelectorAll('.toggle-btn:not(.edit-btn):not(.approve-btn):not(.reject-btn)').forEach(btn => {
       btn.addEventListener('click', () =>
         toggleCampaign(btn.dataset.id, btn.dataset.active === 'true')
       );
@@ -167,9 +167,54 @@ async function loadCampaigns() {
     container.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditModal(btn.dataset.id, rows));
     });
+    container.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', () => approveCampaign(btn.dataset.id));
+    });
+    container.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', () => rejectCampaign(btn.dataset.id));
+    });
   } catch (err) {
     container.innerHTML = `<div class="err-msg" style="padding:20px">Failed to load: ${esc(err.message)}</div>`;
   }
+}
+
+function campaignStatusCell(c, adminMode) {
+  const status = c.status || (c.active ? 'approved' : 'pending');
+
+  if (status === 'pending') {
+    if (adminMode) {
+      return `
+        <span class="camp-status pending">⏳ Pending</span>
+        <div style="margin-top:6px;display:flex;gap:5px">
+          <button class="approve-btn" data-id="${c.id}" style="padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✓ Approve</button>
+          <button class="reject-btn" data-id="${c.id}" style="padding:4px 10px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✗ Reject</button>
+          <button class="toggle-btn paused edit-btn" data-id="${c.id}" style="padding:4px 10px;font-size:11px">✏️</button>
+        </div>`;
+    }
+    return `<span class="camp-status pending">⏳ Pending review</span>`;
+  }
+
+  if (status === 'rejected') {
+    const reason = c.rejectionReason ? ` — ${esc(c.rejectionReason)}` : '';
+    if (adminMode) {
+      return `
+        <span class="camp-status rejected">✗ Rejected</span>
+        ${reason ? `<div style="font-size:11px;color:#6b7280;margin-top:3px">${reason}</div>` : ''}
+        <div style="margin-top:6px">
+          <button class="approve-btn" data-id="${c.id}" style="padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✓ Approve</button>
+          <button class="toggle-btn paused edit-btn" data-id="${c.id}" style="padding:4px 6px;font-size:11px;margin-left:4px">✏️</button>
+        </div>`;
+    }
+    return `<span class="camp-status rejected">✗ Rejected${reason}</span>`;
+  }
+
+  // approved — show live/pause toggle
+  return `
+    <button class="toggle-btn ${c.active ? 'live' : 'paused'}"
+            data-id="${c.id}" data-active="${!!c.active}">
+      ${c.active ? '● Live' : '○ Paused'}
+    </button>
+    ${adminMode ? `<button class="toggle-btn paused edit-btn" data-id="${c.id}" style="margin-left:6px;padding:4px 6px;font-size:11px">✏️</button>` : ''}`;
 }
 
 function campaignRow(c, adminMode = false) {
@@ -196,13 +241,7 @@ function campaignRow(c, adminMode = false) {
           <div class="budget-text">${used.toLocaleString()} / ${total.toLocaleString()} XP</div>
         </div>
       </td>
-      <td style="white-space:nowrap">
-        <button class="toggle-btn ${c.active ? 'live' : 'paused'}"
-                data-id="${c.id}" data-active="${!!c.active}">
-          ${c.active ? '● Live' : '○ Paused'}
-        </button>
-        ${adminMode ? `<button class="toggle-btn paused edit-btn" data-id="${c.id}" style="margin-left:6px">✏️ Edit</button>` : ''}
-      </td>
+      <td style="white-space:nowrap">${campaignStatusCell(c, adminMode)}</td>
     </tr>`;
 }
 
@@ -221,6 +260,38 @@ async function toggleCampaign(adId, currentlyActive) {
     loadCampaigns();
   } catch (err) {
     alert('Failed to update campaign: ' + err.message);
+  }
+}
+
+async function approveCampaign(adId) {
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-campaigns', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ adId, action: 'approve' }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
+    loadCampaigns();
+  } catch (err) {
+    alert('Failed to approve campaign: ' + err.message);
+  }
+}
+
+async function rejectCampaign(adId) {
+  const reason = prompt('Rejection reason (optional):');
+  if (reason === null) return; // cancelled
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-campaigns', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ adId, action: 'reject', rejectionReason: reason }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
+    loadCampaigns();
+  } catch (err) {
+    alert('Failed to reject campaign: ' + err.message);
   }
 }
 
@@ -333,7 +404,7 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
   hide('launch-error');
 
   btn.disabled = true;
-  btn.textContent = 'Launching…';
+  btn.textContent = 'Submitting…';
 
   try {
     const token = await auth.currentUser.getIdToken();
@@ -356,10 +427,17 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
 
     showView('view-dashboard');
     loadCampaigns();
+    // Show a review-pending notice on the dashboard
+    const notice = document.createElement('div');
+    notice.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;color:#92400e;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:16px';
+    notice.textContent = '⏳ Campaign submitted! It will go live after admin review (usually within 24 hours).';
+    const container = document.getElementById('campaigns-container');
+    container.parentNode.insertBefore(notice, container);
+    setTimeout(() => notice.remove(), 8000);
   } catch (err) {
-    showError('launch-error', 'Launch failed: ' + err.message);
+    showError('launch-error', 'Submission failed: ' + err.message);
     btn.disabled = false;
-    btn.textContent = '🚀 Launch Campaign';
+    btn.textContent = '🚀 Submit for Review';
   }
 });
 
