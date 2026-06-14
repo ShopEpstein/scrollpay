@@ -277,7 +277,7 @@
               <th>Price (sats / XP)</th>
               <th>XP amount</th>
               <th>Total sats</th>
-              <th class="ob-hide-mobile">≈ USD value</th>
+              <th class="ob-hide-mobile">≈ Value (USD / ETH / SOL / USDC)</th>
             </tr>
           </thead>
           <tbody id="ob-body">
@@ -419,13 +419,18 @@
       tbody.innerHTML = listings.map(l => {
         const sats = l.satsRequested || 0;
         const usd  = satsToUsd(sats);
-        const usdCell = usd !== null ? fmtUsd(usd) : '—';
+        const eth  = usdToEth(usd);
+        const sol  = usdToSol(usd);
+        const convHtml = usd !== null
+          ? `<div class="td-usd">${fmtUsd(usd)}</div>
+             <div class="td-conversions">${fmtEth(eth)} · ${fmtSol(sol)} · ${fmtUsd(usd)} USDC</div>`
+          : '<div class="td-usd">—</div>';
         return `
           <tr>
             <td class="td-price">${(l.pricePerXp || 0).toLocaleString()} sats</td>
             <td class="td-xp">${(l.xpAmount || 0).toLocaleString()} XP</td>
             <td class="td-total">${sats.toLocaleString()} sats</td>
-            <td class="td-usd ob-hide-mobile">${usdCell}</td>
+            <td class="ob-hide-mobile">${convHtml}</td>
           </tr>`;
       }).join('');
     }
