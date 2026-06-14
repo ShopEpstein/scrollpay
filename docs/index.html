@@ -116,6 +116,63 @@
       .steps, .privacy-grid { grid-template-columns: 1fr; }
     }
 
+    /* ── Web farming / auth ── */
+    .farm-section { background: var(--cream); }
+    .farm-tabs { display: flex; gap: 0; margin: 28px auto 0; max-width: 420px; border-bottom: 2px solid #fed7aa; }
+    .farm-tab {
+      flex: 1; padding: 10px; background: none; border: none;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      color: var(--muted); border-bottom: 3px solid transparent;
+      font-family: inherit; margin-bottom: -2px; transition: color .15s;
+    }
+    .farm-tab.active { color: var(--orange-dark); border-bottom-color: var(--orange); }
+    .farm-form {
+      max-width: 420px; margin: 20px auto 0;
+      background: #fff; border: 1.5px solid #fed7aa;
+      border-radius: 14px; padding: 24px;
+    }
+    .farm-field { margin-bottom: 12px; }
+    .farm-field input {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-size: 15px; font-family: inherit; color: var(--ink);
+      outline: none; transition: border-color .15s;
+    }
+    .farm-field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,.1); }
+    .farm-err { color: #dc2626; font-size: 13px; margin-bottom: 10px; display: none; }
+    .btn-farm { width: 100%; padding: 13px; font-size: 15px; }
+
+    /* Signed-in dashboard */
+    .farm-dash {
+      max-width: 640px; margin: 24px auto 0;
+      background: #fff; border: 1.5px solid #fed7aa;
+      border-radius: 16px; padding: 28px 32px;
+      display: flex; align-items: center; gap: 32px; flex-wrap: wrap;
+    }
+    .farm-xp { text-align: center; min-width: 110px; }
+    .farm-xp-num { font-size: 52px; font-weight: 800; color: var(--orange-dark); line-height: 1; }
+    .farm-xp-lbl { font-size: 13px; color: #9a3412; margin-top: 4px; font-weight: 500; }
+    .farm-info { flex: 1; min-width: 180px; }
+    .farm-email { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .farm-ref-row {
+      background: var(--cream); border: 1px solid #fed7aa;
+      border-radius: 8px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .farm-ref-url { font-size: 13px; color: var(--orange-dark); font-weight: 600; flex: 1; word-break: break-all; }
+    .farm-copy-btn {
+      background: var(--orange); color: #fff; border: none;
+      padding: 5px 12px; border-radius: 6px; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap;
+      transition: background .15s;
+    }
+    .farm-copy-btn:hover { background: var(--orange-dark); }
+    .farm-status { font-size: 13px; color: var(--muted); }
+    .farm-status .live { color: #16a34a; font-weight: 700; }
+    .farm-status .capped { color: #d97706; font-weight: 700; }
+    .farm-signout { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline; font-family: inherit; margin-top: 10px; display: block; }
+    .farm-today { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
     /* ── Waitlist ── */
     .waitlist-form {
       display: flex; gap: 10px; max-width: 480px;
@@ -252,6 +309,54 @@
       <p class="micro">Free forever · No mining rig needed · We never read your page content</p>
     </header>
   </div>
+
+  <!-- ── Web farming / auth ── -->
+  <section class="block farm-section" id="earn-now">
+    <div class="wrap" style="text-align:center">
+      <h2>Start stacking XP right now</h2>
+      <p class="section-sub">No extension needed. Sign up, watch the ads on this page, and your XP accumulates in real time — sell it for Bitcoin or let it ride in the draw.</p>
+
+      <!-- Not signed in -->
+      <div id="farm-auth-panel">
+        <div class="farm-tabs">
+          <button class="farm-tab active" data-mode="signup">Create account</button>
+          <button class="farm-tab" data-mode="login">Sign in</button>
+        </div>
+        <div class="farm-form">
+          <div class="farm-field">
+            <input type="email" id="farm-email" placeholder="your@email.com" autocomplete="email" />
+          </div>
+          <div class="farm-field">
+            <input type="password" id="farm-password" placeholder="Password (min 6 characters)" autocomplete="current-password" />
+          </div>
+          <p id="farm-err" class="farm-err"></p>
+          <button class="btn-primary btn-farm" id="farm-auth-btn">Create free account →</button>
+        </div>
+      </div>
+
+      <!-- Signed in -->
+      <div id="farm-dash-panel" style="display:none">
+        <div class="farm-dash">
+          <div class="farm-xp">
+            <div class="farm-xp-num" id="farm-xp-num">0</div>
+            <div class="farm-xp-lbl">₿ XP earned</div>
+            <div class="farm-today" id="farm-today-lbl"></div>
+          </div>
+          <div class="farm-info">
+            <div class="farm-email" id="farm-user-email"></div>
+            <div class="farm-ref-row">
+              <span class="farm-ref-url" id="farm-ref-url">loading…</span>
+              <button class="farm-copy-btn" id="farm-copy-btn">Copy link</button>
+            </div>
+            <div class="farm-status" id="farm-status">
+              <span class="live">● earning XP</span> — watch ads in the bottom-right corner
+            </div>
+            <button class="farm-signout" id="farm-signout-btn">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="block" id="how">
     <div class="wrap">
@@ -428,6 +533,10 @@
       getFirestore, collection, query, where, getDocs,
       doc, setDoc, serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signOut, onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
@@ -465,6 +574,7 @@
 
     const fbApp = initializeApp(FIREBASE_CONFIG, 'landing');
     const db = getFirestore(fbApp);
+    const auth = getAuth(fbApp);
 
     // Load live ads from Firestore, then fill in any fallbacks not already present
     async function loadAds() {
@@ -529,6 +639,7 @@
       adIndex = (adIndex + 1) % ads.length;
       renderAd(ads[adIndex]);
       restartProgress();
+      earnXp(5, 'impression'); // real XP when signed in
     }
 
     // ── Widget visibility ────────────────────────────────────────
@@ -567,6 +678,7 @@
         e.preventDefault();
         document.getElementById('get-started').scrollIntoView({ behavior: 'smooth' });
       }
+      earnXp(25, 'click');
     });
 
     // ── XP counter ───────────────────────────────────────────────
@@ -627,6 +739,144 @@
         widgetEl.classList.add('dw-' + size);
         xpMultiplier = SIZE_XP[size];
       });
+    });
+
+    // ── Auth + XP farming ────────────────────────────────────────
+
+    let currentUser = null;
+    let userXpTotal = 0;
+    let userTodayXp = 0;
+    let isCapped = false;
+
+    async function getToken() {
+      if (!currentUser) return null;
+      return currentUser.getIdToken();
+    }
+
+    async function loadUserAccount(referredBy) {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const res = await fetch('/api/user-me' + (referredBy ? `?ref=${referredBy}` : ''), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        const u = data.user;
+        userXpTotal = u.totalSats || 0;
+        userTodayXp = u.satsToday || 0;
+        renderDashboard(u);
+      } catch (e) {
+        console.error('[ScrollPay] loadUserAccount:', e);
+      }
+    }
+
+    function renderDashboard(u) {
+      document.getElementById('farm-auth-panel').style.display = 'none';
+      document.getElementById('farm-dash-panel').style.display = 'block';
+      document.getElementById('farm-xp-num').textContent = (u.totalSats || 0).toLocaleString();
+      document.getElementById('farm-user-email').textContent = u.email || '';
+      document.getElementById('farm-today-lbl').textContent = (u.satsToday || 0).toLocaleString() + ' XP today';
+      const refUrl = u.refCode ? `scrollpay.app/r/${u.refCode}` : '';
+      document.getElementById('farm-ref-url').textContent = refUrl;
+      document.getElementById('farm-copy-btn').dataset.url = u.refCode ? `https://scrollpay.app/r/${u.refCode}` : 'https://scrollpay.app';
+    }
+
+    async function earnXp(amount, type) {
+      if (!currentUser || isCapped || amount <= 0) return;
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const res = await fetch('/api/earn-xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ amount, type }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          userXpTotal = data.total;
+          userTodayXp += data.awarded;
+          isCapped = data.capped;
+          document.getElementById('farm-xp-num').textContent = userXpTotal.toLocaleString();
+          document.getElementById('farm-today-lbl').textContent = userTodayXp.toLocaleString() + ' XP today';
+          // Mirror in demo widget
+          xpCount = userXpTotal;
+          document.getElementById('dw-xp').textContent = userXpTotal.toLocaleString();
+          document.getElementById('farm-status').innerHTML = isCapped
+            ? '<span class="capped">⚡ Daily cap reached</span> — come back tomorrow to keep earning'
+            : '<span class="live">● earning XP</span> — watch ads in the bottom-right corner';
+        }
+      } catch (e) {}
+    }
+
+    // Auth state
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      if (user) {
+        const pendingRef = new URLSearchParams(window.location.search).get('ref');
+        await loadUserAccount(pendingRef || '');
+      } else {
+        document.getElementById('farm-auth-panel').style.display = 'block';
+        document.getElementById('farm-dash-panel').style.display = 'none';
+        xpCount = 0;
+      }
+    });
+
+    // Auth form
+    let farmMode = 'signup';
+    document.querySelectorAll('.farm-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        farmMode = btn.dataset.mode;
+        document.querySelectorAll('.farm-tab').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('farm-auth-btn').textContent =
+          farmMode === 'login' ? 'Sign in →' : 'Create free account →';
+        document.getElementById('farm-err').style.display = 'none';
+      });
+    });
+
+    const FRIENDLY_AUTH_ERR = {
+      'auth/email-already-in-use':  'An account with that email already exists — sign in instead.',
+      'auth/user-not-found':        'No account found. Create one above.',
+      'auth/wrong-password':        'Incorrect password.',
+      'auth/invalid-credential':    'Invalid email or password.',
+      'auth/weak-password':         'Password must be at least 6 characters.',
+      'auth/invalid-email':         'Please enter a valid email address.',
+      'auth/too-many-requests':     'Too many attempts — try again in a few minutes.',
+    };
+
+    document.getElementById('farm-auth-btn').addEventListener('click', async () => {
+      const email    = document.getElementById('farm-email').value.trim();
+      const password = document.getElementById('farm-password').value;
+      const errEl    = document.getElementById('farm-err');
+      const btn      = document.getElementById('farm-auth-btn');
+      errEl.style.display = 'none';
+      if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+      btn.disabled = true;
+      btn.textContent = 'Please wait…';
+      try {
+        if (farmMode === 'login') {
+          await signInWithEmailAndPassword(auth, email, password);
+        } else {
+          await createUserWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err) {
+        errEl.textContent = FRIENDLY_AUTH_ERR[err.code] || `Error: ${err.message}`;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = farmMode === 'login' ? 'Sign in →' : 'Create free account →';
+      }
+    });
+
+    document.getElementById('farm-signout-btn').addEventListener('click', () => signOut(auth));
+
+    document.getElementById('farm-copy-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('farm-copy-btn');
+      const url = btn.dataset.url || 'https://scrollpay.app';
+      try {
+        await navigator.clipboard.writeText(url);
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+      } catch (e) {}
     });
 
     // ── Init ─────────────────────────────────────────────────────
