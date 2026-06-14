@@ -302,7 +302,7 @@
     <header class="hero">
       <span class="pill">₿ Mine Bitcoin with your attention</span>
       <h1>Get paid in Bitcoin<br /><span class="accent">for scrolling you already do.</span></h1>
-      <p class="sub">ScrollPay shows you ads while you browse and pays you in Bitcoin. Every ad you see earns XP — win the weekly BTC draw, or sell your XP directly to advertisers running campaigns.</p>
+      <p class="sub">ScrollPay shows you ads while you browse and pays you in Bitcoin. Every ad you see mines XP — win the weekly BTC draw, or sell your XP directly to advertisers running campaigns.</p>
       <div class="cta-row">
         <a class="btn-primary" href="#get-started">＋ Add to Chrome — Free</a>
         <a class="btn-ghost" href="#how">See how it works</a>
@@ -314,8 +314,8 @@
   <!-- ── Web farming / auth ── -->
   <section class="block farm-section" id="earn-now">
     <div class="wrap" style="text-align:center">
-      <h2>Start stacking XP right now</h2>
-      <p class="section-sub">No extension needed. Sign up, watch the ads on this page, and your XP accumulates in real time — sell it for Bitcoin or let it ride in the draw.</p>
+      <h2>Start mining Bitcoin right now</h2>
+      <p class="section-sub">No extension needed. Sign up, watch the ads on this page, and your XP mines in real time — sell it for Bitcoin or let it ride in the draw.</p>
 
       <!-- Not signed in -->
       <div id="farm-auth-panel">
@@ -340,17 +340,31 @@
         <div class="farm-dash">
           <div class="farm-xp">
             <div class="farm-xp-num" id="farm-xp-num">0</div>
-            <div class="farm-xp-lbl">₿ XP earned</div>
+            <div class="farm-xp-lbl">₿ XP mined</div>
             <div class="farm-today" id="farm-today-lbl"></div>
           </div>
           <div class="farm-info">
             <div class="farm-email" id="farm-user-email"></div>
+            <div id="farm-nickname-display" style="display:none;margin-bottom:10px;">
+              <span style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.5px;">Miner Handle</span><br>
+              <span id="farm-nickname-val" style="font-weight:700;color:var(--orange-dark);font-size:15px;"></span>
+              <span style="font-size:10px;color:var(--muted);margin-left:4px;">(permanent)</span>
+            </div>
+            <div id="farm-nickname-form" style="display:none;margin-bottom:10px;">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">Set Miner Handle</div>
+              <div style="display:flex;gap:6px;">
+                <input type="text" id="farm-nickname-input" placeholder="e.g. satoshi_21" maxlength="20" style="flex:1;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit;outline:none;" />
+                <button id="farm-nickname-btn" style="padding:7px 14px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;">Set</button>
+              </div>
+              <div id="farm-nickname-err" style="font-size:11px;color:#dc2626;margin-top:3px;display:none;"></div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;">Lowercase, numbers, underscores · 3–20 chars · Permanent</div>
+            </div>
             <div class="farm-ref-row">
               <span class="farm-ref-url" id="farm-ref-url">loading…</span>
               <button class="farm-copy-btn" id="farm-copy-btn">Copy link</button>
             </div>
             <div class="farm-status" id="farm-status">
-              <span class="live">● earning XP</span> — watch ads in the bottom-right corner
+              <span class="live">● mining XP</span> — watch ads in the bottom-right corner
             </div>
             <button class="farm-signout" id="farm-signout-btn">Sign out</button>
           </div>
@@ -362,7 +376,7 @@
   <section class="block" id="how">
     <div class="wrap">
       <h2>How it works</h2>
-      <p class="section-sub">Three steps. Earn XP, sell it for sats, or win it in the weekly BTC draw.</p>
+      <p class="section-sub">Three steps. Mine XP, sell it for sats, or win it in the weekly BTC draw.</p>
       <div class="steps">
         <div class="step">
           <div class="num">1</div>
@@ -371,13 +385,13 @@
         </div>
         <div class="step">
           <div class="num">2</div>
-          <h3>Earn nonstop while you scroll</h3>
+          <h3>Mine nonstop while you scroll</h3>
           <p>The widget runs continuous ads the whole time you're browsing. You choose the size — S, M, L, or XL — and your XP rate scales with it. Tap an ad for a bonus.</p>
         </div>
         <div class="step">
           <div class="num">3</div>
           <h3>Build your downline, stack Bitcoin</h3>
-          <p>Earn 100 XP per friend you recruit, 25 XP when they recruit someone, 10 XP for the level below that. Sell your XP for sats or let it ride in the weekly BTC draw. Early members earn a 1.5× bonus.</p>
+          <p>Mine 100 XP per friend you recruit, 25 XP when they recruit someone, 10 XP for the level below that. Sell your XP for sats or let it ride in the weekly BTC draw. Early members mine a 1.5× bonus.</p>
         </div>
       </div>
 
@@ -405,7 +419,7 @@
   <section class="block">
     <div class="wrap">
       <h2>Private by design</h2>
-      <p class="section-sub">Earning rewards shouldn't cost you your privacy.</p>
+      <p class="section-sub">Mining Bitcoin shouldn't cost you your privacy.</p>
       <div class="privacy-grid">
         <div class="priv">
           <div class="ic">🔒</div>
@@ -432,7 +446,7 @@
       <div class="faq">
         <details open>
           <summary>Is it really free?</summary>
-          <p>Yes. ScrollPay is free to install and use. You earn XP just by browsing with it on.</p>
+          <p>Yes. ScrollPay is free to install and use. You mine XP just by browsing with it on.</p>
         </details>
         <details>
           <summary>How do I win a prize?</summary>
@@ -472,7 +486,7 @@
 
   <section class="final" id="get-started">
     <div class="wrap">
-      <h2>Start earning XP today</h2>
+      <h2>Start mining XP today</h2>
       <!-- TODO: replace href with the Chrome Web Store listing URL once published -->
       <a class="btn-primary" href="#" id="install-btn">＋ Add to Chrome — Free</a>
       <p class="micro">Coming soon to the Chrome Web Store. <a href="#" id="pilot-link">Join the pilot →</a></p>
@@ -507,7 +521,7 @@
         <button data-size="md" class="dw-sz-active">M</button>
         <button data-size="lg">L</button>
       </div>
-      <span class="dw-status"><span class="dw-dot"></span> <span id="dw-status-text">earning</span></span>
+      <span class="dw-status"><span class="dw-dot"></span> <span id="dw-status-text">mining</span></span>
     </div>
     <div id="dw-ad-area">
       <div class="dw-ad-content">
@@ -519,7 +533,7 @@
       </div>
     </div>
     <div id="dw-footer">
-      <span class="dw-earnings">₿ <span id="dw-xp">0</span> XP earned</span>
+      <span class="dw-earnings">₿ <span id="dw-xp">0</span> XP mined</span>
       <div style="display:flex;gap:4px;align-items:center;">
         <button class="dw-share" id="dw-share" title="Copy referral link">🔗</button>
         <button class="dw-close" id="dw-close" aria-label="Hide demo widget">✕</button>
@@ -781,6 +795,14 @@
       const refUrl = u.refCode ? `scrollpay.app/r/${u.refCode}` : '';
       document.getElementById('farm-ref-url').textContent = refUrl;
       document.getElementById('farm-copy-btn').dataset.url = u.refCode ? `https://scrollpay.app/r/${u.refCode}` : 'https://scrollpay.app';
+      if (u.nickname) {
+        document.getElementById('farm-nickname-val').textContent = u.nickname;
+        document.getElementById('farm-nickname-display').style.display = 'block';
+        document.getElementById('farm-nickname-form').style.display = 'none';
+      } else {
+        document.getElementById('farm-nickname-display').style.display = 'none';
+        document.getElementById('farm-nickname-form').style.display = 'block';
+      }
     }
 
     async function earnXp(amount, type) {
@@ -804,7 +826,7 @@
           xpCount = userXpTotal;
           document.getElementById('dw-xp').textContent = userXpTotal.toLocaleString();
           document.getElementById('farm-status').innerHTML =
-            '<span class="live">● earning XP</span> — watch ads in the bottom-right corner';
+            '<span class="live">● mining XP</span> — watch ads in the bottom-right corner';
         }
       } catch (e) {}
     }
@@ -868,6 +890,44 @@
     });
 
     document.getElementById('farm-signout-btn').addEventListener('click', () => signOut(auth));
+
+    document.getElementById('farm-nickname-btn').addEventListener('click', async () => {
+      const input = document.getElementById('farm-nickname-input');
+      const errEl = document.getElementById('farm-nickname-err');
+      const btn = document.getElementById('farm-nickname-btn');
+      const nickname = input.value.trim().toLowerCase();
+      errEl.style.display = 'none';
+      if (!/^[a-z0-9_]{3,20}$/.test(nickname)) {
+        errEl.textContent = 'Lowercase letters, numbers, underscores only (3–20 chars).';
+        errEl.style.display = 'block';
+        return;
+      }
+      const token = await getToken();
+      if (!token) return;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const res = await fetch('/api/set-nickname', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ nickname }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('farm-nickname-val').textContent = nickname;
+          document.getElementById('farm-nickname-display').style.display = 'block';
+          document.getElementById('farm-nickname-form').style.display = 'none';
+        } else {
+          errEl.textContent = data.error || 'Could not set handle.';
+          errEl.style.display = 'block';
+        }
+      } catch (e) {
+        errEl.textContent = 'Network error — try again.';
+        errEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Set';
+    });
 
     document.getElementById('farm-copy-btn').addEventListener('click', async () => {
       const btn = document.getElementById('farm-copy-btn');

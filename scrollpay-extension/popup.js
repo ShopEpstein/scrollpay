@@ -72,10 +72,17 @@ async function loadUserData() {
 
     const noteEl = document.getElementById('referral-note');
     if (isEarlyAdopter) {
-      noteEl.textContent = 'Earn 150 XP per direct recruit (+L2: 38 XP, +L3: 15 XP) — early adopter bonus active';
+      noteEl.textContent = 'Mine 150 XP per direct recruit (+L2: 38 XP, +L3: 15 XP) — early adopter bonus active';
     } else {
-      noteEl.textContent = 'Earn 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)';
+      noteEl.textContent = 'Mine 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)';
     }
+  }
+
+  // Nickname display
+  if (data.nickname) {
+    document.getElementById('nickname-value').textContent = data.nickname;
+    document.getElementById('nickname-display').style.display = 'block';
+    document.getElementById('nickname-set-form').style.display = 'none';
   }
 
   // Load recent ads from local storage
@@ -135,6 +142,40 @@ document.getElementById('sell-xp-btn').addEventListener('click', async () => {
     if (res?.data?.refCode) url += '?ref=' + encodeURIComponent(res.data.refCode);
   }
   chrome.tabs.create({ url });
+});
+
+// Nickname save
+document.getElementById('nickname-save-btn').addEventListener('click', async () => {
+  const input = document.getElementById('nickname-input');
+  const errEl = document.getElementById('nickname-error');
+  const btn = document.getElementById('nickname-save-btn');
+  const nickname = input.value.trim().toLowerCase();
+
+  errEl.style.display = 'none';
+  if (!/^[a-z0-9_]{3,20}$/.test(nickname)) {
+    errEl.textContent = 'Lowercase letters, numbers, underscores only (3–20 chars).';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const result = await chrome.storage.local.get([USER_KEY]);
+  const userId = result[USER_KEY];
+  if (!userId) return;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  const res = await sendToBackground({ type: 'SET_NICKNAME', userId, nickname });
+  btn.disabled = false;
+  btn.textContent = 'Set';
+
+  if (res.success) {
+    document.getElementById('nickname-value').textContent = nickname;
+    document.getElementById('nickname-display').style.display = 'block';
+    document.getElementById('nickname-set-form').style.display = 'none';
+  } else {
+    errEl.textContent = res.error || 'Could not set handle.';
+    errEl.style.display = 'block';
+  }
 });
 
 // Init

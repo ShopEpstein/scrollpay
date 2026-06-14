@@ -367,6 +367,26 @@ async function updateLightningAddress(userId, lightningAddress) {
   }
 }
 
+const NICKNAME_RE = /^[a-z0-9_]{3,20}$/;
+
+async function setNickname(userId, nickname) {
+  if (!db || !userId) return { success: false, error: 'Not ready' };
+  if (!NICKNAME_RE.test(nickname)) return { success: false, error: 'Handle must be 3–20 lowercase letters, numbers, or underscores.' };
+  try {
+    const userRef = doc(db, 'sp_users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) return { success: false, error: 'User not found' };
+    if (snap.data().nickname) return { success: false, error: 'Handle already set — it cannot be changed.' };
+    const takenSnap = await getDocs(query(collection(db, 'sp_users'), where('nickname', '==', nickname)));
+    if (!takenSnap.empty) return { success: false, error: 'Handle already taken — choose another.' };
+    await updateDoc(userRef, { nickname });
+    return { success: true, nickname };
+  } catch (e) {
+    console.error('[ScrollPay] setNickname error:', e);
+    return { success: false, error: e.message };
+  }
+}
+
 // Message handler from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
@@ -410,6 +430,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'UPDATE_LIGHTNING': {
           const ok = await updateLightningAddress(message.userId, message.lightningAddress);
           sendResponse({ success: ok });
+          break;
+        }
+        case 'SET_NICKNAME': {
+          const result = await setNickname(message.userId, message.nickname);
+          sendResponse(result);
           break;
         }
         default:

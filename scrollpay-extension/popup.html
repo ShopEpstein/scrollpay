@@ -14,7 +14,24 @@
     <div class="header">
       <div class="logo-row">
         <span class="logo-text">SCROLLPAY</span>
-        <span class="status-badge"><span class="status-dot"></span> earning XP</span>
+        <span class="status-badge"><span class="status-dot"></span> mining XP</span>
+      </div>
+    </div>
+
+    <!-- Miner Handle -->
+    <div class="section nickname-section">
+      <div class="section-label">Miner Handle</div>
+      <div id="nickname-display" style="display:none">
+        <span class="nickname-badge" id="nickname-value"></span>
+        <div class="nickname-locked">Permanent — cannot be changed</div>
+      </div>
+      <div id="nickname-set-form">
+        <div class="nickname-row">
+          <input type="text" id="nickname-input" placeholder="e.g. satoshi_21" maxlength="20" />
+          <button class="copy-btn" id="nickname-save-btn">Set</button>
+        </div>
+        <div class="nickname-hint">Lowercase, numbers, underscores · 3–20 chars · Permanent</div>
+        <p id="nickname-error" class="nickname-err" style="display:none"></p>
       </div>
     </div>
 
@@ -68,7 +85,7 @@
         <span id="referral-link" class="referral-link">Loading...</span>
         <button class="copy-btn" id="copy-ref-btn">Copy</button>
       </div>
-      <div class="referral-note" id="referral-note">Earn 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)</div>
+      <div class="referral-note" id="referral-note">Mine 100 XP per direct recruit (+L2: 25 XP, +L3: 10 XP)</div>
     </div>
 
     <!-- Sell XP -->

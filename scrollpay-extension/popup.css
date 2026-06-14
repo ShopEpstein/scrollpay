@@ -307,6 +307,59 @@ body {
   color: #6b7280;
 }
 
+/* Nickname / Miner Handle */
+.nickname-section { padding-bottom: 10px; }
+
+.nickname-badge {
+  display: inline-block;
+  background: #0f172a;
+  color: #f7931a;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.nickname-locked {
+  font-size: 10px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.nickname-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.nickname-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color: #111827;
+  transition: border-color .15s;
+}
+
+.nickname-row input:focus { border-color: #f7931a; }
+
+.nickname-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.nickname-err {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 3px;
+}
+
 .btn-sell-xp {
   width: 100%;
   padding: 10px 16px;
