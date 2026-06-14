@@ -213,12 +213,13 @@
       background: #f8f9fa; border-top: 1px solid #e5e7eb;
     }
     #demo-widget .dw-earnings { font-size: 11px; font-weight: 600; color: #16a34a; }
-    #demo-widget .dw-close {
+    #demo-widget .dw-close, #demo-widget .dw-share {
       background: none; border: none; cursor: pointer;
       color: #9ca3af; font-size: 12px; font-weight: 500;
       padding: 2px 6px; border-radius: 4px; font-family: inherit;
     }
-    #demo-widget .dw-close:hover { background: #e5e7eb; color: #374151; }
+    #demo-widget .dw-close:hover, #demo-widget .dw-share:hover { background: #e5e7eb; color: #374151; }
+    #demo-widget .dw-share { font-size: 14px; }
     #demo-widget #dw-progress { height: 3px; background: #e5e7eb; }
     #demo-widget #dw-progress-fill {
       height: 100%; width: 0%; background: linear-gradient(90deg,#f97316,#fbbf24);
@@ -235,6 +236,10 @@
         <a class="nav-cta" href="#get-started">Add to Chrome</a>
       </div>
     </nav>
+
+    <div id="ref-banner" style="display:none;background:var(--cream);border:1px solid #fed7aa;border-radius:10px;padding:14px 20px;margin-bottom:20px;text-align:center;font-size:14px;">
+      🎟️ You were invited! Use code <strong id="ref-banner-code" style="font-size:15px;letter-spacing:1px;color:var(--orange-dark)"></strong> during setup to give your friend a bonus.
+    </div>
 
     <header class="hero">
       <span class="pill">🎟️ Earn XP · Win the weekly draw</span>
@@ -355,6 +360,15 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Show referral banner if ?ref= is in the URL
+    (function () {
+      const ref = new URLSearchParams(window.location.search).get('ref');
+      if (ref) {
+        document.getElementById('ref-banner-code').textContent = ref.toUpperCase();
+        document.getElementById('ref-banner').style.display = 'block';
+      }
+    })();
   </script>
 
   <!-- Demo widget — mirrors the real Chrome extension widget -->
@@ -379,7 +393,10 @@
     </div>
     <div id="dw-footer">
       <span class="dw-earnings">🎟️ <span id="dw-xp">0</span> XP earned</span>
-      <button class="dw-close" id="dw-close" aria-label="Hide demo widget">✕</button>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button class="dw-share" id="dw-share" title="Copy referral link">🔗</button>
+        <button class="dw-close" id="dw-close" aria-label="Hide demo widget">✕</button>
+      </div>
     </div>
     <div id="dw-progress"><div id="dw-progress-fill"></div></div>
   </div>
@@ -505,6 +522,17 @@
       w.classList.add('dw-hiding');
       w.classList.remove('dw-visible');
     }
+
+    document.getElementById('dw-share').addEventListener('click', async () => {
+      const btn = document.getElementById('dw-share');
+      try {
+        const ref = new URLSearchParams(window.location.search).get('ref');
+        const url = ref ? `https://scrollpay.app/r/${ref}` : 'https://scrollpay.app';
+        await navigator.clipboard.writeText(url);
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = '🔗'; }, 2000);
+      } catch (e) {}
+    });
 
     document.getElementById('dw-close').addEventListener('click', () => {
       hideWidget();

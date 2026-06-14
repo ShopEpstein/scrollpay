@@ -238,6 +238,23 @@
   color: #fff !important;
 }
 
+#scrollpay-widget .sp-share-btn {
+  all: initial !important;
+  font-family: 'Inter', sans-serif !important;
+  cursor: pointer !important;
+  color: #9ca3af !important;
+  font-size: 13px !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  transition: background 0.15s !important;
+  line-height: 1 !important;
+}
+
+#scrollpay-widget .sp-share-btn:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+}
+
 #scrollpay-widget .sp-close-btn {
   all: initial !important;
   font-family: 'Inter', sans-serif !important;
