@@ -125,5 +125,17 @@ document.getElementById('copy-ref-btn').addEventListener('click', async () => {
   }
 });
 
+// Sell XP button — opens market page pre-filled with refCode
+document.getElementById('sell-xp-btn').addEventListener('click', async () => {
+  const result = await chrome.storage.local.get([USER_KEY]);
+  const userId = result[USER_KEY];
+  let url = 'https://scrollpay.app/market';
+  if (userId) {
+    const res = await sendToBackground({ type: 'GET_BALANCE', userId });
+    if (res?.data?.refCode) url += '?ref=' + encodeURIComponent(res.data.refCode);
+  }
+  chrome.tabs.create({ url });
+});
+
 // Init
 loadUserData();
