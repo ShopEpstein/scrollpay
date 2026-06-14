@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
@@ -9,18 +9,19 @@ module.exports = async (req, res) => {
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     if (decoded.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
 
     if (req.method === 'GET') {
       const status = req.query.status || 'open';
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', status)
-        .orderBy('createdAt', 'desc')
         .limit(100)
         .get();
       const listings = [];
       snap.forEach(d => listings.push({ id: d.id, ...d.data() }));
+      // Newest first — no composite index needed
+      listings.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       return res.status(200).json({ listings });
     }
 

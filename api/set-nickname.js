@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const NICKNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     const userRef = db.collection('sp_users').doc(decoded.uid);
     const snap = await userRef.get();
     if (!snap.exists) return res.status(404).json({ error: 'Account not found.' });

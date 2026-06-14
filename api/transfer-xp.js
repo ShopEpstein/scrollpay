@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const MIN_TRANSFER = 10;
 
@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     const fromUid = decoded.uid;
 
     // Find recipient by nickname (lowercase) or refCode (uppercase)

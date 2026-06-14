@@ -1,4 +1,4 @@
-const { admin, db, initError } = require('./_firebase');
+const { admin, db, initError, verifyToken } = require('./_firebase');
 
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const decoded = await verifyToken(authHeader.slice(7));
     const { brandName, brandLogo, brandWebsite, headline, ctaText, ctaUrl, dailyBudgetXp, totalBudgetXp } = req.body;
 
     if (!brandName || !headline || !ctaText || !ctaUrl) {
