@@ -284,28 +284,53 @@
     let dragging = false;
     let startX, startY, startRight, startBottom;
 
-    handle.addEventListener('mousedown', (e) => {
+    function dragStart(clientX, clientY) {
       dragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      startX = clientX;
+      startY = clientY;
       const rect = widget.getBoundingClientRect();
       startRight = window.innerWidth - rect.right;
       startBottom = window.innerHeight - rect.bottom;
-      widget.style.transition = 'none';
+      // Must use setProperty with 'important' — the widget CSS uses !important
+      // on these properties, which defeats plain style.right = '...' assignment.
+      widget.style.setProperty('transition', 'none', 'important');
+    }
+
+    function dragMove(clientX, clientY) {
+      if (!dragging) return;
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      const newRight  = Math.max(0, Math.min(startRight  - dx, window.innerWidth  - widget.offsetWidth));
+      const newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - widget.offsetHeight));
+      widget.style.setProperty('right',  newRight  + 'px', 'important');
+      widget.style.setProperty('bottom', newBottom + 'px', 'important');
+    }
+
+    function dragEnd() {
+      if (!dragging) return;
+      dragging = false;
+      widget.style.removeProperty('transition');
+    }
+
+    // Mouse
+    handle.addEventListener('mousedown', (e) => {
+      dragStart(e.clientX, e.clientY);
       e.preventDefault();
     });
+    document.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
+    document.addEventListener('mouseup', dragEnd);
 
-    document.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      let newRight = Math.max(0, Math.min(startRight - dx, window.innerWidth - widget.offsetWidth));
-      let newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - widget.offsetHeight));
-      widget.style.right = newRight + 'px';
-      widget.style.bottom = newBottom + 'px';
-    });
-
-    document.addEventListener('mouseup', () => { dragging = false; });
+    // Touch (trackpads, touchscreens)
+    handle.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      dragStart(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      dragMove(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener('touchend', dragEnd);
   }
 
   // --- Dismiss ---
