@@ -731,7 +731,7 @@ async function loadFulfilledListings() {
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:2px">${(l.xpAmount||0).toLocaleString()} XP${chain !== '—' ? ' · ' + chain : ''}</div>
           ${txLink ? `<div style="margin-bottom:3px">${txLink}</div>` : ''}
-          <div style="font-size:11px;color:#6b7280">${esc(l.userEmail||'')} · ${date}</div>
+          <div style="font-size:11px;color:#6b7280">${l.nickname ? esc(l.nickname) : (l.refCode ? esc(l.refCode) : '—')} · ${date}</div>
           ${addTxBtn}
         </div>
       </div>`;

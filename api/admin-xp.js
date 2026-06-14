@@ -20,6 +20,21 @@ module.exports = async (req, res) => {
       const listings = [];
       snap.forEach(d => listings.push({ id: d.id, ...d.data() }));
       listings.sort((a, b) => (b.fulfilledAt?.seconds || 0) - (a.fulfilledAt?.seconds || 0));
+
+      const uids = [...new Set(listings.map(l => l.userId).filter(Boolean))];
+      const userMap = {};
+      await Promise.all(uids.map(async uid => {
+        try {
+          const u = await db.collection('sp_users').doc(uid).get();
+          if (u.exists) userMap[uid] = { nickname: u.data().nickname || '', refCode: u.data().refCode || '' };
+        } catch (_) {}
+      }));
+      listings.forEach(l => {
+        const u = userMap[l.userId] || {};
+        l.nickname = u.nickname || '';
+        l.refCode  = u.refCode  || '';
+      });
+
       return res.status(200).json({ listings });
     }
 
