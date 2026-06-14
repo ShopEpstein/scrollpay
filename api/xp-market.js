@@ -1,7 +1,7 @@
 const { admin, db, initError } = require('./_firebase');
 
-const XP_RATE_SATS = 10; // 1 XP = 10 sats (~$0.01 at $100k BTC)
 const MIN_SELL_XP = 100;
+const MIN_PRICE_SATS = 1;
 
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
@@ -10,8 +10,9 @@ module.exports = async (req, res) => {
     try {
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', 'open')
-        .orderBy('createdAt', 'desc')
-        .limit(50)
+        .orderBy('pricePerXp', 'asc')   // cheapest first — natural order book
+        .orderBy('createdAt', 'asc')
+        .limit(100)
         .get();
       const listings = [];
       snap.forEach(d => {
@@ -19,24 +20,29 @@ module.exports = async (req, res) => {
         listings.push({
           id: d.id,
           xpAmount: data.xpAmount,
+          pricePerXp: data.pricePerXp,
           satsRequested: data.satsRequested,
           createdAt: data.createdAt,
         });
       });
-      return res.status(200).json({ listings, ratePerXp: XP_RATE_SATS });
+      return res.status(200).json({ listings });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   }
 
   if (req.method === 'POST') {
-    const { refCode, xpAmount, btcAddress } = req.body;
-    if (!refCode || !xpAmount || !btcAddress) {
+    const { refCode, xpAmount, pricePerXp, btcAddress } = req.body;
+    if (!refCode || !xpAmount || !pricePerXp || !btcAddress) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     const amount = parseInt(xpAmount);
+    const price  = parseInt(pricePerXp);
     if (!amount || amount < MIN_SELL_XP) {
       return res.status(400).json({ error: `Minimum sell amount is ${MIN_SELL_XP} XP` });
+    }
+    if (!price || price < MIN_PRICE_SATS) {
+      return res.status(400).json({ error: `Minimum price is ${MIN_PRICE_SATS} sat per XP` });
     }
 
     try {
@@ -58,7 +64,6 @@ module.exports = async (req, res) => {
         });
       }
 
-      // Check no other open listing from this user
       const existing = await db.collection('sp_xp_listings')
         .where('userId', '==', userDoc.id)
         .where('status', '==', 'open')
@@ -68,18 +73,19 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'You already have an open listing. Cancel it first.' });
       }
 
-      const satsRequested = amount * XP_RATE_SATS;
+      const satsRequested = amount * price;
       const ref = await db.collection('sp_xp_listings').add({
         userId: userDoc.id,
         userEmail: userData.email || '',
         xpAmount: amount,
+        pricePerXp: price,
         satsRequested,
         btcAddress: btcAddress.trim(),
         status: 'open',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return res.status(200).json({ id: ref.id, satsRequested, ratePerXp: XP_RATE_SATS });
+      return res.status(200).json({ id: ref.id, satsRequested, pricePerXp: price });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
