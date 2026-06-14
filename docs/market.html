@@ -276,12 +276,11 @@
             <tr>
               <th>Price (sats / XP)</th>
               <th>XP amount</th>
-              <th>Total sats</th>
-              <th class="ob-hide-mobile">≈ Value (USD / ETH / SOL / USDC)</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody id="ob-body">
-            <tr><td colspan="4" class="ob-empty">Loading…</td></tr>
+            <tr><td colspan="3" class="ob-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -413,7 +412,7 @@
       lastListings = listings;
       const tbody = document.getElementById('ob-body');
       if (!listings.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
         return;
       }
       tbody.innerHTML = listings.map(l => {
@@ -421,16 +420,17 @@
         const usd  = satsToUsd(sats);
         const eth  = usdToEth(usd);
         const sol  = usdToSol(usd);
-        const convHtml = usd !== null
-          ? `<div class="td-usd">${fmtUsd(usd)}</div>
-             <div class="td-conversions">${fmtEth(eth)} · ${fmtSol(sol)} · ${fmtUsd(usd)} USDC</div>`
-          : '<div class="td-usd">—</div>';
+        const convLine = usd !== null
+          ? `<div class="td-conversions">${fmtUsd(usd)} · ${fmtEth(eth)} · ${fmtSol(sol)} · ${fmtUsd(usd)} USDC</div>`
+          : '';
         return `
           <tr>
             <td class="td-price">${(l.pricePerXp || 0).toLocaleString()} sats</td>
             <td class="td-xp">${(l.xpAmount || 0).toLocaleString()} XP</td>
-            <td class="td-total">${sats.toLocaleString()} sats</td>
-            <td class="ob-hide-mobile">${convHtml}</td>
+            <td class="td-total">
+              ${sats.toLocaleString()} sats
+              ${convLine}
+            </td>
           </tr>`;
       }).join('');
     }
@@ -458,7 +458,7 @@
         renderOrderBookRows(listings);
       } catch (e) {
         document.getElementById('ob-body').innerHTML =
-          '<tr><td colspan="4" class="ob-empty">Failed to load order book.</td></tr>';
+          '<tr><td colspan="3" class="ob-empty">Failed to load order book.</td></tr>';
       }
     }
 
