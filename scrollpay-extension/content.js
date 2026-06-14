@@ -121,7 +121,7 @@
       <div id="sp-drag-handle" aria-label="Drag to move">
         <span class="sp-drag-dots">⠿⠿⠿</span>
         <span class="sp-brand">SCROLLPAY</span>
-        <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">earning</span></span>
+        <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">mining</span></span>
       </div>
       <div id="sp-ad-area">
         <div class="sp-ad-content">
@@ -133,7 +133,7 @@
         </div>
       </div>
       <div id="sp-footer">
-        <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP earned</span>
+        <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP mined</span>
         <div class="sp-footer-controls">
           <div class="sp-size-controls" role="group" aria-label="Widget size">${sizeBtns}</div>
           <button class="sp-share-btn" id="sp-share-btn" aria-label="Copy referral link" title="Copy referral link">🔗</button>
@@ -208,7 +208,7 @@
         pendingXp += whole;
         setXpDisplay(displayedXp);
       }
-      const rateLabel = xpMultiplier !== 1.0 ? `earning ${xpMultiplier}×` : 'earning';
+      const rateLabel = xpMultiplier !== 1.0 ? `mining ${xpMultiplier}×` : 'mining';
       setStatus(rateLabel);
     } else if (capped) {
       setStatus('daily max');
