@@ -717,15 +717,14 @@ async function loadFulfilledListings() {
     }
     container.innerHTML = listings.map(l => {
       const chain = (l.txChain || '').toUpperCase() || '—';
+      const shortHash = l.txHash ? (l.txHash.length > 20 ? l.txHash.slice(0, 10) + '…' + l.txHash.slice(-8) : l.txHash) : '';
       const txLink = l.txUrl
-        ? `<a href="${esc(l.txUrl)}" target="_blank" rel="noopener" style="font-family:monospace;font-size:11px;color:#f7931a;word-break:break-all">${esc(l.txHash)}</a>`
+        ? `<a href="${esc(l.txUrl)}" target="_blank" rel="noopener" style="font-family:monospace;font-size:11px;color:#f7931a">${esc(shortHash)}</a>`
         : '';
       const date = l.fulfilledAt?._seconds
         ? new Date(l.fulfilledAt._seconds * 1000).toLocaleDateString()
         : '—';
-      const addTxBtn = !l.txHash
-        ? `<button class="add-tx-btn" data-listing-id="${l.id}" style="margin-top:5px;padding:4px 10px;background:#f7931a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">+ Add tx hash</button>`
-        : '';
+      const addTxBtn = `<button class="add-tx-btn" data-listing-id="${l.id}" style="margin-top:5px;padding:4px 10px;background:#f7931a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">${l.txHash ? '✏️ Edit tx' : '+ Add tx hash'}</button>`;
       return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:8px;">
         <span style="font-size:18px">✓</span>
         <div style="flex:1;min-width:0;">

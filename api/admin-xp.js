@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
       const listing = listingSnap.data();
 
       if (action === 'update-tx') {
-        const { txHash, txChain, xpAmount } = req.body;
+        let { txHash, txChain, xpAmount } = req.body;
         const txChainNorm = (txChain || 'btc').toLowerCase();
         const explorerBase = {
           btc:  'https://mempool.space/tx/',
@@ -89,6 +89,11 @@ module.exports = async (req, res) => {
           eth:  'https://etherscan.io/tx/',
           usdc: 'https://etherscan.io/tx/',
         }[txChainNorm] || 'https://mempool.space/tx/';
+        // If user pasted a full explorer URL, extract just the hash
+        if (txHash && txHash.startsWith('http')) {
+          const parts = txHash.replace(/\?.*$/, '').split('/');
+          txHash = parts[parts.length - 1];
+        }
         const update = {
           txHash: txHash || '',
           txChain: txChainNorm,
@@ -106,7 +111,11 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'fulfill') {
-        const { txHash, txChain } = req.body;
+        let { txHash, txChain } = req.body;
+        if (txHash && txHash.startsWith('http')) {
+          const parts = txHash.replace(/\?.*$/, '').split('/');
+          txHash = parts[parts.length - 1];
+        }
         const userRef = db.collection('sp_users').doc(listing.userId);
         const userSnap = await userRef.get();
         if (!userSnap.exists) return res.status(404).json({ error: 'User not found' });

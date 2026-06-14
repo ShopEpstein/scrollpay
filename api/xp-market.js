@@ -15,6 +15,7 @@ module.exports = async (req, res) => {
       const listings = [];
       snap.forEach(d => {
         const data = d.data();
+        if (!data.txHash) return; // only show verified payouts
         listings.push({
           id: d.id,
           xpAmount: data.xpAmount,
@@ -24,7 +25,7 @@ module.exports = async (req, res) => {
           fulfilledAt: data.fulfilledAt,
         });
       });
-      listings.sort((a, b) => (b.fulfilledAt?.seconds || 0) - (a.fulfilledAt?.seconds || 0));
+      listings.sort((a, b) => (b.fulfilledAt?._seconds || 0) - (a.fulfilledAt?._seconds || 0));
       return res.status(200).json({ listings });
     } catch (err) {
       return res.status(500).json({ error: err.message });
