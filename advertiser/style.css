@@ -291,7 +291,8 @@ nav {
 .preview-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
 
 .preview-widget {
-  width: 280px;
+  max-width: 280px;
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
@@ -507,6 +508,22 @@ nav {
 @media (max-width: 700px) {
   #stat-cards { grid-template-columns: repeat(2, 1fr); }
   #stats-section > div:nth-child(3) { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 16px; }
+  .nav-inner { padding: 0 14px; }
+  .card { padding: 18px 14px; }
+  .wizard-progress { gap: 4px; }
+  .wp-lbl { display: none; }
+  .wp-num { width: 24px; height: 24px; font-size: 11px; }
+  .modal-card { padding: 20px 14px; }
+  .ob-refresh { min-height: 36px; padding: 6px 12px; }
+}
+
+/* Ensure all buttons meet 36px min height for touch */
+.btn-primary, .btn-ghost-sm, .toggle-btn {
+  min-height: 36px;
 }
 
 /* Campaign approval status badges */
