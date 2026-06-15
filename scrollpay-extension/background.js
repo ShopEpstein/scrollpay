@@ -49,7 +49,7 @@ const POINTS_CONFIG = {
   referralBonusL3: 10,        // L3 downline
   earlyAdopterThreshold: 500, // first N users get the early bonus
   earlyAdopterMultiplier: 1.5,// +50% referral XP for early adopters
-  dailyCap: 50000,
+  dailyCap: Infinity,
   payoutThreshold: 1000
 };
 
