@@ -934,15 +934,35 @@
       w.classList.remove('dw-visible');
     }
 
+    async function shareUrl(url, btn, originalLabel) {
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'Join ScrollPay — Get paid to browse',
+            text: 'Earn Bitcoin just by browsing the web. Join with my link:',
+            url,
+          });
+        } else {
+          await navigator.clipboard.writeText(url);
+          if (btn) {
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = originalLabel; }, 2000);
+          }
+        }
+      } catch (e) {
+        // User cancelled share or clipboard denied — try clipboard as final fallback
+        try {
+          await navigator.clipboard.writeText(url);
+          if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = originalLabel; }, 2000); }
+        } catch (_) {}
+      }
+    }
+
     document.getElementById('dw-share').addEventListener('click', async () => {
       const btn = document.getElementById('dw-share');
-      try {
-        const ref = new URLSearchParams(window.location.search).get('ref');
-        const url = ref ? `https://scrollpay.app/r/${ref}` : 'https://scrollpay.app';
-        await navigator.clipboard.writeText(url);
-        btn.textContent = '✓';
-        setTimeout(() => { btn.textContent = '🔗'; }, 2000);
-      } catch (e) {}
+      // Use logged-in ref URL if available, otherwise site root
+      const url = document.getElementById('farm-copy-btn')?.dataset?.url || 'https://scrollpay.app';
+      await shareUrl(url, btn, '🔗');
     });
 
     document.getElementById('dw-close').addEventListener('click', () => {
@@ -1021,11 +1041,15 @@
     });
 
     document.getElementById('nudge-copy-btn').addEventListener('click', async () => {
-      const url = document.getElementById('farm-copy-btn')?.dataset?.url || 'https://scrollpay.app';
-      await navigator.clipboard.writeText(url).catch(() => {});
       const btn = document.getElementById('nudge-copy-btn');
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = 'Copy link'; hideNudge(); }, 1800);
+      const url = document.getElementById('farm-copy-btn')?.dataset?.url || 'https://scrollpay.app';
+      if (navigator.share) {
+        hideNudge();
+        await shareUrl(url, null, '');
+      } else {
+        await shareUrl(url, btn, 'Copy link');
+        setTimeout(hideNudge, 1800);
+      }
     });
 
     function startNudgeLoop() {
@@ -1330,11 +1354,7 @@
     document.getElementById('farm-copy-btn').addEventListener('click', async () => {
       const btn = document.getElementById('farm-copy-btn');
       const url = btn.dataset.url || 'https://scrollpay.app';
-      try {
-        await navigator.clipboard.writeText(url);
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
-      } catch (e) {}
+      await shareUrl(url, btn, 'Copy link');
     });
 
     document.getElementById('farm-gift-btn').addEventListener('click', async () => {
