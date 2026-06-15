@@ -333,6 +333,39 @@
       height: 100%; width: 0%; background: linear-gradient(90deg,#f7931a,#fbbf24);
       border-radius: 0 2px 2px 0;
     }
+  /* Referral nudge toast */
+  #ref-nudge {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: #0f172a;
+    border: 1px solid #f7931a;
+    border-radius: 12px;
+    padding: 14px 18px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+    max-width: calc(100vw - 48px);
+  }
+  #ref-nudge.nudge-visible { transform: translateX(-50%) translateY(0); }
+  #ref-nudge .nudge-text { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  #ref-nudge .nudge-text span { color: #f7931a; }
+  #ref-nudge .nudge-copy {
+    background: #f7931a; color: #fff; border: none; border-radius: 7px;
+    padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  #ref-nudge .nudge-copy:hover { background: #e6851a; }
+  #ref-nudge .nudge-close {
+    background: none; border: none; color: #64748b; cursor: pointer;
+    font-size: 16px; padding: 0 2px; line-height: 1; flex-shrink: 0;
+  }
+  #ref-nudge .nudge-close:hover { color: #f1f5f9; }
   </style>
 </head>
 <body>
@@ -721,6 +754,13 @@
     setInterval(fetchScrollPrice, 30000);
   </script>
 
+  <!-- Referral nudge toast -->
+  <div id="ref-nudge" role="alert" aria-live="polite">
+    <div class="nudge-text">🔥 Grow your team — share your link and earn <span>100 XP per recruit</span></div>
+    <button class="nudge-copy" id="nudge-copy-btn">Copy link</button>
+    <button class="nudge-close" id="nudge-close-btn" aria-label="Dismiss">×</button>
+  </div>
+
   <!-- Demo widget — mirrors the real Chrome extension widget -->
   <div id="demo-widget" aria-label="ScrollPay demo widget">
     <div id="dw-handle">
@@ -914,7 +954,73 @@
       }
     }, 1000);
 
-    setInterval(rotateAd, AD_ROTATE_MS);
+    // ── Activity-aware ad rotation (no XP when idle or tab hidden) ──
+    const IDLE_CUTOFF_MS = 60_000; // pause after 60s of no interaction
+    let lastActivity = Date.now();
+    let adRotateTimer = null;
+
+    function resetActivity() { lastActivity = Date.now(); }
+    ['scroll','mousemove','mousedown','keydown','touchstart','touchmove'].forEach(evt =>
+      window.addEventListener(evt, resetActivity, { passive: true })
+    );
+
+    function isPageActive() {
+      return document.visibilityState === 'visible'
+        && (Date.now() - lastActivity) < IDLE_CUTOFF_MS;
+    }
+
+    function scheduleNextRotation() {
+      clearTimeout(adRotateTimer);
+      adRotateTimer = setTimeout(() => {
+        if (isPageActive()) rotateAd();
+        scheduleNextRotation();
+      }, AD_ROTATE_MS);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') resetActivity();
+    });
+
+    scheduleNextRotation();
+
+    // ── Referral nudge toast ─────────────────────────────────────
+    const NUDGE_INTERVAL_MS = 3 * 60_000; // every 3 minutes
+    let nudgeTimer = null;
+    let nudgeDismissed = false;
+
+    function showNudge() {
+      if (!currentUser || nudgeDismissed) return;
+      const url = document.getElementById('farm-copy-btn')?.dataset?.url;
+      if (!url || url === 'https://scrollpay.app') return; // no ref code yet
+      document.getElementById('ref-nudge').classList.add('nudge-visible');
+      setTimeout(hideNudge, 8000); // auto-hide after 8s
+    }
+
+    function hideNudge() {
+      document.getElementById('ref-nudge').classList.remove('nudge-visible');
+    }
+
+    document.getElementById('nudge-close-btn').addEventListener('click', () => {
+      nudgeDismissed = true;
+      hideNudge();
+    });
+
+    document.getElementById('nudge-copy-btn').addEventListener('click', async () => {
+      const url = document.getElementById('farm-copy-btn')?.dataset?.url || 'https://scrollpay.app';
+      await navigator.clipboard.writeText(url).catch(() => {});
+      const btn = document.getElementById('nudge-copy-btn');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = 'Copy link'; hideNudge(); }, 1800);
+    });
+
+    function startNudgeLoop() {
+      clearInterval(nudgeTimer);
+      nudgeTimer = setInterval(() => {
+        if (isPageActive() && !nudgeDismissed) showNudge();
+      }, NUDGE_INTERVAL_MS);
+      // First nudge after 90s so they've had time to get into it
+      setTimeout(showNudge, 90_000);
+    }
 
     // ── Waitlist form ────────────────────────────────────────────
 
@@ -1017,6 +1123,7 @@
         document.getElementById('farm-nickname-form').style.display = 'block';
       }
       loadLeaderboard();
+      startNudgeLoop();
     }
 
     // ── Leaderboard ──────────────────────────────────────────────
