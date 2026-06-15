@@ -229,25 +229,32 @@ async function awardPointsBatched(userId, total, type = 'referral') {
 async function recordClick(userId, adId, impressionId) {
   if (!db || !userId) return false;
 
-  try {
-    // Update impression record
-    if (impressionId) {
+  // Mark impression as clicked (best-effort)
+  if (impressionId) {
+    try {
       const impRef = doc(db, 'sp_impressions', impressionId);
       await updateDoc(impRef, { clicked: true });
-    }
+    } catch (_) {}
+  }
 
-    // Update ad click count
-    const adRef = doc(db, 'sp_ads', adId);
-    await updateDoc(adRef, { clicks: increment(1) });
-
-    // Award click bonus
+  // Award click XP — this is what matters for the user
+  try {
     await awardPoints(userId, POINTS_CONFIG.perClick, 'click');
-
-    return true;
   } catch (e) {
-    console.error('[ScrollPay] recordClick error:', e);
+    console.error('[ScrollPay] recordClick awardPoints error:', e);
     return false;
   }
+
+  // Increment ad click counter via server (Firestore rules block client writes to sp_ads counters)
+  try {
+    await fetch('https://scrollpay.app/api/record-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adId }),
+    });
+  } catch (_) {}
+
+  return true;
 }
 
 async function getUserBalance(userId) {
