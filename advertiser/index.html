@@ -119,6 +119,47 @@
         </div>
         <div id="inbox-container"></div>
       </div>
+
+      <!-- Admin-only: SEO Partners -->
+      <div id="partners-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:16px;">
+          <h2 style="font-size:20px;font-weight:700;">🔗 SEO Partners</h2>
+          <div style="display:flex;gap:8px;">
+            <button id="partners-refresh" class="btn-ghost-sm">Refresh</button>
+            <button id="new-partner-btn" class="btn-primary" style="font-size:13px;padding:6px 14px;">+ Add Partner</button>
+          </div>
+        </div>
+        <div id="partners-container"></div>
+
+        <!-- Add/Edit partner form -->
+        <div id="partner-form-wrap" style="display:none;margin-top:24px;">
+          <div class="card" style="max-width:540px;">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;" id="partner-form-title">Add Partner</h3>
+            <input type="hidden" id="pf-id" value="" />
+            <div class="field"><label>Project Name <span class="req">*</span></label><input type="text" id="pf-name" placeholder="My Project" /></div>
+            <div class="field"><label>URL Slug <span class="req">*</span></label><input type="text" id="pf-slug" placeholder="my-project" /><span class="hint">scrollpay.app/partners/<b id="slug-preview">my-project</b></span></div>
+            <div class="field"><label>Description</label><textarea id="pf-desc" rows="3" placeholder="Short description of the project..." style="width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;resize:vertical;"></textarea></div>
+            <div class="field"><label>Logo URL</label><input type="url" id="pf-logo" placeholder="https://example.com/logo.png" /></div>
+            <div class="field"><label>Website</label><input type="url" id="pf-website" placeholder="https://example.com" /></div>
+            <div class="field"><label>Twitter / X URL</label><input type="url" id="pf-twitter" placeholder="https://twitter.com/project" /></div>
+            <div class="field"><label>Telegram URL</label><input type="url" id="pf-telegram" placeholder="https://t.me/project" /></div>
+            <div class="field"><label>Contract Address</label><input type="text" id="pf-ca" placeholder="Token contract address" /></div>
+            <div class="field"><label>Chain</label>
+              <select id="pf-chain" style="padding:8px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;">
+                <option value="solana">Solana</option>
+                <option value="ethereum">Ethereum</option>
+                <option value="base">Base</option>
+                <option value="bsc">BSC</option>
+              </select>
+            </div>
+            <p id="partner-form-err" class="err-msg hidden"></p>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button id="pf-submit" class="btn-primary">Save Partner</button>
+              <button id="pf-cancel" class="btn-ghost-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partners — ScrollPay</title>
+  <meta name="description" content="Discover projects and companies partnered with ScrollPay — the Bitcoin attention economy." />
+  <link rel="icon" href="/icon128.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #1e293b; }
+    .nav-brand img { width: 32px; height: 32px; border-radius: 6px; }
+    .nav-home { font-size: 13px; color: #94a3b8; transition: color .15s; }
+    .nav-home:hover { color: #f7931a; }
+
+    header { max-width: 900px; margin: 56px auto 40px; padding: 0 24px; text-align: center; }
+    header h1 { font-size: 40px; font-weight: 800; margin-bottom: 14px; }
+    header h1 span { color: #f7931a; }
+    header p { font-size: 17px; color: #94a3b8; line-height: 1.6; max-width: 560px; margin: 0 auto; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto 80px; padding: 0 24px; }
+
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 24px; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; gap: 14px; }
+    .card:hover { border-color: #f7931a; transform: translateY(-2px); }
+
+    .card-top { display: flex; align-items: center; gap: 14px; }
+    .p-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid #334155; flex-shrink: 0; }
+    .p-initial { width: 48px; height: 48px; border-radius: 10px; background: linear-gradient(135deg,#f7931a,#e6851a); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .p-name { font-size: 17px; font-weight: 700; color: #f8fafc; }
+    .p-chain { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .p-desc { font-size: 13px; color: #94a3b8; line-height: 1.6; flex: 1; }
+    .card-link { display: block; padding: 9px 0; text-align: center; border-radius: 8px; background: #f7931a; color: #fff; font-size: 13px; font-weight: 700; transition: background .15s; margin-top: auto; }
+    .card-link:hover { background: #e6851a; }
+
+    #loading { text-align: center; padding: 80px 24px; color: #475569; }
+    #empty { text-align: center; padding: 80px 24px; color: #475569; display: none; }
+
+    footer { text-align: center; padding: 32px 24px; color: #475569; font-size: 13px; border-top: 1px solid #1e293b; }
+    footer a { color: #f7931a; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="/"><img src="/icon128.png" alt="ScrollPay" /></a>
+    <a class="nav-home" href="/">← Home</a>
+  </nav>
+
+  <header>
+    <h1>ScrollPay <span>Partners</span></h1>
+    <p>Projects and companies boosting their reach through the ScrollPay attention network.</p>
+  </header>
+
+  <div id="loading">Loading partners…</div>
+  <div id="empty">No partners listed yet — check back soon.</div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <a href="/">ScrollPay</a> · <a href="/advertiser">Advertise</a> · <a href="/privacy">Privacy</a>
+  </footer>
+
+  <script>
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function loadPartners() {
+      try {
+        const res = await fetch('/api/partners');
+        const { partners } = await res.json();
+        document.getElementById('loading').style.display = 'none';
+        if (!partners || partners.length === 0) {
+          document.getElementById('empty').style.display = 'block';
+          return;
+        }
+        const grid = document.getElementById('grid');
+        partners.forEach(p => {
+          const logoHtml = p.logo
+            ? '<img class="p-logo" src="' + esc(p.logo) + '" alt="' + esc(p.name) + '" />'
+            : '<div class="p-initial">' + esc((p.name||'?')[0].toUpperCase()) + '</div>';
+          grid.innerHTML += `
+            <div class="card">
+              <div class="card-top">
+                ${logoHtml}
+                <div>
+                  <div class="p-name">${esc(p.name)}</div>
+                  ${p.chain ? '<div class="p-chain">' + esc(p.chain) + '</div>' : ''}
+                </div>
+              </div>
+              ${p.description ? '<p class="p-desc">' + esc(p.description) + '</p>' : ''}
+              <a class="card-link" href="/partners/${esc(p.slug)}">View Project →</a>
+            </div>
+          `;
+        });
+      } catch(_) {
+        document.getElementById('loading').textContent = 'Failed to load — try refreshing.';
+      }
+    }
+
+    loadPartners();
+  </script>
+</body>
+</html>

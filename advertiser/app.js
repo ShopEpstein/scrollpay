@@ -54,7 +54,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); }
+    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); }
   } else {
     showView('view-auth');
   }
@@ -924,6 +924,173 @@ async function sendAdminReply(userId, refCode, btn, textarea) {
 }
 
 document.getElementById('inbox-refresh')?.addEventListener('click', loadInbox);
+
+// ── SEO Partners (admin only) ────────────────────────────────────
+
+let partnersData = [];
+
+async function loadPartners() {
+  const section = document.getElementById('partners-section');
+  const container = document.getElementById('partners-container');
+  section.style.display = 'block';
+  container.innerHTML = '<div class="loading">Loading partners…</div>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-partners', { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+    partnersData = data.partners || [];
+    renderPartnersTable();
+  } catch (e) {
+    container.innerHTML = '<p class="err-msg" style="display:block">Failed to load: ' + esc(e.message) + '</p>';
+  }
+}
+
+function renderPartnersTable() {
+  const container = document.getElementById('partners-container');
+  if (partnersData.length === 0) {
+    container.innerHTML = '<p style="color:#6b7280;font-size:14px;">No partners yet. Add the first one above.</p>';
+    return;
+  }
+  container.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead><tr style="border-bottom:2px solid #e5e7eb;">
+        <th style="text-align:left;padding:8px 4px;">Name</th>
+        <th style="text-align:left;padding:8px 4px;">Slug</th>
+        <th style="text-align:left;padding:8px 4px;">Chain</th>
+        <th style="text-align:center;padding:8px 4px;">Status</th>
+        <th style="text-align:right;padding:8px 4px;">Actions</th>
+      </tr></thead>
+      <tbody>
+        ${partnersData.map(p => `
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:10px 4px;font-weight:600;">${esc(p.name)}</td>
+            <td style="padding:10px 4px;color:#6b7280;">/partners/${esc(p.slug)}</td>
+            <td style="padding:10px 4px;color:#6b7280;">${esc(p.chain || 'solana')}</td>
+            <td style="padding:10px 4px;text-align:center;">
+              <button class="toggle-btn ${p.active ? 'active' : 'paused'} partner-toggle-btn"
+                data-id="${esc(p.id)}" data-active="${p.active}">
+                ${p.active ? '● Live' : '○ Hidden'}
+              </button>
+            </td>
+            <td style="padding:10px 4px;text-align:right;">
+              <button class="toggle-btn paused partner-edit-btn" data-id="${esc(p.id)}" style="margin-right:4px;">✏️ Edit</button>
+              <button class="toggle-btn paused partner-del-btn" data-id="${esc(p.id)}" style="background:#fee2e2;color:#dc2626;">🗑 Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  document.querySelectorAll('.partner-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const nowActive = btn.dataset.active === 'true';
+      const token = await auth.currentUser.getIdToken();
+      await fetch('/api/admin-partners', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, active: !nowActive }),
+      });
+      loadPartners();
+    });
+  });
+
+  document.querySelectorAll('.partner-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = partnersData.find(x => x.id === btn.dataset.id);
+      if (!p) return;
+      openPartnerForm(p);
+    });
+  });
+
+  document.querySelectorAll('.partner-del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this partner page?')) return;
+      const token = await auth.currentUser.getIdToken();
+      await fetch('/api/admin-partners', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: btn.dataset.id }),
+      });
+      loadPartners();
+    });
+  });
+}
+
+function openPartnerForm(p = null) {
+  document.getElementById('partner-form-wrap').style.display = 'block';
+  document.getElementById('partner-form-title').textContent = p ? 'Edit Partner' : 'Add Partner';
+  document.getElementById('pf-id').value = p ? p.id : '';
+  document.getElementById('pf-name').value = p ? p.name : '';
+  document.getElementById('pf-slug').value = p ? p.slug : '';
+  document.getElementById('pf-desc').value = p ? p.description : '';
+  document.getElementById('pf-logo').value = p ? p.logo : '';
+  document.getElementById('pf-website').value = p ? p.website : '';
+  document.getElementById('pf-twitter').value = p ? p.twitter : '';
+  document.getElementById('pf-telegram').value = p ? p.telegram : '';
+  document.getElementById('pf-ca').value = p ? p.contractAddress : '';
+  document.getElementById('pf-chain').value = p ? (p.chain || 'solana') : 'solana';
+  document.getElementById('slug-preview').textContent = p ? p.slug : '';
+  document.getElementById('partner-form-err').classList.add('hidden');
+  document.getElementById('partner-form-wrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.getElementById('new-partner-btn')?.addEventListener('click', () => openPartnerForm());
+document.getElementById('partners-refresh')?.addEventListener('click', loadPartners);
+
+document.getElementById('pf-slug')?.addEventListener('input', e => {
+  document.getElementById('slug-preview').textContent = e.target.value || '';
+});
+document.getElementById('pf-name')?.addEventListener('input', e => {
+  if (!document.getElementById('pf-id').value) {
+    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    document.getElementById('pf-slug').value = slug;
+    document.getElementById('slug-preview').textContent = slug;
+  }
+});
+
+document.getElementById('pf-cancel')?.addEventListener('click', () => {
+  document.getElementById('partner-form-wrap').style.display = 'none';
+});
+
+document.getElementById('pf-submit')?.addEventListener('click', async () => {
+  const id = document.getElementById('pf-id').value;
+  const name = document.getElementById('pf-name').value.trim();
+  const slug = document.getElementById('pf-slug').value.trim();
+  if (!name || !slug) {
+    showError('partner-form-err', 'Name and slug are required.');
+    return;
+  }
+  const body = {
+    name, slug,
+    description: document.getElementById('pf-desc').value.trim(),
+    logo: document.getElementById('pf-logo').value.trim(),
+    website: document.getElementById('pf-website').value.trim(),
+    twitter: document.getElementById('pf-twitter').value.trim(),
+    telegram: document.getElementById('pf-telegram').value.trim(),
+    contractAddress: document.getElementById('pf-ca').value.trim(),
+    chain: document.getElementById('pf-chain').value,
+  };
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const method = id ? 'PATCH' : 'POST';
+    if (id) body.id = id;
+    const res = await fetch('/api/admin-partners', {
+      method,
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save');
+    document.getElementById('partner-form-wrap').style.display = 'none';
+    loadPartners();
+  } catch (e) {
+    showError('partner-form-err', e.message);
+  }
+});
 
 // ── Helpers ─────────────────────────────────────────────────────
 

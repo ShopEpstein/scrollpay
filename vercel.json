@@ -7,6 +7,10 @@
     { "source": "/market",           "destination": "/docs/market.html" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
     { "source": "/advertiser/(.*)", "destination": "/advertiser/$1" },
+    { "source": "/partners",        "destination": "/docs/partners/index.html" },
+    { "source": "/partners/:slug",  "destination": "/docs/partners/partner.html" },
+    { "source": "/api/partners",    "destination": "/api/partners.js" },
+    { "source": "/api/admin-partners", "destination": "/api/admin-partners.js" },
     { "source": "/",                "destination": "/docs/index.html" },
     { "source": "/(.*)",            "destination": "/docs/$1" }
   ]

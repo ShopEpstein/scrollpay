@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="page-title">Partner — ScrollPay</title>
+  <meta id="page-desc" name="description" content="Discover this ScrollPay partner project." />
+  <link rel="icon" href="/icon128.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Nav */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #1e293b; }
+    .nav-brand img { width: 32px; height: 32px; border-radius: 6px; }
+    .nav-back { font-size: 13px; color: #94a3b8; transition: color .15s; }
+    .nav-back:hover { color: #f7931a; }
+
+    /* Hero */
+    .hero { max-width: 800px; margin: 48px auto 0; padding: 0 24px; }
+    .hero-top { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+    .partner-logo { width: 72px; height: 72px; border-radius: 14px; object-fit: cover; border: 1px solid #1e293b; flex-shrink: 0; }
+    .partner-initial { width: 72px; height: 72px; border-radius: 14px; background: linear-gradient(135deg,#f7931a,#e6851a); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .hero-name { font-size: 32px; font-weight: 800; color: #f8fafc; line-height: 1.15; }
+    .hero-desc { font-size: 16px; color: #94a3b8; line-height: 1.7; margin-bottom: 28px; }
+
+    /* Links */
+    .links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+    .link-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; border: 1px solid #334155; color: #e2e8f0; background: #1e293b; transition: background .15s, border-color .15s; }
+    .link-btn:hover { background: #334155; border-color: #475569; }
+    .link-btn.primary { background: #f7931a; border-color: #f7931a; color: #fff; }
+    .link-btn.primary:hover { background: #e6851a; border-color: #e6851a; }
+
+    /* Token info strip */
+    .token-strip { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px 20px; margin-bottom: 32px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+    .token-field label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
+    .token-field span { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+    .ca-text { font-family: monospace; font-size: 12px; word-break: break-all; }
+    .copy-btn { cursor: pointer; background: #334155; border: none; color: #94a3b8; border-radius: 4px; padding: 2px 8px; font-size: 11px; margin-left: 8px; transition: background .15s; }
+    .copy-btn:hover { background: #475569; color: #f8fafc; }
+
+    /* Chart */
+    .chart-section { margin-bottom: 48px; }
+    .section-title { font-size: 15px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    #partner-chart { width: 100%; height: 420px; border: none; border-radius: 10px; display: none; }
+
+    /* Footer */
+    footer { text-align: center; padding: 40px 24px; color: #475569; font-size: 13px; border-top: 1px solid #1e293b; margin-top: 24px; }
+    footer a { color: #f7931a; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; letter-spacing: .5px; background: #f7931a22; color: #f7931a; margin-left: 10px; vertical-align: middle; }
+
+    #loading { text-align: center; padding: 80px 24px; color: #475569; }
+    #error-msg { text-align: center; padding: 80px 24px; color: #ef4444; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="/"><img src="/icon128.png" alt="ScrollPay" /></a>
+    <a class="nav-back" href="/partners">← All Partners</a>
+  </nav>
+
+  <div id="loading">Loading partner…</div>
+  <div id="error-msg" style="display:none">Partner not found.</div>
+
+  <main id="main-content" style="display:none">
+    <div class="hero">
+      <div class="hero-top">
+        <div id="logo-wrap"></div>
+        <div>
+          <div class="hero-name" id="p-name"></div>
+          <span class="badge">ScrollPay Partner</span>
+        </div>
+      </div>
+      <p class="hero-desc" id="p-desc"></p>
+
+      <div class="links" id="p-links"></div>
+
+      <div id="token-wrap" style="display:none">
+        <div class="token-strip" id="token-strip"></div>
+      </div>
+
+      <div class="chart-section" id="chart-section" style="display:none">
+        <div class="section-title">Live Chart</div>
+        <iframe id="partner-chart" allow="autoplay; encrypted-media" loading="lazy"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Powered by <a href="/">ScrollPay</a> · <a href="/privacy">Privacy</a>
+  </footer>
+
+  <script>
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function getSlug() {
+      const parts = window.location.pathname.replace(/\/+$/, '').split('/');
+      return parts[parts.length - 1];
+    }
+
+    async function loadPartner() {
+      const slug = getSlug();
+      if (!slug || slug === 'partners') {
+        window.location.href = '/partners';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/partners?slug=' + encodeURIComponent(slug));
+        if (!res.ok) throw new Error('not found');
+        const { partner: p } = await res.json();
+
+        document.title = p.name + ' — ScrollPay Partner';
+        document.getElementById('page-title').textContent = p.name + ' — ScrollPay Partner';
+        document.getElementById('page-desc').setAttribute('content', p.description || ('Discover ' + p.name + ' on ScrollPay.'));
+
+        // Logo
+        const logoWrap = document.getElementById('logo-wrap');
+        if (p.logo) {
+          logoWrap.innerHTML = '<img class="partner-logo" src="' + esc(p.logo) + '" alt="' + esc(p.name) + '" />';
+        } else {
+          logoWrap.innerHTML = '<div class="partner-initial">' + esc((p.name||'?')[0].toUpperCase()) + '</div>';
+        }
+
+        document.getElementById('p-name').textContent = p.name;
+        document.getElementById('p-desc').textContent = p.description || '';
+
+        // Links
+        const links = document.getElementById('p-links');
+        if (p.website) links.innerHTML += '<a class="link-btn primary" href="' + esc(p.website) + '" target="_blank" rel="noopener">🌐 Website</a>';
+        if (p.twitter) links.innerHTML += '<a class="link-btn" href="' + esc(p.twitter) + '" target="_blank" rel="noopener">𝕏 Twitter</a>';
+        if (p.telegram) links.innerHTML += '<a class="link-btn" href="' + esc(p.telegram) + '" target="_blank" rel="noopener">✈ Telegram</a>';
+
+        // Token info
+        if (p.contractAddress) {
+          document.getElementById('token-wrap').style.display = 'block';
+          const strip = document.getElementById('token-strip');
+          const shortCA = p.contractAddress.slice(0,6) + '…' + p.contractAddress.slice(-4);
+          strip.innerHTML = `
+            <div class="token-field">
+              <label>Chain</label>
+              <span>${esc(p.chain || 'Solana')}</span>
+            </div>
+            <div class="token-field" style="flex:1">
+              <label>Contract Address</label>
+              <span class="ca-text">${esc(p.contractAddress)}</span>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('${esc(p.contractAddress)}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+            </div>
+          `;
+
+          // Fetch live price from DexScreener
+          try {
+            const dr = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + encodeURIComponent(p.contractAddress));
+            const dd = await dr.json();
+            const pair = (dd.pairs || []).sort((a,b) => (b.liquidity?.usd||0) - (a.liquidity?.usd||0))[0];
+            if (pair) {
+              const price = parseFloat(pair.priceUsd);
+              const change = parseFloat(pair.priceChange?.h24 || 0);
+              const fmt = n => n >= 1e6 ? '$'+(n/1e6).toFixed(1)+'M' : n >= 1e3 ? '$'+(n/1e3).toFixed(1)+'K' : '$'+n.toFixed(0);
+              strip.innerHTML += `
+                <div class="token-field">
+                  <label>Price</label>
+                  <span>${price < 0.01 ? '$'+price.toFixed(8) : '$'+price.toFixed(6)}</span>
+                </div>
+                <div class="token-field">
+                  <label>24H</label>
+                  <span style="color:${change>=0?'#22c55e':'#ef4444'}">${change>=0?'+':''}${change.toFixed(2)}%</span>
+                </div>
+                ${pair.marketCap ? '<div class="token-field"><label>Mkt Cap</label><span>'+fmt(pair.marketCap)+'</span></div>' : ''}
+              `;
+
+              if (pair.pairAddress) {
+                const chartUrl = 'https://dexscreener.com/' + (p.chain||'solana').toLowerCase() + '/' + pair.pairAddress + '?embed=1&theme=dark&trades=0&info=0&chartLeftToolbar=0';
+                const chartFrame = document.getElementById('partner-chart');
+                chartFrame.src = chartUrl;
+                chartFrame.style.display = 'block';
+                document.getElementById('chart-section').style.display = 'block';
+              }
+            }
+          } catch(_) {}
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+      } catch(_) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-msg').style.display = 'block';
+      }
+    }
+
+    loadPartner();
+  </script>
+</body>
+</html>
