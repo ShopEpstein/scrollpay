@@ -34,13 +34,31 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'reject') {
-        await db.collection('sp_ads').doc(adId).update({
-          status: 'rejected',
-          active: false,
-          rejectionReason: rejectionReason || '',
-          rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        const adRef = db.collection('sp_ads').doc(adId);
+        const adSnap = await adRef.get();
+        if (!adSnap.exists) return res.status(404).json({ error: 'Campaign not found' });
+        const ad = adSnap.data();
+        const alreadyRejected = ad.status === 'rejected';
+
+        await db.runTransaction(async (t) => {
+          t.update(adRef, {
+            status: 'rejected',
+            active: false,
+            rejectionReason: rejectionReason || '',
+            rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          // Refund XP to owner on first rejection only
+          if (!alreadyRejected && ad.xpPaid && ad.ownerId) {
+            const ownerRef = db.collection('sp_users').doc(ad.ownerId);
+            const ownerSnap = await t.get(ownerRef);
+            if (ownerSnap.exists) {
+              t.update(ownerRef, {
+                totalSats: admin.firestore.FieldValue.increment(ad.xpPaid),
+              });
+            }
+          }
         });
-        return res.status(200).json({ ok: true });
+        return res.status(200).json({ ok: true, xpRefunded: alreadyRejected ? 0 : (ad.xpPaid || 0) });
       }
 
       delete updates.ownerId;

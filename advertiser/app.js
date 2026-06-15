@@ -4,7 +4,7 @@ import {
   signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import {
-  getFirestore, collection, doc, getDocs, query, where
+  getFirestore, collection, doc, getDoc, getDocs, query, where
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -23,8 +23,12 @@ const db = getFirestore(app);
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 function isAdmin() { return auth.currentUser?.email === ADMIN_EMAIL; }
 
+const CAMPAIGN_COST_XP = 50000;
+
 // In-progress campaign data collected across steps
 const draft = { brand: {}, ad: {}, budget: {} };
+
+let advertiserXpBalance = null; // loaded lazily when wizard opens
 
 // ── View switching ──────────────────────────────────────────────
 
@@ -295,14 +299,23 @@ async function rejectCampaign(adId) {
   }
 }
 
-document.getElementById('new-campaign-btn').addEventListener('click', () => {
+document.getElementById('new-campaign-btn').addEventListener('click', async () => {
   Object.assign(draft, { brand: {}, ad: {}, budget: {} });
-  // Clear form fields
   ['brand-name','brand-logo','brand-website','ad-headline','ad-cta','ad-url','daily-budget','total-budget']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('headline-chars').textContent = '0';
   hide('campaign-summary');
   hide('launch-error');
+
+  // Load advertiser XP balance (skip for admin)
+  advertiserXpBalance = null;
+  if (!isAdmin() && auth.currentUser) {
+    try {
+      const snap = await getDoc(doc(db, 'sp_users', auth.currentUser.uid));
+      advertiserXpBalance = snap.exists() ? (snap.data().totalSats || 0) : 0;
+    } catch (_) { advertiserXpBalance = null; }
+  }
+
   showStep(1);
   showView('view-create');
 });
@@ -385,7 +398,17 @@ function updateSummary() {
   const daily = parseInt(document.getElementById('daily-budget').value) || 0;
   const total = parseInt(document.getElementById('total-budget').value) || 0;
   const box = document.getElementById('campaign-summary');
+  const launchBtn = document.getElementById('launch-btn');
   box.classList.remove('hidden');
+
+  const bal = advertiserXpBalance;
+  const hasEnough = isAdmin() || bal === null || bal >= CAMPAIGN_COST_XP;
+  const balLine = bal !== null
+    ? `<div class="summary-row" style="color:${hasEnough ? '#16a34a' : '#dc2626'};font-weight:700">
+        <span>Your XP balance</span><span>${bal.toLocaleString()} XP</span>
+       </div>`
+    : '';
+
   box.innerHTML = `
     <div class="summary-title">Campaign summary</div>
     <div class="summary-row"><span>Brand</span><span>${esc(draft.brand.name || '—')}</span></div>
@@ -393,7 +416,13 @@ function updateSummary() {
     <div class="summary-row"><span>CTA button</span><span>${esc(draft.ad.ctaText || '—')}</span></div>
     <div class="summary-row"><span>Destination</span><span>${esc(draft.ad.ctaUrl || '—')}</span></div>
     <div class="summary-row"><span>Daily budget</span><span>${daily ? daily.toLocaleString() + ' XP / day' : '—'}</span></div>
-    <div class="summary-row"><span>Total budget</span><span>${total ? total.toLocaleString() + ' XP' : '—'}</span></div>`;
+    <div class="summary-row"><span>Total budget</span><span>${total ? total.toLocaleString() + ' XP' : '—'}</span></div>
+    <div style="border-top:1px solid #e5e7eb;margin:8px 0"></div>
+    <div class="summary-row" style="font-weight:700"><span>Campaign fee</span><span>${CAMPAIGN_COST_XP.toLocaleString()} XP</span></div>
+    ${balLine}
+    ${!hasEnough ? `<div style="color:#dc2626;font-size:12px;margin-top:4px">⚠ Insufficient XP — earn more with the ScrollPay extension.</div>` : ''}`;
+
+  if (launchBtn) launchBtn.disabled = !hasEnough;
 }
 
 document.getElementById('launch-btn').addEventListener('click', async () => {
