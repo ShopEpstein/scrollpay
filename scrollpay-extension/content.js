@@ -456,6 +456,20 @@
     setupActivityTracking();
     startLoops();
 
+    // Pause ad rotation while the user hovers so they can read/click comfortably
+    widget.addEventListener('mouseenter', () => {
+      if (rotateTimer) {
+        clearInterval(rotateTimer);
+        rotateTimer = null;
+      }
+      const fill = document.getElementById('sp-progress-fill');
+      if (fill) fill.style.animationPlayState = 'paused', fill.style.transition = 'none';
+    });
+    widget.addEventListener('mouseleave', () => {
+      if (!rotateTimer) rotateTimer = setInterval(rotateAd, AD_ROTATE_MS);
+      restartProgressBar();
+    });
+
     requestAnimationFrame(() => widget.classList.add('sp-visible'));
   }
 
