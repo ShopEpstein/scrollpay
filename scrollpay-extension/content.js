@@ -124,6 +124,7 @@
         <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">mining</span></span>
       </div>
       <div id="sp-ad-area">
+        <div id="sp-video-container" style="display:none"></div>
         <div class="sp-ad-content">
           <span id="sp-brand-mark"></span>
           <div class="sp-ad-text">
@@ -151,6 +152,24 @@
   // Update the widget's ad content in place (no re-injection).
   function renderAd(ad) {
     currentAd = ad;
+
+    // Video thumbnail (YouTube)
+    const vc = document.getElementById('sp-video-container');
+    if (vc) {
+      if (ad.videoId) {
+        vc.style.display = 'block';
+        vc.innerHTML = `<div class="sp-video-thumb" id="sp-video-thumb">
+          <img class="sp-video-img" src="https://img.youtube.com/vi/${escapeHtml(ad.videoId)}/hqdefault.jpg" alt="${escapeHtml(ad.brandName)}" />
+          <div class="sp-play-btn">▶</div>
+        </div>`;
+        const thumb = document.getElementById('sp-video-thumb');
+        if (thumb) thumb.addEventListener('click', handleVideoClick);
+      } else {
+        vc.style.display = 'none';
+        vc.innerHTML = '';
+      }
+    }
+
     const mark = document.getElementById('sp-brand-mark');
     if (mark) {
       mark.innerHTML = ad.brandLogo
@@ -161,6 +180,19 @@
     if (headline) headline.textContent = ad.headline || '';
     const cta = document.getElementById('sp-cta-btn');
     if (cta) cta.textContent = ad.ctaText || 'Learn more';
+  }
+
+  async function handleVideoClick() {
+    if (!currentAd || !currentAd.videoId) return;
+    const uid = await getUserId();
+    if (uid) {
+      const res = await sendToBackground({ type: 'RECORD_CLICK', userId: uid, adId: currentAd.id });
+      if (res && res.success) {
+        displayedXp += (res.satsAwarded || 25);
+        setXpDisplay(displayedXp);
+      }
+    }
+    window.open(`https://www.youtube.com/watch?v=${currentAd.videoId}`, '_blank', 'noopener,noreferrer');
   }
 
   function rotateAd() {

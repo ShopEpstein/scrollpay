@@ -180,6 +180,11 @@
             <input type="url" id="ad-url" placeholder="https://acme.com/offer" />
           </div>
 
+          <div class="field">
+            <label>YouTube Video URL <span class="opt">(optional — shows thumbnail with play button in the widget)</span></label>
+            <input type="url" id="ad-video-url" placeholder="https://www.youtube.com/watch?v=..." />
+          </div>
+
           <!-- Live preview -->
           <div class="preview-wrap">
             <div class="preview-label">Live Preview</div>
@@ -187,6 +192,10 @@
               <div class="pw-handle">
                 <span class="pw-brand-text">SCROLLPAY</span>
                 <span class="pw-status"><span class="pw-dot"></span> earning</span>
+              </div>
+              <div id="preview-video-container" style="display:none;position:relative;margin:8px 8px 0;border-radius:6px;overflow:hidden;cursor:pointer;">
+                <img id="preview-video-thumb" src="" alt="" style="width:100%;height:72px;object-fit:cover;display:block;" />
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;">▶</div>
               </div>
               <div class="pw-body">
                 <div id="preview-logo" class="pw-logo">A</div>

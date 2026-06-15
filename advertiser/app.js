@@ -301,7 +301,7 @@ async function rejectCampaign(adId) {
 
 document.getElementById('new-campaign-btn').addEventListener('click', async () => {
   Object.assign(draft, { brand: {}, ad: {}, budget: {} });
-  ['brand-name','brand-logo','brand-website','ad-headline','ad-cta','ad-url','daily-budget','total-budget']
+  ['brand-name','brand-logo','brand-website','ad-headline','ad-cta','ad-url','ad-video-url','daily-budget','total-budget']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('headline-chars').textContent = '0';
   hide('campaign-summary');
@@ -377,12 +377,36 @@ function updatePreview() {
 }
 
 document.getElementById('step2-back').addEventListener('click', () => showStep(1));
+function parseYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function updateVideoPreview() {
+  const url = document.getElementById('ad-video-url')?.value.trim() || '';
+  const id = parseYouTubeId(url);
+  const container = document.getElementById('preview-video-container');
+  const thumb = document.getElementById('preview-video-thumb');
+  if (!container || !thumb) return;
+  if (id) {
+    thumb.src = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+    thumb.src = '';
+  }
+}
+
+document.getElementById('ad-video-url')?.addEventListener('input', updateVideoPreview);
+
 document.getElementById('step2-next').addEventListener('click', () => {
   const headline = document.getElementById('ad-headline').value.trim();
   const ctaText = document.getElementById('ad-cta').value.trim();
   const ctaUrl = document.getElementById('ad-url').value.trim();
+  const videoUrl = document.getElementById('ad-video-url')?.value.trim() || '';
   if (!headline || !ctaText || !ctaUrl) return alert('Please fill in all ad fields.');
-  draft.ad = { headline, ctaText, ctaUrl };
+  draft.ad = { headline, ctaText, ctaUrl, videoUrl };
   updateSummary();
   showStep(3);
 });
@@ -447,6 +471,7 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
         headline: draft.ad.headline,
         ctaText: draft.ad.ctaText,
         ctaUrl: draft.ad.ctaUrl,
+        videoUrl: draft.ad.videoUrl || '',
         dailyBudgetXp: daily || 0,
         totalBudgetXp: total || 0,
       }),

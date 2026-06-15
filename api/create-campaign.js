@@ -3,6 +3,12 @@ const { admin, db, initError, verifyToken } = require('./_firebase');
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 const CAMPAIGN_COST_XP = 50000;
 
+function parseYouTubeId(url) {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -12,7 +18,8 @@ module.exports = async (req, res) => {
 
   try {
     const decoded = await verifyToken(authHeader.slice(7));
-    const { brandName, brandLogo, brandWebsite, headline, ctaText, ctaUrl, dailyBudgetXp, totalBudgetXp } = req.body;
+    const { brandName, brandLogo, brandWebsite, headline, ctaText, ctaUrl, videoUrl, dailyBudgetXp, totalBudgetXp } = req.body;
+    const videoId = parseYouTubeId(videoUrl);
 
     if (!brandName || !headline || !ctaText || !ctaUrl) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -51,6 +58,7 @@ module.exports = async (req, res) => {
         headline,
         ctaText,
         ctaUrl,
+        videoId: videoId || null,
         dailyBudgetXp: dailyBudgetXp || 0,
         totalBudgetXp: totalBudgetXp || 0,
         budgetUsed: 0,

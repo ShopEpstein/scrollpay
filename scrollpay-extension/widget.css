@@ -273,6 +273,55 @@
   color: #f8fafc !important;
 }
 
+/* Video thumbnail */
+#scrollpay-widget #sp-video-container {
+  padding: 8px 12px 0 !important;
+  box-sizing: border-box !important;
+}
+
+#scrollpay-widget .sp-video-thumb {
+  position: relative !important;
+  width: 100% !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  display: block !important;
+}
+
+#scrollpay-widget .sp-video-img {
+  width: 100% !important;
+  height: 80px !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+#scrollpay-widget.sp-size-lg .sp-video-img { height: 100px !important; }
+#scrollpay-widget.sp-size-xl .sp-video-img { height: 120px !important; }
+#scrollpay-widget.sp-size-sm .sp-video-img { height: 60px !important; }
+
+#scrollpay-widget .sp-play-btn {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: rgba(0,0,0,0.65) !important;
+  color: #fff !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  padding-left: 2px !important;
+  transition: background 0.15s !important;
+  pointer-events: none !important;
+}
+
+#scrollpay-widget .sp-video-thumb:hover .sp-play-btn {
+  background: #f7931a !important;
+}
+
 /* Progress Bar */
 #scrollpay-widget #sp-progress-bar {
   all: initial;
