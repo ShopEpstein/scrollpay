@@ -23,17 +23,25 @@ try {
 
 const db = initError ? null : admin.firestore();
 
-// Wraps verifyIdToken with a single retry for the transient "String didn't match!"
-// cold-start race condition that occurs when concurrent Vercel Lambdas all try to
-// fetch Google's public keys at the same time.
+// Wraps verifyIdToken with retries for the transient cold-start race condition
+// where concurrent Vercel Lambdas all try to fetch Google's public keys at once.
+// The error message varies across Firebase Admin SDK versions.
 async function verifyToken(token) {
+  const isKeyRace = msg =>
+    msg && (msg.includes("did not match") || msg.includes("didn't match"));
+
   try {
     return await admin.auth().verifyIdToken(token);
   } catch (e) {
-    if (e.message === "String didn't match!") {
+    if (!isKeyRace(e.message)) throw e;
+    // First retry
+    try {
+      return await admin.auth().verifyIdToken(token);
+    } catch (e2) {
+      if (!isKeyRace(e2.message)) throw e2;
+      // Second retry
       return await admin.auth().verifyIdToken(token);
     }
-    throw e;
   }
 }
 
