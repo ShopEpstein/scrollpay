@@ -474,6 +474,11 @@
               <button id="farm-gift-btn" style="width:100%;padding:8px;background:#0f172a;color:#f7931a;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;">Send XP</button>
               <p id="farm-gift-msg" style="font-size:11px;margin-top:4px;display:none;"></p>
             </div>
+            <div id="farm-faucet-area" style="margin-top:12px;">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:5px;">Daily XP Faucet</div>
+              <button id="farm-faucet-btn" style="width:100%;padding:8px;background:linear-gradient(135deg,#f7931a,#e6851a);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;">⚡ Claim 1 XP</button>
+              <p id="farm-faucet-msg" style="font-size:11px;margin-top:4px;display:none;text-align:center;color:var(--muted);"></p>
+            </div>
             <button class="farm-signout" id="farm-signout-btn">Sign out</button>
           </div>
         </div>
@@ -1313,6 +1318,78 @@
         msgEl.textContent = text;
         msgEl.style.color = ok ? '#16a34a' : '#dc2626';
         msgEl.style.display = 'block';
+      }
+    });
+
+    // ── XP Faucet ────────────────────────────────────────────────
+
+    function showFaucetCountdown(seconds, msgEl) {
+      if (!msgEl || !(seconds > 0)) return;
+      function tick() {
+        if (seconds <= 0) { msgEl.style.display = 'none'; return; }
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        msgEl.textContent = `Resets in ${h}h ${m}m`;
+        msgEl.style.display = 'block';
+        seconds--;
+        setTimeout(tick, 1000);
+      }
+      tick();
+    }
+
+    document.getElementById('farm-faucet-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('farm-faucet-btn');
+      const msg = document.getElementById('farm-faucet-msg');
+      if (btn.disabled) return;
+
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.textContent = 'Claiming…';
+      msg.style.display = 'none';
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          btn.textContent = '⚡ Claim 1 XP';
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          return;
+        }
+
+        const res = await fetch('/api/faucet', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          userXpTotal = data.total;
+          document.getElementById('farm-xp-num').textContent = userXpTotal.toLocaleString();
+          btn.textContent = '✓ Claimed!';
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'default';
+          msg.style.color = 'var(--muted)';
+          const now = new Date();
+          const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+          showFaucetCountdown(Math.ceil((midnight - now) / 1000), msg);
+        } else if (res.status === 429) {
+          btn.textContent = '✓ Already claimed';
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'default';
+          msg.style.color = 'var(--muted)';
+          showFaucetCountdown(data.secondsUntilReset, msg);
+        } else {
+          btn.textContent = '⚡ Claim 1 XP';
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          msg.textContent = data.error || 'Something went wrong — try again.';
+          msg.style.color = '#dc2626';
+          msg.style.display = 'block';
+        }
+      } catch (_) {
+        btn.textContent = '⚡ Claim 1 XP';
+        btn.disabled = false;
+        btn.style.opacity = '1';
       }
     });
 
