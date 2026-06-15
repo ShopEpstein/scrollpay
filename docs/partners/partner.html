@@ -34,16 +34,16 @@
 
     /* Token info strip */
     .token-strip { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px 20px; margin-bottom: 32px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
-    .token-field label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
+    .token-field label { font-size: 12px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
     .token-field span { font-size: 14px; font-weight: 600; color: #e2e8f0; }
     .ca-text { font-family: monospace; font-size: 12px; word-break: break-all; }
-    .copy-btn { cursor: pointer; background: #334155; border: none; color: #94a3b8; border-radius: 4px; padding: 2px 8px; font-size: 11px; margin-left: 8px; transition: background .15s; }
+    .copy-btn { cursor: pointer; background: #334155; border: none; color: #94a3b8; border-radius: 4px; padding: 5px 10px; font-size: 12px; margin-left: 8px; transition: background .15s; }
     .copy-btn:hover { background: #475569; color: #f8fafc; }
 
     /* Chart */
     .chart-section { margin-bottom: 48px; }
     .section-title { font-size: 15px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-    #partner-chart { width: 100%; height: 420px; border: none; border-radius: 10px; display: none; }
+    #partner-chart { width: 100%; height: 360px; border: none; border-radius: 10px; display: none; }
 
     /* Footer */
     footer { text-align: center; padding: 40px 24px; color: #475569; font-size: 13px; border-top: 1px solid #1e293b; margin-top: 24px; }
@@ -53,6 +53,14 @@
 
     #loading { text-align: center; padding: 80px 24px; color: #475569; }
     #error-msg { text-align: center; padding: 80px 24px; color: #ef4444; }
+
+    @media (max-width: 600px) {
+      .hero { padding: 0 16px; margin-top: 32px; }
+      .hero-name { font-size: 24px; }
+      #partner-chart { height: 280px; }
+      .token-strip { flex-direction: column; gap: 12px; }
+      .link-btn { padding: 10px 14px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
