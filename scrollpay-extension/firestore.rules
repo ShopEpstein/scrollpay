@@ -4,7 +4,9 @@ service cloud.firestore {
 
     // Largest single legitimate award (referral bonus = 50 sats).
     function maxAward() { return 50; }
-    function dailyCap() { return 5000; }
+    // 50 000 XP/day ≈ 1 250 ads at 40 XP/ad (genesis rate); generous enough
+    // for heavy users, still blocks runaway writes or bot abuse.
+    function dailyCap() { return 50000; }
 
     // Balances may only grow — never be rewritten to an arbitrary value.
     function balancesOnlyGrow() {
