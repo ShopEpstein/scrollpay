@@ -744,7 +744,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import {
       getFirestore, collection, query, where, getDocs,
-      doc, setDoc, serverTimestamp
+      doc, setDoc, serverTimestamp, orderBy, limit
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import {
       getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -1016,13 +1016,20 @@
     async function loadLeaderboard() {
       const container = document.getElementById('lb-container');
       try {
-        const res = await fetch('/api/leaderboard');
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          container.innerHTML = '<p style="color:var(--muted);padding:12px 0;">Leaderboard loading… refresh in a moment.</p>';
-          return;
-        }
-        const leaders = data.leaders || [];
+        const snap = await getDocs(
+          query(collection(db, 'sp_users'), orderBy('totalSats', 'desc'), limit(20))
+        );
+        const leaders = [];
+        snap.forEach(d => {
+          const u = d.data();
+          leaders.push({
+            rank: leaders.length + 1,
+            handle: u.nickname || `Miner #${u.signupNumber || '?'}`,
+            xp: u.totalSats || 0,
+            recruits: u.referralCount || 0,
+            hasNickname: !!u.nickname,
+          });
+        });
         if (leaders.length === 0) {
           container.innerHTML = '<p style="color:var(--muted);padding:12px 0;">No miners yet — be the first!</p>';
           return;
