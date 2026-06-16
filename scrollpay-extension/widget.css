@@ -70,13 +70,6 @@
   line-height: 1 !important;
 }
 
-#scrollpay-widget .sp-brand-wrap {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0 !important;
-  line-height: 1 !important;
-}
-
 #scrollpay-widget .sp-brand {
   font-family: 'Inter', sans-serif !important;
   font-size: 10px !important;
@@ -84,16 +77,6 @@
   letter-spacing: 1.5px !important;
   color: #f7931a !important;
   text-transform: uppercase !important;
-}
-
-#scrollpay-widget .sp-miner-name {
-  font-family: 'Inter', sans-serif !important;
-  font-size: 8px !important;
-  font-weight: 600 !important;
-  color: #94a3b8 !important;
-  display: none !important;
-  letter-spacing: 0.3px !important;
-  margin-top: 1px !important;
 }
 
 #scrollpay-widget .sp-status {
