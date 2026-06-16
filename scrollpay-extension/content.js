@@ -120,7 +120,10 @@
     widget.innerHTML = `
       <div id="sp-drag-handle" aria-label="Drag to move">
         <span class="sp-drag-dots">⠿⠿⠿</span>
-        <span class="sp-brand">SCROLLPAY</span>
+        <div class="sp-brand-wrap">
+          <span class="sp-brand">SCROLLPAY</span>
+          <span class="sp-miner-name" id="sp-miner-name"></span>
+        </div>
         <span class="sp-status"><span class="sp-dot"></span> <span id="sp-status-text">mining</span></span>
       </div>
       <div id="sp-ad-area">
@@ -432,6 +435,18 @@
     document.body.appendChild(widget);
     renderAd(adList[0]);
     restartProgressBar();
+
+    // Show miner handle in widget header if set
+    sendToBackground({ type: 'GET_BALANCE', userId: uid }).then(balRes => {
+      const nick = balRes?.data?.nickname;
+      if (nick) {
+        const nameEl = document.getElementById('sp-miner-name');
+        if (nameEl) {
+          nameEl.textContent = nick;
+          nameEl.style.setProperty('display', 'block', 'important');
+        }
+      }
+    }).catch(() => {});
 
     const closeBtn = document.getElementById('sp-close-btn');
     if (closeBtn) closeBtn.addEventListener('click', dismissWidget);

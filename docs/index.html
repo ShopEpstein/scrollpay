@@ -431,6 +431,9 @@
           </div>
           <p id="farm-err" class="farm-err"></p>
           <button class="btn-primary btn-farm" id="farm-auth-btn">Create free account →</button>
+          <p id="farm-forgot-row" style="display:none;margin-top:10px;text-align:right;">
+            <button id="farm-forgot-btn" style="background:none;border:none;color:#f7931a;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;">Forgot password?</button>
+          </p>
         </div>
       </div>
 
@@ -774,7 +777,7 @@
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import {
       getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      signOut, onAuthStateChanged
+      sendPasswordResetEmail, signOut, onAuthStateChanged
     } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const FIREBASE_CONFIG = {
@@ -1191,7 +1194,30 @@
         document.getElementById('farm-auth-btn').textContent =
           farmMode === 'login' ? 'Sign in →' : 'Create free account →';
         document.getElementById('farm-err').style.display = 'none';
+        document.getElementById('farm-forgot-row').style.display =
+          farmMode === 'login' ? 'block' : 'none';
       });
+    });
+
+    document.getElementById('farm-forgot-btn').addEventListener('click', async () => {
+      const email = document.getElementById('farm-email').value.trim();
+      const errEl = document.getElementById('farm-err');
+      if (!email) {
+        errEl.textContent = 'Enter your email above first.';
+        errEl.style.color = '#d97706';
+        errEl.style.display = 'block';
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        errEl.textContent = '✓ Reset email sent — check your inbox.';
+        errEl.style.color = '#16a34a';
+        errEl.style.display = 'block';
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.color = '#dc2626';
+        errEl.style.display = 'block';
+      }
     });
 
     const FRIENDLY_AUTH_ERR = {

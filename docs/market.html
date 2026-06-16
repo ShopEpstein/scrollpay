@@ -410,6 +410,14 @@
       padding: 8px 12px; background: #0f172a; border-top: 1px solid #1e293b;
     }
     .dw-earnings { font-size: 11px; font-weight: 600; color: #22c55e; }
+    .dw-size-row { display: flex; gap: 3px; }
+    .dw-sz {
+      background: #334155; border: none; color: #94a3b8;
+      border-radius: 4px; padding: 3px 7px; font-size: 10px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: background .15s, color .15s;
+    }
+    .dw-sz.active, .dw-sz:hover { background: #f7931a; color: #fff; }
     .dw-close {
       background: none; border: none; cursor: pointer;
       color: #64748b; font-size: 12px; padding: 2px 6px;
@@ -1355,6 +1363,12 @@
     </div>
     <div id="dw-footer">
       <span class="dw-earnings">₿ <span id="dw-xp">0</span> XP mined</span>
+      <div class="dw-size-row">
+        <button class="dw-sz" data-sz="sm" data-mult="0.5">S</button>
+        <button class="dw-sz active" data-sz="md" data-mult="1">M</button>
+        <button class="dw-sz" data-sz="lg" data-mult="1.5">L</button>
+        <button class="dw-sz" data-sz="xl" data-mult="2">XL</button>
+      </div>
       <button class="dw-close" id="dw-close" aria-label="Hide widget">✕</button>
     </div>
     <div id="dw-progress"><div id="dw-progress-fill"></div></div>
@@ -1382,6 +1396,17 @@
     let ads = [...FALLBACK_ADS];
     let adIndex = 0;
     let xpCount = 0;
+    let xpMultiplier = 1.0;
+
+    const DW_WIDTHS = { sm: '220px', md: '280px', lg: '340px', xl: '380px' };
+    document.querySelectorAll('.dw-sz').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dw-sz').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        xpMultiplier = parseFloat(btn.dataset.mult);
+        document.getElementById('demo-widget').style.width = DW_WIDTHS[btn.dataset.sz] || '280px';
+      });
+    });
 
     const db = getFirestore(initializeApp(FIREBASE_CONFIG, 'market-widget'));
 
@@ -1436,10 +1461,16 @@
       setTimeout(showWidget, 8000);
     });
 
+    let xpFrac = 0;
     setInterval(() => {
       if (widget.classList.contains('dw-visible')) {
-        xpCount++;
-        document.getElementById('dw-xp').textContent = xpCount.toLocaleString();
+        xpFrac += xpMultiplier;
+        const earned = Math.floor(xpFrac);
+        if (earned > 0) {
+          xpCount += earned;
+          xpFrac -= earned;
+          document.getElementById('dw-xp').textContent = xpCount.toLocaleString();
+        }
       }
     }, 1000);
 

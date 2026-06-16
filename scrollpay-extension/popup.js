@@ -380,6 +380,113 @@ document.getElementById('msg-send-btn').addEventListener('click', async () => {
   }
 });
 
+// ── Link Website Account ─────────────────────────────────────
+
+const FB_API_KEY = 'AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14';
+const LINKED_EMAIL_KEY = 'scrollpay_linked_email';
+
+async function firebaseSignIn(email, password) {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true }),
+    }
+  );
+  const data = await res.json();
+  if (data.error) {
+    const msg = data.error.message;
+    if (msg === 'INVALID_LOGIN_CREDENTIALS' || msg === 'EMAIL_NOT_FOUND' || msg === 'INVALID_PASSWORD') {
+      throw new Error('Incorrect email or password.');
+    }
+    throw new Error(msg);
+  }
+  return { uid: data.localId, email: data.email };
+}
+
+async function firebaseSendPasswordReset(email) {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FB_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
+    }
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+}
+
+async function loadLinkAccountSection() {
+  const result = await chrome.storage.local.get([LINKED_EMAIL_KEY]);
+  const linkedEmail = result[LINKED_EMAIL_KEY];
+  if (linkedEmail) {
+    document.getElementById('linked-account-view').style.display = 'block';
+    document.getElementById('link-account-form').style.display = 'none';
+    document.getElementById('linked-email-display').textContent = '✓ ' + linkedEmail;
+  }
+}
+
+document.getElementById('btn-link-account').addEventListener('click', async () => {
+  const email = document.getElementById('link-email').value.trim();
+  const password = document.getElementById('link-password').value;
+  const statusEl = document.getElementById('link-status');
+  const btn = document.getElementById('btn-link-account');
+
+  if (!email || !password) {
+    statusEl.textContent = 'Please enter your email and password.';
+    statusEl.style.color = '#dc2626';
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+  statusEl.style.display = 'none';
+
+  try {
+    const { uid, email: confirmedEmail } = await firebaseSignIn(email, password);
+    await chrome.storage.local.set({ [USER_KEY]: uid, [LINKED_EMAIL_KEY]: confirmedEmail });
+    statusEl.textContent = '✓ Connected! Reloading…';
+    statusEl.style.color = '#16a34a';
+    statusEl.style.display = 'block';
+    setTimeout(() => window.location.reload(), 1000);
+  } catch (e) {
+    statusEl.textContent = e.message;
+    statusEl.style.color = '#dc2626';
+    statusEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign in & Connect';
+  }
+});
+
+document.getElementById('btn-forgot-pw').addEventListener('click', async () => {
+  const email = document.getElementById('link-email').value.trim();
+  const statusEl = document.getElementById('link-status');
+  if (!email) {
+    statusEl.textContent = 'Enter your email above first.';
+    statusEl.style.color = '#d97706';
+    statusEl.style.display = 'block';
+    return;
+  }
+  try {
+    await firebaseSendPasswordReset(email);
+    statusEl.textContent = '✓ Reset email sent — check your inbox.';
+    statusEl.style.color = '#16a34a';
+  } catch (e) {
+    statusEl.textContent = e.message;
+    statusEl.style.color = '#dc2626';
+  }
+  statusEl.style.display = 'block';
+});
+
+document.getElementById('btn-unlink').addEventListener('click', async () => {
+  await chrome.storage.local.remove([LINKED_EMAIL_KEY]);
+  document.getElementById('linked-account-view').style.display = 'none';
+  document.getElementById('link-account-form').style.display = 'block';
+});
+
 // ── XP Halving Countdown ─────────────────────────────────────
 const HALVING_START_MS    = new Date('2026-06-14T21:25:00Z').getTime();
 const HALVING_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -424,3 +531,4 @@ setInterval(tickHalving, 1000);
 
 // Init
 loadUserData();
+loadLinkAccountSection();

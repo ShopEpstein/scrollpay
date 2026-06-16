@@ -350,6 +350,63 @@ body {
   color: #9ca3af;
 }
 
+/* Link Website Account */
+.link-hint {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.link-input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 6px;
+  display: block;
+}
+.link-input:focus { border-color: #f7931a; }
+.btn-link-acct {
+  width: 100%;
+  padding: 9px;
+  background: #f7931a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 6px;
+  display: block;
+}
+.btn-link-acct:hover { background: #e6851a; }
+.btn-forgot-pw {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  padding: 0;
+}
+.link-status { font-size: 11px; margin-top: 4px; }
+.linked-email { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+.btn-unlink-acct {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  padding: 0;
+}
+
 /* Footer */
 .popup-footer {
   padding: 10px 16px;
