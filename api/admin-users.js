@@ -65,6 +65,15 @@ module.exports = async (req, res) => {
           downlineSize: u.downlineSize || 0,
           downlineXp: u.downlineXp || 0,
           installedAt: u.installedAt?._seconds || u.installedAt?.seconds || null,
+          // Payment methods
+          btcAddress: u.btcAddress || '',
+          solAddress: u.solAddress || '',
+          ethAddress: u.ethAddress || '',
+          venmo:      u.venmo      || '',
+          cashapp:    u.cashapp    || '',
+          applepay:   u.applepay   || '',
+          paypal:     u.paypal     || '',
+          zelle:      u.zelle      || '',
         };
         row.fraudScore = fraudScore(row);
         users.push(row);

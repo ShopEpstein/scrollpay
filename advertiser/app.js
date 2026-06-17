@@ -54,7 +54,10 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); }
+    if (isAdminUser) {
+      document.getElementById('admin-jump-nav').style.display = 'flex';
+      loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners();
+    }
   } else {
     showView('view-auth');
   }
@@ -1200,6 +1203,12 @@ function renderMinersTable(users) {
       openXpFix(btn.dataset.id, btn.dataset.handle, parseInt(btn.dataset.xp))
     );
   });
+  container.querySelectorAll('.pay-info-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const u = allMiners.find(m => m.id === btn.dataset.uid);
+      if (u) showPaymentPopup(u, e.currentTarget);
+    });
+  });
   container.querySelectorAll('.sort-miners-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       minerSort = btn.dataset.sort;
@@ -1241,6 +1250,10 @@ function minerRow(u) {
               data-handle="${handle}"
               data-xp="${u.totalSats || 0}"
               style="font-size:11px;padding:3px 8px;background:#fee2e2;color:#dc2626;border-color:#fca5a5;">⚙ XP</button>
+      <button class="pay-info-btn btn-ghost-sm"
+              data-uid="${esc(u.id)}"
+              style="font-size:11px;padding:3px 8px;"
+              title="Payment methods">💳</button>
     </td>
   </tr>`;
 }
@@ -1282,6 +1295,59 @@ async function openXpFix(userId, handle, currentXp) {
   } catch (err) {
     alert('Error: ' + err.message);
   }
+}
+
+let payPopupEl = null;
+function showPaymentPopup(u, anchorEl) {
+  if (payPopupEl) payPopupEl.remove();
+
+  const METHODS = [
+    ['₿ BTC/LN',   u.btcAddress],
+    ['◎ SOL',      u.solAddress],
+    ['Ξ ETH',      u.ethAddress],
+    ['Venmo',      u.venmo],
+    ['CashApp',    u.cashapp],
+    ['Apple Pay',  u.applepay],
+    ['PayPal',     u.paypal],
+    ['Zelle',      u.zelle],
+  ].filter(([, v]) => v);
+
+  const rows = METHODS.length
+    ? METHODS.map(([label, val]) =>
+        `<div class="miner-pay-row">
+          <span class="miner-pay-label">${esc(label)}</span>
+          <span class="miner-pay-val">${esc(val)}</span>
+          <button class="miner-pay-copy" onclick="navigator.clipboard.writeText('${esc(val).replace(/'/g,"\\'")}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copy',1200)})">Copy</button>
+        </div>`
+      ).join('')
+    : '<div style="color:#9ca3af;font-size:12px;">No payment methods saved yet.</div>';
+
+  const el = document.createElement('div');
+  el.className = 'miner-pay-popup';
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h4 style="margin:0;">💳 ${esc(u.nickname || u.email || u.id)}</h4>
+      <button onclick="this.closest('.miner-pay-popup').remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9ca3af;line-height:1;padding:2px 4px;">✕</button>
+    </div>
+    ${rows}`;
+  document.body.appendChild(el);
+  payPopupEl = el;
+
+  // Position near the button
+  const rect = anchorEl.getBoundingClientRect();
+  const top = Math.min(rect.bottom + 6 + window.scrollY, window.scrollY + window.innerHeight - el.offsetHeight - 20);
+  el.style.top = top + 'px';
+  el.style.right = (window.innerWidth - rect.right) + 'px';
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function close(ev) {
+      if (!el.contains(ev.target) && ev.target !== anchorEl) {
+        el.remove();
+        document.removeEventListener('click', close);
+      }
+    });
+  }, 0);
 }
 
 document.getElementById('miners-search')?.addEventListener('input', e => {
