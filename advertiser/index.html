@@ -160,6 +160,30 @@
           </div>
         </div>
       </div>
+
+      <!-- Admin-only: Miners -->
+      <div id="miners-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:16px;">
+          <h2 style="font-size:20px;font-weight:700;">⛏️ Miners</h2>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="miners-search" placeholder="Search handle or email…" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;width:200px;" />
+            <button id="miners-refresh" class="btn-ghost-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="miners-container"></div>
+      </div>
+
+      <!-- Miner message compose (floating) -->
+      <div id="miner-msg-wrap" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.14);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <strong id="miner-msg-title" style="font-size:13px;color:#111827;">Message</strong>
+          <button id="miner-msg-close" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9ca3af;line-height:1;">✕</button>
+        </div>
+        <textarea id="miner-msg-text" rows="4" placeholder="Type your message…" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;resize:vertical;font-family:inherit;margin-bottom:8px;box-sizing:border-box;outline:none;"></textarea>
+        <button id="miner-msg-send" class="btn-primary" style="width:100%;font-size:13px;">Send Message</button>
+        <p id="miner-msg-status" style="font-size:12px;margin-top:6px;display:none;"></p>
+      </div>
+
     </div>
   </div>
 

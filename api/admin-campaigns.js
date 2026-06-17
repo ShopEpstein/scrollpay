@@ -61,6 +61,15 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ok: true, xpRefunded: alreadyRejected ? 0 : (ad.xpPaid || 0) });
       }
 
+      if (action === 'cancel') {
+        await db.collection('sp_ads').doc(adId).update({
+          status: 'cancelled',
+          active: false,
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
       delete updates.ownerId;
       delete updates.ownerEmail;
       delete updates.createdAt;

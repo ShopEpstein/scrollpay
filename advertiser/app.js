@@ -54,7 +54,7 @@ onAuthStateChanged(auth, user => {
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
     loadCampaigns();
-    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); }
+    if (isAdminUser) { loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); }
   } else {
     showView('view-auth');
   }
@@ -177,6 +177,13 @@ async function loadCampaigns() {
     container.querySelectorAll('.reject-btn').forEach(btn => {
       btn.addEventListener('click', () => rejectCampaign(btn.dataset.id));
     });
+    container.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Cancel this campaign? It will stop serving immediately.')) {
+          cancelCampaign(btn.dataset.id);
+        }
+      });
+    });
   } catch (err) {
     container.innerHTML = `<div class="err-msg" style="padding:20px">Failed to load: ${esc(err.message)}</div>`;
   }
@@ -212,13 +219,29 @@ function campaignStatusCell(c, adminMode) {
     return `<span class="camp-status rejected">✗ Rejected${reason}</span>`;
   }
 
-  // approved — show live/pause toggle
+  if (status === 'cancelled') {
+    if (adminMode) {
+      return `
+        <span class="camp-status rejected">✗ Cancelled</span>
+        <div style="margin-top:6px">
+          <button class="approve-btn" data-id="${c.id}" style="padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">↩ Restore</button>
+        </div>`;
+    }
+    return `<span class="camp-status rejected">✗ Cancelled</span>`;
+  }
+
+  // approved — show live/pause toggle + admin quick actions
   return `
-    <button class="toggle-btn ${c.active ? 'live' : 'paused'}"
-            data-id="${c.id}" data-active="${!!c.active}">
-      ${c.active ? '● Live' : '○ Paused'}
-    </button>
-    ${adminMode ? `<button class="toggle-btn paused edit-btn" data-id="${c.id}" style="margin-left:6px;padding:4px 6px;font-size:11px">✏️</button>` : ''}`;
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+      <button class="toggle-btn ${c.active ? 'live' : 'paused'}"
+              data-id="${c.id}" data-active="${!!c.active}">
+        ${c.active ? '● Live' : '○ Paused'}
+      </button>
+      ${adminMode ? `
+        <button class="toggle-btn paused edit-btn" data-id="${c.id}" title="Edit" style="padding:4px 8px;font-size:11px;">✏️</button>
+        <button class="cancel-btn" data-id="${c.id}" title="Cancel campaign" style="padding:4px 8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">✗ Cancel</button>
+      ` : ''}
+    </div>`;
 }
 
 function campaignRow(c, adminMode = false) {
@@ -264,6 +287,21 @@ async function toggleCampaign(adId, currentlyActive) {
     loadCampaigns();
   } catch (err) {
     alert('Failed to update campaign: ' + err.message);
+  }
+}
+
+async function cancelCampaign(adId) {
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-campaigns', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ adId, action: 'cancel' }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Server error'); }
+    loadCampaigns();
+  } catch (err) {
+    alert('Failed to cancel campaign: ' + err.message);
   }
 }
 
@@ -1090,6 +1128,144 @@ document.getElementById('pf-submit')?.addEventListener('click', async () => {
   } catch (e) {
     showError('partner-form-err', e.message);
   }
+});
+
+// ── Miners (admin only) ─────────────────────────────────────────
+
+let allMiners = [];
+let minerMsgTarget = null;
+
+async function loadMiners() {
+  const section = document.getElementById('miners-section');
+  const container = document.getElementById('miners-container');
+  section.style.display = 'block';
+  container.innerHTML = '<div class="loading">Loading miners…</div>';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-users', { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    allMiners = data.users || [];
+    renderMinersTable(allMiners);
+  } catch (err) {
+    container.innerHTML = `<div class="err-msg">Failed to load: ${esc(err.message)}</div>`;
+  }
+}
+
+function renderMinersTable(users) {
+  const container = document.getElementById('miners-container');
+  if (!users.length) {
+    container.innerHTML = '<div style="color:#9ca3af;padding:16px">No miners found.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">${users.length.toLocaleString()} miners</div>
+    <table class="campaigns-table">
+      <thead><tr>
+        <th>#</th>
+        <th>Handle</th>
+        <th>Email / ID</th>
+        <th>Total XP</th>
+        <th>Today</th>
+        <th>Recruits</th>
+        <th>Last Active</th>
+        <th></th>
+      </tr></thead>
+      <tbody>${users.map(u => minerRow(u)).join('')}</tbody>
+    </table>`;
+
+  container.querySelectorAll('.msg-miner-btn').forEach(btn => {
+    btn.addEventListener('click', () =>
+      openMinerMessage(btn.dataset.id, btn.dataset.ref, btn.dataset.handle)
+    );
+  });
+}
+
+function minerRow(u) {
+  const lastActive = u.lastActiveAt
+    ? new Date(u.lastActiveAt * 1000).toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : '—';
+  const display = esc(u.email || u.id || '—');
+  return `<tr>
+    <td style="font-size:12px;color:#6b7280">${u.signupNumber || '—'}</td>
+    <td><strong>${u.nickname ? esc(u.nickname) : '<span style="color:#9ca3af">—</span>'}</strong></td>
+    <td style="font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${display}</td>
+    <td>${(u.totalSats || 0).toLocaleString()}</td>
+    <td style="color:${u.satsToday ? '#16a34a' : 'inherit'}">${(u.satsToday || 0).toLocaleString()}</td>
+    <td>${(u.referralCount || 0).toLocaleString()}</td>
+    <td style="font-size:12px;color:#6b7280">${lastActive}</td>
+    <td>
+      <button class="msg-miner-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              data-ref="${esc(u.refCode)}"
+              data-handle="${esc(u.nickname || u.email || u.id)}"
+              style="font-size:12px;padding:4px 10px;">💬 Message</button>
+    </td>
+  </tr>`;
+}
+
+function openMinerMessage(userId, refCode, handle) {
+  minerMsgTarget = { userId, refCode };
+  document.getElementById('miner-msg-title').textContent = `Message ${handle}`;
+  document.getElementById('miner-msg-text').value = '';
+  document.getElementById('miner-msg-status').style.display = 'none';
+  document.getElementById('miner-msg-wrap').style.display = 'block';
+  document.getElementById('miner-msg-text').focus();
+}
+
+document.getElementById('miners-search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  const filtered = q
+    ? allMiners.filter(u =>
+        (u.nickname || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.id || '').toLowerCase().includes(q)
+      )
+    : allMiners;
+  renderMinersTable(filtered);
+});
+
+document.getElementById('miners-refresh').addEventListener('click', loadMiners);
+
+document.getElementById('miner-msg-close').addEventListener('click', () => {
+  document.getElementById('miner-msg-wrap').style.display = 'none';
+});
+
+document.getElementById('miner-msg-send').addEventListener('click', async () => {
+  const text = document.getElementById('miner-msg-text').value.trim();
+  const statusEl = document.getElementById('miner-msg-status');
+  const btn = document.getElementById('miner-msg-send');
+  if (!text || !minerMsgTarget) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  statusEl.style.display = 'none';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId: minerMsgTarget.userId, refCode: minerMsgTarget.refCode, text }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.textContent = '✓ Sent!';
+      statusEl.style.color = '#16a34a';
+      statusEl.style.display = 'block';
+      setTimeout(() => { document.getElementById('miner-msg-wrap').style.display = 'none'; }, 1200);
+    } else {
+      statusEl.textContent = data.error || 'Failed to send.';
+      statusEl.style.color = '#dc2626';
+      statusEl.style.display = 'block';
+    }
+  } catch (_) {
+    statusEl.textContent = 'Network error — try again.';
+    statusEl.style.color = '#dc2626';
+    statusEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Send Message';
 });
 
 // ── Helpers ─────────────────────────────────────────────────────
