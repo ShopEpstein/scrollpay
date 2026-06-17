@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/privacy",          "destination": "/docs/privacy.html" },
     { "source": "/market",           "destination": "/docs/market.html" },
+    { "source": "/economics",        "destination": "/docs/economics.html" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
     { "source": "/advertiser/(.*)", "destination": "/advertiser/$1" },
     { "source": "/partners",        "destination": "/docs/partners/index.html" },

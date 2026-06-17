@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How ScrollPay Works — Economics</title>
+  <meta name="description" content="A closed-loop economy where ad spend flows directly back to users and holders. Learn how XP, revenue splits, and token buybacks work." />
+  <link rel="icon" href="/icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      border-bottom: 1px solid #1f2937;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand img { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; }
+    .brand-text { font-size: 13px; font-weight: 800; color: #F97316; letter-spacing: 2px; }
+    .nav-links { display: flex; align-items: center; gap: 16px; }
+    .nav-links a { font-size: 14px; font-weight: 600; color: #9ca3af; transition: color .15s; }
+    .nav-links a:hover, .nav-links a.active { color: #F97316; }
+    .nav-cta {
+      background: #F97316; color: #fff !important;
+      padding: 9px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 700;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { background: #ea6c05 !important; }
+
+    /* Hero */
+    .hero {
+      padding: 80px 24px 64px;
+      text-align: center;
+      border-bottom: 1px solid #1f2937;
+    }
+    .hero-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #F97316;
+      background: rgba(249,115,22,.1);
+      border: 1px solid rgba(249,115,22,.25);
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 56px);
+      font-weight: 800;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    .hero p {
+      font-size: 18px;
+      color: #9ca3af;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* Sections */
+    .sections { padding: 72px 0 96px; }
+    .section { margin-bottom: 64px; }
+    .section:last-child { margin-bottom: 0; }
+
+    .section-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #F97316;
+      margin-bottom: 8px;
+    }
+    .section h2 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 16px;
+      padding: 28px 32px;
+    }
+    .card p {
+      font-size: 16px;
+      color: #d1d5db;
+      line-height: 1.75;
+    }
+    .card p + p { margin-top: 12px; }
+
+    /* Revenue split */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .split-item {
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .split-pct {
+      font-size: 32px;
+      font-weight: 800;
+      color: #F97316;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .split-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f9fafb;
+      margin-bottom: 4px;
+    }
+    .split-desc {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    /* Buyback flow */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .flow-step {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 20px 12px;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 12px;
+    }
+    .flow-step .flow-icon { font-size: 24px; margin-bottom: 8px; }
+    .flow-step .flow-label { font-size: 12px; font-weight: 700; color: #f9fafb; }
+    .flow-arrow {
+      font-size: 18px;
+      color: #F97316;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    /* Transparency */
+    .transparency-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 4px;
+    }
+    .transparency-list li {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .t-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .t-text { font-size: 14px; color: #d1d5db; line-height: 1.6; }
+    .t-text strong { color: #fff; }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid #1f2937;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer-inner { max-width: 800px; margin: 0 auto; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: #6b7280; transition: color .15s; }
+    .footer-links a:hover { color: #F97316; }
+    .footer-legal {
+      font-size: 12px;
+      color: #4b5563;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 600px) {
+      .split-grid { grid-template-columns: 1fr 1fr; }
+      .flow-step { min-width: 80px; padding: 14px 8px; }
+      .flow-arrow { padding: 0 4px; font-size: 14px; }
+      .card { padding: 20px; }
+      .hero { padding: 56px 24px 48px; }
+      .nav-links a:not(.nav-cta) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a class="brand" href="/"><img src="/icon128.png" alt="ScrollPay" /><span class="brand-text">SCROLLPAY</span></a>
+      <div class="nav-links">
+        <a href="/market">XP Market</a>
+        <a href="/partners">Partners</a>
+        <a href="/advertiser">Advertise</a>
+        <a href="/economics" class="active">How It Works</a>
+        <a class="nav-cta" href="/#get-started">Install Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-label">Economics</div>
+      <h1>How ScrollPay Works</h1>
+      <p>A closed-loop economy where ad spend flows directly back to users and holders.</p>
+    </div>
+  </div>
+
+  <div class="sections">
+    <div class="wrap">
+
+      <!-- Section 1 — What is XP? -->
+      <div class="section">
+        <div class="section-num">01</div>
+        <h2>What is XP?</h2>
+        <div class="card">
+          <p>XP is ScrollPay's advertising credit. You earn XP free by viewing ads while you browse.</p>
+          <p>XP can only be used to fund ad campaigns on ScrollPay. XP has no cash value and is not a cryptocurrency.</p>
+          <p>Advertisers can trade unused XP credits peer-to-peer.</p>
+        </div>
+      </div>
+
+      <!-- Section 2 — The Revenue Split -->
+      <div class="section">
+        <div class="section-num">02</div>
+        <h2>The Revenue Split</h2>
+        <div class="split-grid">
+          <div class="split-item">
+            <div class="split-pct">40%</div>
+            <div class="split-label">Users</div>
+            <div class="split-desc">BTC draw entries and mining rewards for active users</div>
+          </div>
+          <div class="split-item">
+            <div class="split-pct">30%</div>
+            <div class="split-label">Operations</div>
+            <div class="split-desc">ScrollPay infrastructure, development, and support</div>
+          </div>
+          <div class="split-item">
+            <div class="split-pct">15%</div>
+            <div class="split-label">Staccana Buybacks</div>
+            <div class="split-desc">Revenue used to buy Staccana from the open market</div>
+          </div>
+          <div class="split-item">
+            <div class="split-pct">15%</div>
+            <div class="split-label">Scroll Buybacks</div>
+            <div class="split-desc">Revenue used to buy Scroll from the open market</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 — Why Buybacks Matter -->
+      <div class="section">
+        <div class="section-num">03</div>
+        <h2>Why Buybacks Matter</h2>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-icon">📢</div>
+            <div class="flow-label">Ad Revenue</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-icon">💰</div>
+            <div class="flow-label">30% to Buybacks</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-icon">📈</div>
+            <div class="flow-label">Open Market Demand</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <p>When ScrollPay generates ad revenue, 30% goes directly to buying Scroll and Staccana tokens from the open market.</p>
+          <p>More ad revenue = more buybacks = more demand for both tokens. Hold Scroll or Staccana and earn from every ad ScrollPay serves — automatically.</p>
+        </div>
+      </div>
+
+      <!-- Section 4 — Transparency -->
+      <div class="section">
+        <div class="section-num">04</div>
+        <h2>Transparency</h2>
+        <ul class="transparency-list">
+          <li>
+            <span class="t-icon">🟡</span>
+            <span class="t-text"><strong>ScrollPay is pre-revenue.</strong> These percentages are our committed split.</span>
+          </li>
+          <li>
+            <span class="t-icon">📄</span>
+            <span class="t-text"><strong>Exact automation publishes at first revenue event.</strong> No projected returns. No price targets.</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/market">XP Market</a>
+        <a href="/partners">Partners</a>
+        <a href="/advertiser">Advertise</a>
+        <a href="/privacy">Privacy</a>
+      </div>
+      <p class="footer-legal">XP is an advertising credit, not a security or cryptocurrency. ScrollPay makes no representations about token price or investment returns.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
