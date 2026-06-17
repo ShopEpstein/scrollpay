@@ -13,6 +13,7 @@
     { "source": "/api/partners",    "destination": "/api/partners.js" },
     { "source": "/api/admin-partners", "destination": "/api/admin-partners.js" },
     { "source": "/api/admin-users",    "destination": "/api/admin-users.js" },
+    { "source": "/api/wallets",         "destination": "/api/wallets.js" },
     { "source": "/api/record-click",   "destination": "/api/record-click.js" },
     { "source": "/api/faucet",          "destination": "/api/faucet.js" },
     { "source": "/",                "destination": "/docs/index.html" },

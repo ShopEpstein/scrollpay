@@ -591,6 +591,98 @@
       </div>
     </div>
 
+    <!-- ── Payment Methods ── -->
+    <div class="manage-section" id="wallets-section" style="margin-top:32px;">
+      <div class="manage-head">
+        <h2>💳 My Payment Methods</h2>
+        <span style="font-size:12px;color:var(--muted)">Save your addresses so we know where to send your payout</span>
+      </div>
+      <div style="padding:16px 20px 8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+          <input type="text" id="wallets-ref" placeholder="Your referral code" maxlength="10"
+            style="text-transform:uppercase;width:180px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none;"
+            onfocus="this.style.borderColor='#f7931a'" onblur="this.style.borderColor='#e5e7eb'" />
+          <button id="wallets-load-btn" style="padding:8px 16px;background:#0f172a;color:#f7931a;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">Load</button>
+          <span id="wallets-load-status" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+
+        <div id="wallets-form" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+            <!-- Crypto column -->
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;">Crypto</div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">₿ Bitcoin / Lightning</label>
+                <input type="text" id="w-btc" class="wallet-input" placeholder="bc1q… or you@wallet.com" />
+                <div class="wallet-hint">Lightning addresses get instant payouts</div>
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">◎ Solana</label>
+                <input type="text" id="w-sol" class="wallet-input" placeholder="Solana wallet address" />
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">Ξ Ethereum / USDC</label>
+                <input type="text" id="w-eth" class="wallet-input" placeholder="0x…" />
+              </div>
+            </div>
+
+            <!-- P2P column -->
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;">Cash Apps</div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">Venmo</label>
+                <input type="text" id="w-venmo" class="wallet-input" placeholder="@username" />
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">CashApp</label>
+                <input type="text" id="w-cashapp" class="wallet-input" placeholder="$cashtag" />
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">Apple Pay / iMessage</label>
+                <input type="text" id="w-applepay" class="wallet-input" placeholder="Phone or email" />
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">PayPal</label>
+                <input type="text" id="w-paypal" class="wallet-input" placeholder="Email or @username" />
+              </div>
+
+              <div class="wallet-field">
+                <label class="wallet-label">Zelle</label>
+                <input type="text" id="w-zelle" class="wallet-input" placeholder="Phone or email" />
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding-bottom:20px;">
+            <button id="wallets-save-btn" style="padding:10px 24px;background:var(--btc);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;">Save payment methods</button>
+            <span id="wallets-save-status" style="font-size:13px;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .wallet-field { margin-bottom:12px; }
+      .wallet-label { display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px; }
+      .wallet-input {
+        width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;
+        font-size:13px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s;
+      }
+      .wallet-input:focus { border-color:var(--btc);box-shadow:0 0 0 3px rgba(247,147,26,.1); }
+      .wallet-hint { font-size:11px;color:var(--muted);margin-top:3px; }
+      @media(max-width:600px){
+        #wallets-form > div:first-child { grid-template-columns:1fr !important; }
+      }
+    </style>
+
     <div class="faq-section">
       <h2>How it works</h2>
       <div class="faq">
@@ -1478,6 +1570,87 @@
 
     setTimeout(showWidget, 800);
     loadAds();
+  </script>
+
+  <script>
+    // ── Payment Methods ──────────────────────────────────────────
+    const WALLET_FIELDS = [
+      ['btcAddress', 'w-btc'],
+      ['solAddress', 'w-sol'],
+      ['ethAddress', 'w-eth'],
+      ['venmo',      'w-venmo'],
+      ['cashapp',    'w-cashapp'],
+      ['applepay',   'w-applepay'],
+      ['paypal',     'w-paypal'],
+      ['zelle',      'w-zelle'],
+    ];
+
+    async function loadWallets() {
+      const ref = document.getElementById('wallets-ref').value.trim().toUpperCase();
+      const status = document.getElementById('wallets-load-status');
+      if (!ref) { status.textContent = 'Enter your referral code first.'; return; }
+      status.textContent = 'Loading…';
+      try {
+        const res = await fetch(`/api/wallets?refCode=${encodeURIComponent(ref)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Not found');
+        WALLET_FIELDS.forEach(([key, id]) => {
+          document.getElementById(id).value = data.wallets[key] || '';
+        });
+        // Auto-fill the sell form BTC address if it's saved
+        const btcEl = document.getElementById('btc-address');
+        if (!btcEl.value && data.wallets.btcAddress) btcEl.value = data.wallets.btcAddress;
+        document.getElementById('wallets-form').style.display = 'block';
+        status.textContent = '✓ Loaded';
+        status.style.color = '#16a34a';
+      } catch (err) {
+        status.textContent = err.message;
+        status.style.color = '#b91c1c';
+      }
+    }
+
+    async function saveWallets() {
+      const ref = document.getElementById('wallets-ref').value.trim().toUpperCase();
+      const saveStatus = document.getElementById('wallets-save-status');
+      if (!ref) return;
+      const wallets = {};
+      WALLET_FIELDS.forEach(([key, id]) => {
+        wallets[key] = document.getElementById(id).value.trim();
+      });
+      saveStatus.textContent = 'Saving…';
+      saveStatus.style.color = 'var(--muted)';
+      try {
+        const res = await fetch('/api/wallets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refCode: ref, wallets }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
+        saveStatus.textContent = '✓ Saved!';
+        saveStatus.style.color = '#16a34a';
+        setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+        // Keep sell form in sync
+        const btcEl = document.getElementById('btc-address');
+        if (wallets.btcAddress) btcEl.value = wallets.btcAddress;
+      } catch (err) {
+        saveStatus.textContent = err.message;
+        saveStatus.style.color = '#b91c1c';
+      }
+    }
+
+    document.getElementById('wallets-load-btn').addEventListener('click', loadWallets);
+    document.getElementById('wallets-save-btn').addEventListener('click', saveWallets);
+    document.getElementById('wallets-ref').addEventListener('keydown', e => {
+      if (e.key === 'Enter') loadWallets();
+    });
+
+    // If ref code already pre-filled (from URL param), auto-load wallets
+    const urlRef2 = new URLSearchParams(window.location.search).get('ref');
+    if (urlRef2) {
+      document.getElementById('wallets-ref').value = urlRef2.toUpperCase();
+      loadWallets();
+    }
   </script>
 </body>
 </html>
