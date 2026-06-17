@@ -1212,7 +1212,7 @@ function openMinerMessage(userId, refCode, handle) {
   document.getElementById('miner-msg-text').focus();
 }
 
-document.getElementById('miners-search').addEventListener('input', e => {
+document.getElementById('miners-search')?.addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   const filtered = q
     ? allMiners.filter(u =>
@@ -1224,13 +1224,13 @@ document.getElementById('miners-search').addEventListener('input', e => {
   renderMinersTable(filtered);
 });
 
-document.getElementById('miners-refresh').addEventListener('click', loadMiners);
+document.getElementById('miners-refresh')?.addEventListener('click', loadMiners);
 
-document.getElementById('miner-msg-close').addEventListener('click', () => {
+document.getElementById('miner-msg-close')?.addEventListener('click', () => {
   document.getElementById('miner-msg-wrap').style.display = 'none';
 });
 
-document.getElementById('miner-msg-send').addEventListener('click', async () => {
+document.getElementById('miner-msg-send')?.addEventListener('click', async () => {
   const text = document.getElementById('miner-msg-text').value.trim();
   const statusEl = document.getElementById('miner-msg-status');
   const btn = document.getElementById('miner-msg-send');
