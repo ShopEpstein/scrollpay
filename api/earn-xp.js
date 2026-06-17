@@ -1,6 +1,7 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const MAX_PER_WRITE = 50;
+const DAILY_CAP = 500; // max XP earnable per day from ad impressions
 
 // Awards override XP to a referrer (fire-and-forget — never blocks the caller).
 function awardOverrideXp(referrerId, override) {
@@ -35,10 +36,17 @@ module.exports = async (req, res) => {
     const today = new Date().toDateString();
     const lastDate = data.lastActiveAt?.toDate?.()?.toDateString?.() || '';
     const isToday = lastDate === today;
+    const satsToday = isToday ? (data.satsToday || 0) : 0;
+
+    if (satsToday >= DAILY_CAP) {
+      return res.status(200).json({ awarded: 0, capped: true, total: data.totalSats || 0 });
+    }
+
+    const cappedAward = Math.min(awarded, DAILY_CAP - satsToday);
 
     const update = {
-      totalSats: admin.firestore.FieldValue.increment(awarded),
-      satsToday: isToday ? admin.firestore.FieldValue.increment(awarded) : awarded,
+      totalSats: admin.firestore.FieldValue.increment(cappedAward),
+      satsToday: isToday ? admin.firestore.FieldValue.increment(cappedAward) : cappedAward,
       lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     if (type === 'impression') {
@@ -49,14 +57,14 @@ module.exports = async (req, res) => {
     await userRef.update(update);
 
     // Override XP: referrer earns 1 XP per 10 XP their recruit earns
-    const override = Math.floor(awarded / 10);
+    const override = Math.floor(cappedAward / 10);
     awardOverrideXp(data.referrerId || '', override);
 
     return res.status(200).json({
-      awarded,
+      awarded: cappedAward,
       overrideAwarded: override,
-      capped: false,
-      total: (data.totalSats || 0) + awarded,
+      capped: (satsToday + cappedAward) >= DAILY_CAP,
+      total: (data.totalSats || 0) + cappedAward,
     });
   } catch (err) {
     const status = err.code?.startsWith('auth/') ? 401 : 500;

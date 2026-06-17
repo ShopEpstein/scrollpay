@@ -1153,14 +1153,28 @@ async function loadMiners() {
   }
 }
 
+let minerSort = 'signup';
+
 function renderMinersTable(users) {
   const container = document.getElementById('miners-container');
   if (!users.length) {
     container.innerHTML = '<div style="color:#9ca3af;padding:16px">No miners found.</div>';
     return;
   }
+  const sorted = [...users].sort((a, b) => {
+    if (minerSort === 'fraud')  return (b.fraudScore || 0) - (a.fraudScore || 0);
+    if (minerSort === 'xp')    return (b.totalSats || 0) - (a.totalSats || 0);
+    if (minerSort === 'today') return (b.satsToday || 0) - (a.satsToday || 0);
+    return (a.signupNumber || 999999) - (b.signupNumber || 999999);
+  });
+  const flagged = sorted.filter(u => (u.fraudScore || 0) >= 30).length;
   container.innerHTML = `
-    <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">${users.length.toLocaleString()} miners</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+      <span style="font-size:12px;color:#6b7280;">${users.length.toLocaleString()} miners${flagged ? ` · <span style="color:#dc2626;font-weight:600;">⚠ ${flagged} flagged</span>` : ''}</span>
+      <div style="display:flex;gap:6px;margin-left:auto;">
+        ${['signup','xp','today','fraud'].map(s => `<button class="sort-miners-btn toggle-btn ${minerSort===s?'active':'paused'}" data-sort="${s}" style="font-size:11px;padding:3px 10px;">${s==='signup'?'# Order':s==='xp'?'Top XP':s==='today'?'Active Today':'⚠ Risk'}</button>`).join('')}
+      </div>
+    </div>
     <table class="campaigns-table">
       <thead><tr>
         <th>#</th>
@@ -1168,17 +1182,29 @@ function renderMinersTable(users) {
         <th>Email / ID</th>
         <th>Total XP</th>
         <th>Today</th>
+        <th>Impr.</th>
         <th>Recruits</th>
-        <th>Last Active</th>
+        <th>Risk</th>
         <th></th>
       </tr></thead>
-      <tbody>${users.map(u => minerRow(u)).join('')}</tbody>
+      <tbody>${sorted.map(u => minerRow(u)).join('')}</tbody>
     </table>`;
 
   container.querySelectorAll('.msg-miner-btn').forEach(btn => {
     btn.addEventListener('click', () =>
       openMinerMessage(btn.dataset.id, btn.dataset.ref, btn.dataset.handle)
     );
+  });
+  container.querySelectorAll('.xp-fix-btn').forEach(btn => {
+    btn.addEventListener('click', () =>
+      openXpFix(btn.dataset.id, btn.dataset.handle, parseInt(btn.dataset.xp))
+    );
+  });
+  container.querySelectorAll('.sort-miners-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      minerSort = btn.dataset.sort;
+      renderMinersTable(allMiners);
+    });
   });
 }
 
@@ -1187,20 +1213,34 @@ function minerRow(u) {
     ? new Date(u.lastActiveAt * 1000).toLocaleDateString([], { month: 'short', day: 'numeric' })
     : '—';
   const display = esc(u.email || u.id || '—');
-  return `<tr>
+  const fs = u.fraudScore || 0;
+  const riskBadge = fs >= 60
+    ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">⚠ ${fs}</span>`
+    : fs >= 30
+      ? `<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">! ${fs}</span>`
+      : `<span style="color:#9ca3af;font-size:11px;">${fs}</span>`;
+  const todayColor = u.satsToday > 200 ? '#dc2626' : u.satsToday > 0 ? '#16a34a' : 'inherit';
+  const handle = esc(u.nickname || u.email || u.id);
+  return `<tr style="${fs >= 60 ? 'background:#fff5f5;' : fs >= 30 ? 'background:#fffbeb;' : ''}">
     <td style="font-size:12px;color:#6b7280">${u.signupNumber || '—'}</td>
     <td><strong>${u.nickname ? esc(u.nickname) : '<span style="color:#9ca3af">—</span>'}</strong></td>
-    <td style="font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${display}</td>
+    <td style="font-size:12px;color:#6b7280;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${display}</td>
     <td>${(u.totalSats || 0).toLocaleString()}</td>
-    <td style="color:${u.satsToday ? '#16a34a' : 'inherit'}">${(u.satsToday || 0).toLocaleString()}</td>
+    <td style="color:${todayColor};font-weight:${u.satsToday>200?'700':'400'}">${(u.satsToday || 0).toLocaleString()}</td>
+    <td style="font-size:12px;color:#6b7280">${(u.totalImpressions || 0).toLocaleString()}</td>
     <td>${(u.referralCount || 0).toLocaleString()}</td>
-    <td style="font-size:12px;color:#6b7280">${lastActive}</td>
-    <td>
+    <td>${riskBadge}</td>
+    <td style="white-space:nowrap;">
       <button class="msg-miner-btn btn-ghost-sm"
               data-id="${esc(u.id)}"
               data-ref="${esc(u.refCode)}"
-              data-handle="${esc(u.nickname || u.email || u.id)}"
-              style="font-size:12px;padding:4px 10px;">💬 Message</button>
+              data-handle="${handle}"
+              style="font-size:11px;padding:3px 8px;">💬</button>
+      <button class="xp-fix-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              data-handle="${handle}"
+              data-xp="${u.totalSats || 0}"
+              style="font-size:11px;padding:3px 8px;background:#fee2e2;color:#dc2626;border-color:#fca5a5;">⚙ XP</button>
     </td>
   </tr>`;
 }
@@ -1212,6 +1252,36 @@ function openMinerMessage(userId, refCode, handle) {
   document.getElementById('miner-msg-status').style.display = 'none';
   document.getElementById('miner-msg-wrap').style.display = 'block';
   document.getElementById('miner-msg-text').focus();
+}
+
+async function openXpFix(userId, handle, currentXp) {
+  const input = prompt(
+    `Adjust XP for ${handle}\nCurrent balance: ${currentXp.toLocaleString()} XP\n\nEnter new total (or leave blank to zero out):`,
+    currentXp
+  );
+  if (input === null) return;
+  const newTotal = input.trim() === '' ? 0 : parseInt(input);
+  if (isNaN(newTotal) || newTotal < 0) return alert('Invalid amount');
+  const adjustXp = newTotal - currentXp;
+  if (adjustXp === 0) return;
+  const confirm = window.confirm(
+    `Set ${handle}'s XP from ${currentXp.toLocaleString()} → ${newTotal.toLocaleString()} (${adjustXp >= 0 ? '+' : ''}${adjustXp.toLocaleString()} XP)?\n\nThis cannot be undone.`
+  );
+  if (!confirm) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ userId, adjustXp, note: `Admin set total to ${newTotal}` }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    alert(`Done. New balance: ${data.newTotal.toLocaleString()} XP`);
+    loadMiners();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
 }
 
 document.getElementById('miners-search')?.addEventListener('input', e => {
