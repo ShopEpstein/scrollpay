@@ -58,6 +58,7 @@ module.exports = async (req, res) => {
         headline,
         ctaText,
         ctaUrl,
+        videoUrl: videoUrl || '',
         videoId: videoId || null,
         dailyBudgetXp: dailyBudgetXp || 0,
         totalBudgetXp: totalBudgetXp || 0,

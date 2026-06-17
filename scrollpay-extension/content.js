@@ -152,17 +152,24 @@
     return widget;
   }
 
+  function parseVideoId(url) {
+    if (!url) return null;
+    const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
   // Update the widget's ad content in place (no re-injection).
   function renderAd(ad) {
     currentAd = ad;
+    const videoId = ad.videoId || parseVideoId(ad.videoUrl);
 
     // Video thumbnail (YouTube)
     const vc = document.getElementById('sp-video-container');
     if (vc) {
-      if (ad.videoId) {
+      if (videoId) {
         vc.style.display = 'block';
         vc.innerHTML = `<div class="sp-video-thumb" id="sp-video-thumb">
-          <img class="sp-video-img" src="https://img.youtube.com/vi/${escapeHtml(ad.videoId)}/hqdefault.jpg" alt="${escapeHtml(ad.brandName)}" />
+          <img class="sp-video-img" src="https://img.youtube.com/vi/${escapeHtml(videoId)}/hqdefault.jpg" alt="${escapeHtml(ad.brandName)}" />
           <div class="sp-play-btn">▶</div>
         </div>`;
         const thumb = document.getElementById('sp-video-thumb');
@@ -186,7 +193,8 @@
   }
 
   async function handleVideoClick() {
-    if (!currentAd || !currentAd.videoId) return;
+    const videoId = currentAd && (currentAd.videoId || parseVideoId(currentAd.videoUrl));
+    if (!videoId) return;
     const uid = await getUserId();
     if (uid) {
       const res = await sendToBackground({ type: 'RECORD_CLICK', userId: uid, adId: currentAd.id });
@@ -195,7 +203,7 @@
         setXpDisplay(displayedXp);
       }
     }
-    window.open(`https://www.youtube.com/watch?v=${currentAd.videoId}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener,noreferrer');
   }
 
   function rotateAd() {
