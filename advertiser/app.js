@@ -543,6 +543,7 @@ function openEditModal(adId, rows) {
   document.getElementById('edit-headline').value    = c.headline || '';
   document.getElementById('edit-cta-text').value    = c.ctaText || '';
   document.getElementById('edit-cta-url').value     = c.ctaUrl || '';
+  document.getElementById('edit-video-url').value   = c.videoUrl || (c.videoId ? `https://youtu.be/${c.videoId}` : '');
   document.getElementById('edit-brand-logo').value  = c.brandLogo || '';
   document.getElementById('edit-daily-budget').value = c.dailyBudgetXp || 0;
   document.getElementById('edit-total-budget').value = c.totalBudgetXp || 0;
@@ -578,6 +579,7 @@ document.getElementById('edit-save').addEventListener('click', async () => {
         headline:     document.getElementById('edit-headline').value.trim(),
         ctaText:      document.getElementById('edit-cta-text').value.trim(),
         ctaUrl:       document.getElementById('edit-cta-url').value.trim(),
+        videoUrl:     document.getElementById('edit-video-url').value.trim(),
         brandLogo:    document.getElementById('edit-brand-logo').value.trim(),
         dailyBudgetXp: parseInt(document.getElementById('edit-daily-budget').value) || 0,
         totalBudgetXp: parseInt(document.getElementById('edit-total-budget').value) || 0,

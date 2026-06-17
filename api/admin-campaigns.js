@@ -2,6 +2,12 @@ const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
+function parseYouTubeId(url) {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
   const authHeader = req.headers.authorization || '';
@@ -73,6 +79,10 @@ module.exports = async (req, res) => {
       delete updates.ownerId;
       delete updates.ownerEmail;
       delete updates.createdAt;
+      // Parse videoUrl → videoId so the extension can render the thumbnail
+      if ('videoUrl' in updates) {
+        updates.videoId = parseYouTubeId(updates.videoUrl) || null;
+      }
       await db.collection('sp_ads').doc(adId).update(updates);
       return res.status(200).json({ ok: true });
     }
