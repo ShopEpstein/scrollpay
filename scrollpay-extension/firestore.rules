@@ -79,5 +79,17 @@ service cloud.firestore {
         && request.resource.data.userCount >= 1;
       allow update: if request.resource.data.userCount > resource.data.userCount;
     }
+
+    // XP/SCROLL exchange — order book: public read; anyone can post (rate-limited by API).
+    match /sp_scroll_orders/{orderId} {
+      allow read: if true;
+      allow write: if false; // all writes go through the API
+    }
+
+    // XP/SCROLL exchange — trade history: public read only.
+    match /sp_scroll_trades/{tradeId} {
+      allow read: if true;
+      allow write: if false; // admin only via API
+    }
   }
 }
