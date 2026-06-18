@@ -55,13 +55,21 @@
     .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 
+    /* Chart hero (full width, above grid) */
+    .chart-hero {
+      max-width: 1100px; margin: 14px auto 0; padding: 0 20px;
+    }
+    .chart-hero .card { display: flex; flex-direction: column; }
+    .chart-hero #price-chart { height: 140px; }
+    #price-chart { width: 100%; display: block; }
+
     /* Main grid */
     .exchange-grid {
       display: grid;
-      grid-template-columns: 300px 1fr 260px;
+      grid-template-columns: 300px 1fr;
       grid-template-rows: auto auto;
       gap: 12px;
-      padding: 14px 20px;
+      padding: 10px 20px 14px;
       max-width: 1100px; margin: 0 auto;
     }
 
@@ -158,8 +166,7 @@
 
     /* Price chart */
     .chart-wrap { padding: 12px 14px; }
-    #price-chart { width: 100%; height: 80px; display: block; }
-    .chart-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px 14px; }
+    .chart-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 14px 14px; }
     .cs-cell { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
     .cs-val { font-size: 14px; font-weight: 700; color: var(--ink); }
     .cs-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
@@ -204,6 +211,7 @@
     @media (max-width: 860px) {
       .exchange-grid { grid-template-columns: 1fr; }
       .trade-feed-wrap { grid-column: auto; }
+      .chart-stats { grid-template-columns: 1fr 1fr; }
       .ticker-bar { gap: 16px; }
       .feed-header-row, .feed-row { grid-template-columns: 60px 90px 90px 90px 1fr; }
     }
@@ -256,6 +264,47 @@
   </div>
   <div class="ticker-live">
     <div class="live-dot"></div> LIVE
+  </div>
+</div>
+
+<!-- Chart hero -->
+<div class="chart-hero">
+  <div class="card">
+    <div class="card-head">
+      <h3>Price (SCROLL / XP)</h3>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span id="chart-range" style="font-size:11px;color:var(--muted);">last 50 trades</span>
+        <!-- SCROLL token info inline -->
+        <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border-radius:6px;padding:4px 10px;">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);">$SCROLL</span>
+          <span style="color:#fff;font-size:12px;font-weight:700;" id="scroll-token-price">—</span>
+          <span style="color:#64748b;font-size:11px;" id="scroll-token-mcap"></span>
+          <a href="https://pump.fun/coin/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump" target="_blank" rel="noopener"
+            style="font-size:11px;font-weight:700;color:var(--orange);text-decoration:none;white-space:nowrap;">Buy →</a>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="price-chart" style="height:140px;"></canvas>
+    </div>
+    <div class="chart-stats">
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-high">—</div>
+        <div class="cs-lbl">24h High</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-low">—</div>
+        <div class="cs-lbl">24h Low</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-open">—</div>
+        <div class="cs-lbl">Open (24h ago)</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-spread">—</div>
+        <div class="cs-lbl">Spread</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -356,48 +405,6 @@
 
       <button class="btn-trade btn-sell" id="btn-sell">List XP for Sale</button>
       <div class="f-msg" id="sell-msg"></div>
-    </div>
-  </div>
-
-  <!-- Chart + stats -->
-  <div class="card" style="display:flex;flex-direction:column;">
-    <div class="card-head">
-      <h3>Price (SCROLL/XP)</h3>
-      <span id="chart-range" style="font-size:11px;color:var(--muted);">last 50 trades</span>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="price-chart"></canvas>
-    </div>
-    <div class="chart-stats">
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-high">—</div>
-        <div class="cs-lbl">24h High</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-low">—</div>
-        <div class="cs-lbl">24h Low</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-open">—</div>
-        <div class="cs-lbl">Open (24h ago)</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-spread">—</div>
-        <div class="cs-lbl">Spread</div>
-      </div>
-    </div>
-
-    <!-- SCROLL token quick info -->
-    <div style="padding:0 14px 14px;">
-      <div style="background:#0f172a;border-radius:8px;padding:10px 12px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);margin-bottom:4px;">$SCROLL · Solana</div>
-        <div style="color:#fff;font-size:13px;font-weight:700;" id="scroll-token-price">—</div>
-        <div style="color:#64748b;font-size:11px;margin-top:2px;" id="scroll-token-mcap">—</div>
-        <a href="https://pump.fun/coin/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump" target="_blank" rel="noopener"
-          style="display:inline-block;margin-top:8px;font-size:11px;font-weight:700;color:var(--orange);text-decoration:none;">
-          Buy on pump.fun →
-        </a>
-      </div>
     </div>
   </div>
 
@@ -643,7 +650,7 @@
   function drawChart() {
     const canvas = document.getElementById('price-chart');
     const ctx = canvas.getContext('2d');
-    const W = canvas.offsetWidth; const H = 80;
+    const W = canvas.offsetWidth; const H = canvas.offsetHeight || 140;
     canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
 
@@ -652,7 +659,7 @@
       ctx.fillStyle = '#f3f4f6';
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#9ca3af'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-      ctx.fillText('Waiting for trades…', W/2, H/2);
+      ctx.font = '13px Inter'; ctx.fillText('No trades yet — place the first order below!', W/2, H/2);
       return;
     }
 
