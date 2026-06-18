@@ -55,13 +55,21 @@
     .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 
+    /* Chart hero (full width, above grid) */
+    .chart-hero {
+      max-width: 1100px; margin: 14px auto 0; padding: 0 20px;
+    }
+    .chart-hero .card { display: flex; flex-direction: column; }
+    .chart-hero #price-chart { height: 140px; }
+    #price-chart { width: 100%; display: block; }
+
     /* Main grid */
     .exchange-grid {
       display: grid;
-      grid-template-columns: 300px 1fr 260px;
+      grid-template-columns: 300px 1fr;
       grid-template-rows: auto auto;
       gap: 12px;
-      padding: 14px 20px;
+      padding: 10px 20px 14px;
       max-width: 1100px; margin: 0 auto;
     }
 
@@ -158,8 +166,7 @@
 
     /* Price chart */
     .chart-wrap { padding: 12px 14px; }
-    #price-chart { width: 100%; height: 80px; display: block; }
-    .chart-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px 14px; }
+    .chart-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 14px 14px; }
     .cs-cell { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
     .cs-val { font-size: 14px; font-weight: 700; color: var(--ink); }
     .cs-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
@@ -182,11 +189,20 @@
     .feed-side { font-weight: 700; }
     .feed-side.sell { color: var(--red); }
     .feed-side.buy  { color: var(--green); }
+    .feed-side.btc  { color: #f59e0b; }
     .feed-price { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
     .feed-xp    { color: var(--muted); }
     .feed-scroll { color: var(--orange); font-weight: 600; }
     .feed-time { color: var(--muted); text-align: right; }
     .feed-empty { padding: 32px 14px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* BTC marketplace section inside order book */
+    .ob-btc-sep { padding: 5px 10px; background: #fffbeb; border-top: 1px solid #fde68a; border-bottom: 1px solid #fde68a; display: flex; justify-content: space-between; align-items: center; }
+    .ob-btc-sep span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #92400e; }
+    .ob-btc-sep a { font-size: 10px; color: #92400e; text-decoration: none; font-weight: 600; }
+    .ob-btc-sep a:hover { text-decoration: underline; }
+    .ob-row.btc-row .ob-price { color: #d97706; }
+    .ob-row.btc-row .depth-bar { background: rgba(245,158,11,.15); }
 
     /* Info box */
     .info-box { background: #0f172a; border-radius: 10px; padding: 14px; margin: 14px; color: #e2e8f0; font-size: 12px; line-height: 1.6; }
@@ -204,6 +220,7 @@
     @media (max-width: 860px) {
       .exchange-grid { grid-template-columns: 1fr; }
       .trade-feed-wrap { grid-column: auto; }
+      .chart-stats { grid-template-columns: 1fr 1fr; }
       .ticker-bar { gap: 16px; }
       .feed-header-row, .feed-row { grid-template-columns: 60px 90px 90px 90px 1fr; }
     }
@@ -259,6 +276,47 @@
   </div>
 </div>
 
+<!-- Chart hero -->
+<div class="chart-hero">
+  <div class="card">
+    <div class="card-head">
+      <h3>Price (SCROLL / XP)</h3>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span id="chart-range" style="font-size:11px;color:var(--muted);">last 50 trades</span>
+        <!-- SCROLL token info inline -->
+        <div style="display:flex;align-items:center;gap:10px;background:#0f172a;border-radius:6px;padding:4px 10px;">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);">$SCROLL</span>
+          <span style="color:#fff;font-size:12px;font-weight:700;" id="scroll-token-price">—</span>
+          <span style="color:#64748b;font-size:11px;" id="scroll-token-mcap"></span>
+          <a href="https://pump.fun/coin/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump" target="_blank" rel="noopener"
+            style="font-size:11px;font-weight:700;color:var(--orange);text-decoration:none;white-space:nowrap;">Buy →</a>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="price-chart" style="height:140px;"></canvas>
+    </div>
+    <div class="chart-stats">
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-high">—</div>
+        <div class="cs-lbl">24h High</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-low">—</div>
+        <div class="cs-lbl">24h Low</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-open">—</div>
+        <div class="cs-lbl">Open (24h ago)</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-spread">—</div>
+        <div class="cs-lbl">Spread</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Exchange grid -->
 <div class="exchange-grid">
 
@@ -281,6 +339,12 @@
       </div>
       <!-- Bids -->
       <div id="ob-bids"></div>
+      <!-- BTC marketplace listings -->
+      <div class="ob-btc-sep">
+        <span>₿ BTC Marketplace</span>
+        <a href="/market">all listings →</a>
+      </div>
+      <div id="ob-btc"></div>
     </div>
   </div>
 
@@ -291,7 +355,7 @@
       <button class="trade-tab sell" id="tab-sell">▼ Sell XP</button>
     </div>
 
-    <!-- Buy XP form -->
+    <!-- Buy XP form — Step 1 -->
     <div id="form-buy" class="trade-form-body">
       <span class="f-label">SCROLL to spend</span>
       <input class="f-input" type="number" id="buy-scroll" placeholder="e.g. 50000" min="1" step="1000" />
@@ -313,19 +377,36 @@
       <span class="f-label">Your referral code</span>
       <input class="f-input" type="text" id="buy-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
 
-      <span class="f-label">Your Solana address (send SCROLL from here)</span>
+      <span class="f-label">Your Solana address (you'll send SCROLL from here)</span>
       <input class="f-input" type="text" id="buy-sol" placeholder="Solana wallet address" />
-      <div class="f-hint">You'll send SCROLL to the seller's address to complete the trade.</div>
 
-      <button class="btn-trade btn-buy" id="btn-buy">Place Buy Order</button>
+      <button class="btn-trade btn-buy" id="btn-buy">Generate Deposit Address →</button>
       <div class="f-msg" id="buy-msg"></div>
+    </div>
 
-      <div class="info-box" style="margin-top:12px;">
-        <strong>How to complete a buy:</strong><br>
-        1. Place your order below<br>
-        2. A seller will be matched<br>
-        3. Send SCROLL to their Solana address<br>
-        4. <a href="mailto:support@scrollpay.app">Email us</a> the tx hash — we'll credit your XP within 24h
+    <!-- Buy XP form — Step 2: deposit instructions (hidden until Step 1 completes) -->
+    <div id="form-buy-step2" class="trade-form-body" style="display:none;">
+      <div class="info-box">
+        <strong>Step 2 — Send your SCROLL</strong><br>
+        Send exactly <strong id="escrow-amount">—</strong> SCROLL to this escrow wallet:
+      </div>
+      <div style="margin:10px 14px 0;">
+        <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span id="escrow-address" style="font-size:11px;font-family:monospace;word-break:break-all;color:#1e293b;flex:1;"></span>
+          <button class="btn-sm" id="copy-escrow" style="flex-shrink:0;">Copy</button>
+        </div>
+        <div class="f-hint" style="margin-top:6px;">This address is unique to your order. Only send $SCROLL (SPL token) — anything else will be lost.</div>
+      </div>
+      <div style="margin:12px 14px 0;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Order ID (save this):</div>
+        <div style="font-size:11px;font-family:monospace;color:#374151;word-break:break-all;" id="escrow-order-id"></div>
+      </div>
+      <div style="padding:0 14px;">
+        <button class="btn-trade btn-buy" id="btn-confirm-deposit" style="margin-top:14px;">✓ I've Sent the SCROLL — Confirm Deposit</button>
+        <div class="f-msg" id="confirm-msg"></div>
+      </div>
+      <div style="padding:0 14px 14px;">
+        <button class="btn-sm" id="btn-back-buy" style="margin-top:8px;width:100%;">← Start over</button>
       </div>
     </div>
 
@@ -354,50 +435,12 @@
       <input class="f-input" type="text" id="sell-sol" placeholder="Solana wallet address" />
       <div class="f-hint">The buyer sends SCROLL directly to this address when your order fills.</div>
 
+      <div class="f-hint" style="color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-top:4px;">
+        🔒 Your XP is <strong>locked immediately</strong> when you list. It's returned automatically if you cancel.
+      </div>
+
       <button class="btn-trade btn-sell" id="btn-sell">List XP for Sale</button>
       <div class="f-msg" id="sell-msg"></div>
-    </div>
-  </div>
-
-  <!-- Chart + stats -->
-  <div class="card" style="display:flex;flex-direction:column;">
-    <div class="card-head">
-      <h3>Price (SCROLL/XP)</h3>
-      <span id="chart-range" style="font-size:11px;color:var(--muted);">last 50 trades</span>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="price-chart"></canvas>
-    </div>
-    <div class="chart-stats">
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-high">—</div>
-        <div class="cs-lbl">24h High</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-low">—</div>
-        <div class="cs-lbl">24h Low</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-open">—</div>
-        <div class="cs-lbl">Open (24h ago)</div>
-      </div>
-      <div class="cs-cell">
-        <div class="cs-val" id="stat-spread">—</div>
-        <div class="cs-lbl">Spread</div>
-      </div>
-    </div>
-
-    <!-- SCROLL token quick info -->
-    <div style="padding:0 14px 14px;">
-      <div style="background:#0f172a;border-radius:8px;padding:10px 12px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);margin-bottom:4px;">$SCROLL · Solana</div>
-        <div style="color:#fff;font-size:13px;font-weight:700;" id="scroll-token-price">—</div>
-        <div style="color:#64748b;font-size:11px;margin-top:2px;" id="scroll-token-mcap">—</div>
-        <a href="https://pump.fun/coin/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump" target="_blank" rel="noopener"
-          style="display:inline-block;margin-top:8px;font-size:11px;font-weight:700;color:var(--orange);text-decoration:none;">
-          Buy on pump.fun →
-        </a>
-      </div>
     </div>
   </div>
 
@@ -410,10 +453,10 @@
       </div>
     </div>
     <div class="feed-header-row">
-      <span>Side</span>
-      <span>Price (SCROLL/XP)</span>
+      <span>Method</span>
+      <span>Price / XP</span>
       <span>XP</span>
-      <span class="feed-scroll-head">SCROLL</span>
+      <span class="feed-scroll-head">Total</span>
       <span style="text-align:right;">Time</span>
     </div>
     <div id="trade-feed">
@@ -451,6 +494,8 @@
   // ── State ─────────────────────────────────────────────────────
   let orders = { asks: [], bids: [] };
   let trades = [];
+  let mktListings = [];    // open BTC marketplace listings
+  let mktFulfilled = [];   // fulfilled BTC sales (for trade history)
   let scrollUsd = 0;
   let lastPrice = null;
 
@@ -524,6 +569,46 @@
     updateTicker();
     drawChart();
   }, () => {});
+
+  // ── BTC marketplace data ──────────────────────────────────────
+  async function loadMarketplaceData() {
+    try {
+      const [openRes, filledRes] = await Promise.all([
+        fetch('/api/xp-market'),
+        fetch('/api/xp-market?status=fulfilled'),
+      ]);
+      const openData   = await openRes.json();
+      const filledData = await filledRes.json();
+      mktListings  = (openData.listings   || []).sort((a,b) => a.pricePerXp - b.pricePerXp);
+      mktFulfilled = (filledData.listings  || []).map(t => ({
+        ...t,
+        _ts: t.fulfilledAt?._seconds || t.fulfilledAt?.seconds || 0,
+        source: 'btc',
+      })).sort((a,b) => b._ts - a._ts);
+      renderBtcListings();
+      renderTradeFeed();
+    } catch (_) {}
+  }
+
+  function renderBtcListings() {
+    const el = document.getElementById('ob-btc');
+    if (!mktListings.length) {
+      el.innerHTML = '<div class="ob-empty">No BTC listings</div>';
+      return;
+    }
+    const maxVol = Math.max(...mktListings.map(o => o.xpAmount || 0), 1);
+    el.innerHTML = mktListings.slice(0, 8).map(o => {
+      const pct = ((o.xpAmount || 0) / maxVol * 100).toFixed(1);
+      const sats = fmtN(o.pricePerXp);
+      const total = fmtN(o.satsRequested);
+      return `<div class="ob-row btc-row">
+        <span class="ob-price">${sats} sats</span>
+        <span>${fmtN(o.xpAmount)}</span>
+        <span>${total} sats</span>
+        <div class="depth-bar" style="width:${pct}%;"></div>
+      </div>`;
+    }).join('');
+  }
 
   // ── Fallback REST (if Firestore rules block direct reads) ─────
   async function loadFallback() {
@@ -621,19 +706,35 @@
   // ── Render trade feed ─────────────────────────────────────────
   function renderTradeFeed() {
     const el = document.getElementById('trade-feed');
-    if (!trades.length) {
+
+    // Merge SCROLL trades + fulfilled BTC sales, sorted newest first
+    const scrollRows = trades.map(t => ({ ...t, source: 'scroll', _ts: t._ts || t.tradedAt || 0 }));
+    const merged = [...scrollRows, ...mktFulfilled].sort((a, b) => b._ts - a._ts).slice(0, 40);
+
+    if (!merged.length) {
       el.innerHTML = '<div class="feed-empty">No trades yet — be the first to trade.</div>';
       return;
     }
-    el.innerHTML = trades.slice(0, 30).map(t => {
+    el.innerHTML = merged.map(t => {
+      const ago = timeAgo(t._ts);
+      if (t.source === 'btc') {
+        const txLink = t.txUrl
+          ? `<a href="${esc(t.txUrl)}" target="_blank" rel="noopener" style="color:inherit;">₿ BTC</a>`
+          : '₿ BTC';
+        return `<div class="feed-row">
+          <span class="feed-side btc">${txLink}</span>
+          <span class="feed-price">${fmtN(t.pricePerXp)} sats</span>
+          <span class="feed-xp">${fmtN(t.xpAmount)} XP</span>
+          <span class="feed-scroll">${fmtN(t.satsRequested)} sats</span>
+          <span class="feed-time">${esc(ago)}</span>
+        </div>`;
+      }
       const side = t.side === 'buy' ? 'buy' : 'sell';
-      const label = side === 'sell' ? 'SELL' : 'BUY';
-      const ago = timeAgo(t._ts || t.tradedAt);
       return `<div class="feed-row">
-        <span class="feed-side ${side}">${esc(label)}</span>
-        <span class="feed-price">${fmtN(t.scrollPerXp, 2)}</span>
+        <span class="feed-side ${side}">${esc(side.toUpperCase())}</span>
+        <span class="feed-price">${fmtN(t.scrollPerXp, 2)} SCROLL</span>
         <span class="feed-xp">${fmtN(t.xpAmount)} XP</span>
-        <span class="feed-scroll">${fmtN(t.totalScroll)}</span>
+        <span class="feed-scroll">${fmtN(t.totalScroll)} SCROLL</span>
         <span class="feed-time">${esc(ago)}</span>
       </div>`;
     }).join('');
@@ -643,7 +744,7 @@
   function drawChart() {
     const canvas = document.getElementById('price-chart');
     const ctx = canvas.getContext('2d');
-    const W = canvas.offsetWidth; const H = 80;
+    const W = canvas.offsetWidth; const H = canvas.offsetHeight || 140;
     canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
 
@@ -652,7 +753,7 @@
       ctx.fillStyle = '#f3f4f6';
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#9ca3af'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-      ctx.fillText('Waiting for trades…', W/2, H/2);
+      ctx.font = '13px Inter'; ctx.fillText('No trades yet — place the first order below!', W/2, H/2);
       return;
     }
 
@@ -754,57 +855,141 @@
     document.getElementById('form-buy').style.display  = 'none';
   });
 
-  // ── Place order ───────────────────────────────────────────────
-  async function placeOrder(type) {
-    const isBuy  = type === 'bid';
-    const scroll = isBuy ? parseFloat(document.getElementById('buy-scroll').value) : null;
-    const price  = parseFloat(document.getElementById(isBuy ? 'buy-price' : 'sell-price').value);
-    const xp     = isBuy ? Math.floor(scroll / price) : parseFloat(document.getElementById('sell-xp').value);
-    const ref    = document.getElementById(isBuy ? 'buy-ref' : 'sell-ref').value.trim().toUpperCase();
-    const sol    = document.getElementById(isBuy ? 'buy-sol' : 'sell-sol').value.trim();
-    const msgEl  = document.getElementById(isBuy ? 'buy-msg' : 'sell-msg');
-    const btn    = document.getElementById(isBuy ? 'btn-buy' : 'btn-sell');
+  // ── Place ask (sell XP — XP locked immediately) ──────────────
+  async function placeAsk() {
+    const xp    = parseFloat(document.getElementById('sell-xp').value);
+    const price = parseFloat(document.getElementById('sell-price').value);
+    const ref   = document.getElementById('sell-ref').value.trim().toUpperCase();
+    const sol   = document.getElementById('sell-sol').value.trim();
+    const msgEl = document.getElementById('sell-msg');
+    const btn   = document.getElementById('btn-sell');
 
     msgEl.className = 'f-msg';
-
-    if (!xp || xp < 100) { msgEl.textContent = 'Minimum 100 XP'; msgEl.className = 'f-msg err'; return; }
+    if (!xp || xp < 100)  { msgEl.textContent = 'Minimum 100 XP'; msgEl.className = 'f-msg err'; return; }
     if (!price || price <= 0) { msgEl.textContent = 'Enter a valid price'; msgEl.className = 'f-msg err'; return; }
     if (!ref) { msgEl.textContent = 'Enter your referral code'; msgEl.className = 'f-msg err'; return; }
 
-    btn.disabled = true;
-    btn.textContent = 'Placing order…';
-
+    btn.disabled = true; btn.textContent = 'Locking XP…';
     try {
-      const res = await fetch('/api/scroll-market', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, xpAmount: xp, scrollPerXp: price, refCode: ref, solanaAddress: sol }),
+      const res  = await fetch('/api/scroll-market', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'ask', xpAmount: xp, scrollPerXp: price, refCode: ref, solanaAddress: sol }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Server error');
-
-      const totalScroll = data.totalScroll?.toLocaleString() || '—';
-      msgEl.textContent = `✓ Order placed! ${fmtN(xp)} XP @ ${fmtN(price, 2)} SCROLL/XP = ${totalScroll} SCROLL total.`;
+      msgEl.textContent = `✓ Listed! ${fmtN(xp)} XP locked and live in the order book.`;
       msgEl.className = 'f-msg ok';
-      document.getElementById(isBuy ? 'buy-scroll' : 'sell-xp').value = '';
-      document.getElementById(isBuy ? 'buy-price' : 'sell-price').value = '';
+      document.getElementById('sell-xp').value = '';
+      document.getElementById('sell-price').value = '';
       updateEstimates();
     } catch (err) {
-      msgEl.textContent = err.message;
-      msgEl.className = 'f-msg err';
+      msgEl.textContent = err.message; msgEl.className = 'f-msg err';
     } finally {
-      btn.disabled = false;
-      btn.textContent = isBuy ? 'Place Buy Order' : 'List XP for Sale';
+      btn.disabled = false; btn.textContent = 'List XP for Sale';
     }
   }
 
-  document.getElementById('btn-buy').addEventListener('click',  () => placeOrder('bid'));
-  document.getElementById('btn-sell').addEventListener('click', () => placeOrder('ask'));
-  document.getElementById('ob-refresh').addEventListener('click', loadFallback);
+  // ── Place bid Step 1: get unique escrow address ───────────────
+  let _escrowOrderId = '';
+
+  async function placeBidStep1() {
+    const scroll = parseFloat(document.getElementById('buy-scroll').value);
+    const price  = parseFloat(document.getElementById('buy-price').value);
+    const xp     = Math.floor(scroll / price);
+    const ref    = document.getElementById('buy-ref').value.trim().toUpperCase();
+    const sol    = document.getElementById('buy-sol').value.trim();
+    const msgEl  = document.getElementById('buy-msg');
+    const btn    = document.getElementById('btn-buy');
+
+    msgEl.className = 'f-msg';
+    if (!xp || xp < 100)  { msgEl.textContent = 'Minimum 100 XP (adjust SCROLL amount or price)'; msgEl.className = 'f-msg err'; return; }
+    if (!price || price <= 0) { msgEl.textContent = 'Enter a valid price'; msgEl.className = 'f-msg err'; return; }
+    if (!ref) { msgEl.textContent = 'Enter your referral code'; msgEl.className = 'f-msg err'; return; }
+
+    btn.disabled = true; btn.textContent = 'Generating deposit address…';
+    try {
+      const res  = await fetch('/api/scroll-market', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'bid', xpAmount: xp, scrollPerXp: price, refCode: ref, solanaAddress: sol }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // If they already have a pending order, show that escrow address again
+        if (data.escrowAddress) {
+          showEscrowStep2(data.existingOrderId, data.escrowAddress, data.scrollAmount, ref);
+          return;
+        }
+        throw new Error(data.error || 'Server error');
+      }
+      showEscrowStep2(data.id, data.escrowAddress, data.scrollAmount, ref);
+    } catch (err) {
+      msgEl.textContent = err.message; msgEl.className = 'f-msg err';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Generate Deposit Address →';
+    }
+  }
+
+  function showEscrowStep2(orderId, escrowAddress, scrollAmount, ref) {
+    _escrowOrderId = orderId;
+    document.getElementById('escrow-order-id').textContent = orderId;
+    document.getElementById('escrow-address').textContent  = escrowAddress;
+    document.getElementById('escrow-amount').textContent   = fmtN(scrollAmount);
+    document.getElementById('form-buy').style.display       = 'none';
+    document.getElementById('form-buy-step2').style.display = 'block';
+    // Store ref for confirm step
+    document.getElementById('btn-confirm-deposit').dataset.ref = ref;
+  }
+
+  // ── Place bid Step 2: verify deposit ─────────────────────────
+  async function confirmDeposit() {
+    const btn    = document.getElementById('btn-confirm-deposit');
+    const msgEl  = document.getElementById('confirm-msg');
+    const ref    = btn.dataset.ref || '';
+    if (!_escrowOrderId) return;
+
+    btn.disabled = true; btn.textContent = 'Checking on-chain balance…';
+    msgEl.className = 'f-msg';
+    try {
+      const res  = await fetch('/api/scroll-market', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_bid', orderId: _escrowOrderId, refCode: ref }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Verification failed');
+      msgEl.textContent = `✓ Deposit confirmed! Your buy order is now live in the order book.`;
+      msgEl.className = 'f-msg ok';
+      btn.textContent  = '✓ Confirmed';
+    } catch (err) {
+      msgEl.textContent = err.message; msgEl.className = 'f-msg err';
+      btn.disabled = false; btn.textContent = '✓ I\'ve Sent the SCROLL — Confirm Deposit';
+    }
+  }
+
+  document.getElementById('btn-sell').addEventListener('click', placeAsk);
+  document.getElementById('btn-buy').addEventListener('click',  placeBidStep1);
+  document.getElementById('btn-confirm-deposit').addEventListener('click', confirmDeposit);
+  document.getElementById('copy-escrow').addEventListener('click', () => {
+    const addr = document.getElementById('escrow-address').textContent;
+    navigator.clipboard.writeText(addr).then(() => {
+      document.getElementById('copy-escrow').textContent = '✓';
+      setTimeout(() => document.getElementById('copy-escrow').textContent = 'Copy', 1500);
+    });
+  });
+  document.getElementById('btn-back-buy').addEventListener('click', () => {
+    document.getElementById('form-buy-step2').style.display = 'none';
+    document.getElementById('form-buy').style.display       = 'block';
+    _escrowOrderId = '';
+  });
+  document.getElementById('ob-refresh').addEventListener('click', () => {
+    loadFallback();
+    loadMarketplaceData();
+  });
 
   // ── Boot ──────────────────────────────────────────────────────
   fetchScrollPrice();
+  loadMarketplaceData();
   setInterval(fetchScrollPrice, 60000);
+  setInterval(loadMarketplaceData, 60000);
 </script>
 </body>
 </html>

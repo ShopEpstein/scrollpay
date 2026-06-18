@@ -19,6 +19,8 @@ module.exports = async (req, res) => {
         listings.push({
           id: d.id,
           xpAmount: data.xpAmount,
+          pricePerXp: data.pricePerXp || 0,
+          satsRequested: data.satsRequested || 0,
           txHash: data.txHash || '',
           txChain: data.txChain || 'btc',
           txUrl: data.txUrl || '',
