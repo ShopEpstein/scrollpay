@@ -4,9 +4,7 @@
   "version": "1.2.0",
   "description": "Earn XP for every ad you see while browsing and use it to enter prize draws. Privacy-safe, no page content read.",
   "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
