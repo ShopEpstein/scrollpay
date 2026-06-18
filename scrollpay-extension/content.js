@@ -422,7 +422,10 @@
       }
     }
 
-    window.open(currentAd.ctaUrl, '_blank', 'noopener,noreferrer');
+    const ctaUrl = currentAd.ctaUrl;
+    if (ctaUrl && /^https:\/\//.test(ctaUrl)) {
+      window.open(ctaUrl, '_blank', 'noopener,noreferrer');
+    }
   }
 
   // --- Init ---

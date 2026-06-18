@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "ScrollPay — Earn XP While You Browse",
-  "version": "1.2.0",
-  "description": "Earn XP for every ad you see while browsing and use it to enter prize draws. Privacy-safe, no page content read.",
+  "version": "1.2.1",
+  "description": "Earn XP watching ads on any website. Sell for Bitcoin, win weekly BTC draws, earn referral bonuses. Widget never reads page content.",
   "permissions": [
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://*.googleapis.com/*",
+    "https://scrollpay.app/*"
   ],
   "background": {
     "service_worker": "background.js",
