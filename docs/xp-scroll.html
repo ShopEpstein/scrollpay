@@ -189,11 +189,20 @@
     .feed-side { font-weight: 700; }
     .feed-side.sell { color: var(--red); }
     .feed-side.buy  { color: var(--green); }
+    .feed-side.btc  { color: #f59e0b; }
     .feed-price { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
     .feed-xp    { color: var(--muted); }
     .feed-scroll { color: var(--orange); font-weight: 600; }
     .feed-time { color: var(--muted); text-align: right; }
     .feed-empty { padding: 32px 14px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* BTC marketplace section inside order book */
+    .ob-btc-sep { padding: 5px 10px; background: #fffbeb; border-top: 1px solid #fde68a; border-bottom: 1px solid #fde68a; display: flex; justify-content: space-between; align-items: center; }
+    .ob-btc-sep span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #92400e; }
+    .ob-btc-sep a { font-size: 10px; color: #92400e; text-decoration: none; font-weight: 600; }
+    .ob-btc-sep a:hover { text-decoration: underline; }
+    .ob-row.btc-row .ob-price { color: #d97706; }
+    .ob-row.btc-row .depth-bar { background: rgba(245,158,11,.15); }
 
     /* Info box */
     .info-box { background: #0f172a; border-radius: 10px; padding: 14px; margin: 14px; color: #e2e8f0; font-size: 12px; line-height: 1.6; }
@@ -330,6 +339,12 @@
       </div>
       <!-- Bids -->
       <div id="ob-bids"></div>
+      <!-- BTC marketplace listings -->
+      <div class="ob-btc-sep">
+        <span>₿ BTC Marketplace</span>
+        <a href="/market">all listings →</a>
+      </div>
+      <div id="ob-btc"></div>
     </div>
   </div>
 
@@ -417,10 +432,10 @@
       </div>
     </div>
     <div class="feed-header-row">
-      <span>Side</span>
-      <span>Price (SCROLL/XP)</span>
+      <span>Method</span>
+      <span>Price / XP</span>
       <span>XP</span>
-      <span class="feed-scroll-head">SCROLL</span>
+      <span class="feed-scroll-head">Total</span>
       <span style="text-align:right;">Time</span>
     </div>
     <div id="trade-feed">
@@ -458,6 +473,8 @@
   // ── State ─────────────────────────────────────────────────────
   let orders = { asks: [], bids: [] };
   let trades = [];
+  let mktListings = [];    // open BTC marketplace listings
+  let mktFulfilled = [];   // fulfilled BTC sales (for trade history)
   let scrollUsd = 0;
   let lastPrice = null;
 
@@ -531,6 +548,46 @@
     updateTicker();
     drawChart();
   }, () => {});
+
+  // ── BTC marketplace data ──────────────────────────────────────
+  async function loadMarketplaceData() {
+    try {
+      const [openRes, filledRes] = await Promise.all([
+        fetch('/api/xp-market'),
+        fetch('/api/xp-market?status=fulfilled'),
+      ]);
+      const openData   = await openRes.json();
+      const filledData = await filledRes.json();
+      mktListings  = (openData.listings   || []).sort((a,b) => a.pricePerXp - b.pricePerXp);
+      mktFulfilled = (filledData.listings  || []).map(t => ({
+        ...t,
+        _ts: t.fulfilledAt?._seconds || t.fulfilledAt?.seconds || 0,
+        source: 'btc',
+      })).sort((a,b) => b._ts - a._ts);
+      renderBtcListings();
+      renderTradeFeed();
+    } catch (_) {}
+  }
+
+  function renderBtcListings() {
+    const el = document.getElementById('ob-btc');
+    if (!mktListings.length) {
+      el.innerHTML = '<div class="ob-empty">No BTC listings</div>';
+      return;
+    }
+    const maxVol = Math.max(...mktListings.map(o => o.xpAmount || 0), 1);
+    el.innerHTML = mktListings.slice(0, 8).map(o => {
+      const pct = ((o.xpAmount || 0) / maxVol * 100).toFixed(1);
+      const sats = fmtN(o.pricePerXp);
+      const total = fmtN(o.satsRequested);
+      return `<div class="ob-row btc-row">
+        <span class="ob-price">${sats} sats</span>
+        <span>${fmtN(o.xpAmount)}</span>
+        <span>${total} sats</span>
+        <div class="depth-bar" style="width:${pct}%;"></div>
+      </div>`;
+    }).join('');
+  }
 
   // ── Fallback REST (if Firestore rules block direct reads) ─────
   async function loadFallback() {
@@ -628,19 +685,35 @@
   // ── Render trade feed ─────────────────────────────────────────
   function renderTradeFeed() {
     const el = document.getElementById('trade-feed');
-    if (!trades.length) {
+
+    // Merge SCROLL trades + fulfilled BTC sales, sorted newest first
+    const scrollRows = trades.map(t => ({ ...t, source: 'scroll', _ts: t._ts || t.tradedAt || 0 }));
+    const merged = [...scrollRows, ...mktFulfilled].sort((a, b) => b._ts - a._ts).slice(0, 40);
+
+    if (!merged.length) {
       el.innerHTML = '<div class="feed-empty">No trades yet — be the first to trade.</div>';
       return;
     }
-    el.innerHTML = trades.slice(0, 30).map(t => {
+    el.innerHTML = merged.map(t => {
+      const ago = timeAgo(t._ts);
+      if (t.source === 'btc') {
+        const txLink = t.txUrl
+          ? `<a href="${esc(t.txUrl)}" target="_blank" rel="noopener" style="color:inherit;">₿ BTC</a>`
+          : '₿ BTC';
+        return `<div class="feed-row">
+          <span class="feed-side btc">${txLink}</span>
+          <span class="feed-price">${fmtN(t.pricePerXp)} sats</span>
+          <span class="feed-xp">${fmtN(t.xpAmount)} XP</span>
+          <span class="feed-scroll">${fmtN(t.satsRequested)} sats</span>
+          <span class="feed-time">${esc(ago)}</span>
+        </div>`;
+      }
       const side = t.side === 'buy' ? 'buy' : 'sell';
-      const label = side === 'sell' ? 'SELL' : 'BUY';
-      const ago = timeAgo(t._ts || t.tradedAt);
       return `<div class="feed-row">
-        <span class="feed-side ${side}">${esc(label)}</span>
-        <span class="feed-price">${fmtN(t.scrollPerXp, 2)}</span>
+        <span class="feed-side ${side}">${esc(side.toUpperCase())}</span>
+        <span class="feed-price">${fmtN(t.scrollPerXp, 2)} SCROLL</span>
         <span class="feed-xp">${fmtN(t.xpAmount)} XP</span>
-        <span class="feed-scroll">${fmtN(t.totalScroll)}</span>
+        <span class="feed-scroll">${fmtN(t.totalScroll)} SCROLL</span>
         <span class="feed-time">${esc(ago)}</span>
       </div>`;
     }).join('');
@@ -807,11 +880,16 @@
 
   document.getElementById('btn-buy').addEventListener('click',  () => placeOrder('bid'));
   document.getElementById('btn-sell').addEventListener('click', () => placeOrder('ask'));
-  document.getElementById('ob-refresh').addEventListener('click', loadFallback);
+  document.getElementById('ob-refresh').addEventListener('click', () => {
+    loadFallback();
+    loadMarketplaceData();
+  });
 
   // ── Boot ──────────────────────────────────────────────────────
   fetchScrollPrice();
+  loadMarketplaceData();
   setInterval(fetchScrollPrice, 60000);
+  setInterval(loadMarketplaceData, 60000);
 </script>
 </body>
 </html>

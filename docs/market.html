@@ -91,6 +91,17 @@
     .td-total { color: var(--muted); font-size: 13px; }
     .ob-empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14px; }
 
+    /* SCROLL exchange widget */
+    .scroll-widget { background: #0f172a; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+    .scroll-widget-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .scroll-widget-head span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #f7931a; }
+    .scroll-widget-head a { font-size: 11px; font-weight: 700; color: #f7931a; text-decoration: none; }
+    .scroll-widget-head a:hover { text-decoration: underline; }
+    .scroll-widget-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 12px; }
+    .scroll-widget-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .scroll-widget-row .swl { color: #64748b; }
+    .scroll-widget-row .swr { color: #e2e8f0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
     /* Sell form */
     .sell-card { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 14px; padding: 24px; position: sticky; top: 20px; }
     .sell-card h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
@@ -524,6 +535,30 @@
       </div>
 
       <!-- Sell form -->
+      <!-- SCROLL Exchange widget -->
+      <div class="scroll-widget">
+        <div class="scroll-widget-head">
+          <span>XP / SCROLL Exchange</span>
+          <a href="/xp-scroll">Trade →</a>
+        </div>
+        <div class="scroll-widget-row">
+          <span class="swl">Best ask</span>
+          <span class="swr" id="sw-ask">— SCROLL/XP</span>
+        </div>
+        <div class="scroll-widget-row">
+          <span class="swl">Best bid</span>
+          <span class="swr" id="sw-bid">— SCROLL/XP</span>
+        </div>
+        <div class="scroll-widget-row">
+          <span class="swl">Recent SCROLL trades</span>
+          <span class="swr" id="sw-trades">—</span>
+        </div>
+        <div class="scroll-widget-row">
+          <span class="swl">$SCROLL price</span>
+          <span class="swr" id="sw-scroll-price">—</span>
+        </div>
+      </div>
+
       <div class="sell-card">
         <h2>Create a sell order</h2>
         <p class="sub">Your listing is open to all buyers — advertisers, draw collectors, and anyone else.</p>
@@ -1652,6 +1687,39 @@
       document.getElementById('wallets-ref').value = urlRef2.toUpperCase();
       loadWallets();
     }
+  </script>
+
+  <script>
+    // SCROLL exchange widget
+    async function loadScrollWidget() {
+      try {
+        const [mktRes, priceRes] = await Promise.all([
+          fetch('/api/scroll-market'),
+          fetch('https://api.dexscreener.com/latest/dex/tokens/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump'),
+        ]);
+        const mkt = await mktRes.json();
+        const priceData = await priceRes.json();
+
+        const asks = (mkt.orders || []).filter(o => o.type === 'ask').sort((a,b) => a.scrollPerXp - b.scrollPerXp);
+        const bids = (mkt.orders || []).filter(o => o.type === 'bid').sort((a,b) => b.scrollPerXp - a.scrollPerXp);
+        const bestAsk = asks[0]?.scrollPerXp;
+        const bestBid = bids[0]?.scrollPerXp;
+        const trades  = mkt.trades || [];
+
+        document.getElementById('sw-ask').textContent = bestAsk != null ? bestAsk.toLocaleString(undefined,{maximumFractionDigits:2}) + ' SCROLL/XP' : 'No asks yet';
+        document.getElementById('sw-bid').textContent = bestBid != null ? bestBid.toLocaleString(undefined,{maximumFractionDigits:2}) + ' SCROLL/XP' : 'No bids yet';
+        document.getElementById('sw-trades').textContent = trades.length ? trades.length + ' recorded' : 'None yet';
+
+        const pair = priceData?.pairs?.[0];
+        if (pair?.priceUsd) {
+          const p = parseFloat(pair.priceUsd);
+          document.getElementById('sw-scroll-price').textContent = p < 0.001
+            ? '$' + p.toFixed(8)
+            : '$' + p.toLocaleString(undefined,{maximumFractionDigits:6});
+        }
+      } catch (_) {}
+    }
+    loadScrollWidget();
   </script>
 </body>
 </html>
