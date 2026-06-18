@@ -377,8 +377,7 @@
       <span class="f-label">Your referral code</span>
       <input class="f-input" type="text" id="buy-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
 
-      <span class="f-label">Your Solana address (you'll send SCROLL from here)</span>
-      <input class="f-input" type="text" id="buy-sol" placeholder="Solana wallet address" />
+      <div class="f-hint" style="margin-bottom:4px;">Solana address is pulled from your profile. <a href="/market#payment-methods" style="color:var(--orange);">Update it here →</a></div>
 
       <button class="btn-trade btn-buy" id="btn-buy">Generate Deposit Address →</button>
       <div class="f-msg" id="buy-msg"></div>
@@ -431,8 +430,7 @@
       <span class="f-label">Your referral code</span>
       <input class="f-input" type="text" id="sell-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
 
-      <span class="f-label">Your Solana address (receive SCROLL here)</span>
-      <input class="f-input" type="text" id="sell-sol" placeholder="Solana wallet address" />
+      <div class="f-hint" style="margin-bottom:4px;">SCROLL will be sent to the Solana address on your profile. <a href="/market#payment-methods" style="color:var(--orange);">Update it here →</a></div>
       <div class="f-hint">The buyer sends SCROLL directly to this address when your order fills.</div>
 
       <div class="f-hint" style="color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-top:4px;">
@@ -860,7 +858,7 @@
     const xp    = parseFloat(document.getElementById('sell-xp').value);
     const price = parseFloat(document.getElementById('sell-price').value);
     const ref   = document.getElementById('sell-ref').value.trim().toUpperCase();
-    const sol   = document.getElementById('sell-sol').value.trim();
+    const sol   = ''; // pulled from profile server-side
     const msgEl = document.getElementById('sell-msg');
     const btn   = document.getElementById('btn-sell');
 
@@ -897,7 +895,7 @@
     const price  = parseFloat(document.getElementById('buy-price').value);
     const xp     = Math.floor(scroll / price);
     const ref    = document.getElementById('buy-ref').value.trim().toUpperCase();
-    const sol    = document.getElementById('buy-sol').value.trim();
+    const sol    = ''; // pulled from profile server-side
     const msgEl  = document.getElementById('buy-msg');
     const btn    = document.getElementById('btn-buy');
 

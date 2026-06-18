@@ -154,6 +154,15 @@ module.exports = async (req, res) => {
       const userData = userDoc.data();
       const totalScroll = Math.round(xp * price);
 
+      // Use saved Solana address from profile; fall back to inline input
+      const solanaAddress = (userData.solAddress || body.solanaAddress || '').trim();
+      if (!solanaAddress) {
+        return res.status(400).json({
+          error: 'No Solana address on file. Add one to your profile at /market (Payment Methods section).',
+          requiresSolAddress: true,
+        });
+      }
+
       // ── ASK: sell XP → lock it immediately ────────────────────
       if (type === 'ask') {
         const existingSnap = await db.collection('sp_scroll_orders')
