@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XP / SCROLL Market — ScrollPay Exchange</title>
+  <meta name="description" content="Trade XP for $SCROLL tokens in real time. Place buy and sell orders instantly." />
+  <link rel="icon" href="icon128.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #f7931a;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --bg: #f9fafb;
+      --green: #16a34a;
+      --red: #dc2626;
+      --green-bg: #f0fdf4;
+      --red-bg: #fef2f2;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.5; font-size: 14px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    /* Nav */
+    nav { background: #fff; border-bottom: 1px solid var(--line); padding: 0 20px; }
+    .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+    .brand { font-weight: 800; letter-spacing: 2px; text-decoration: none; color: var(--ink); display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--orange); }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-links { display: flex; align-items: center; gap: 18px; font-size: 13px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav-links a:hover, .nav-links a.active { color: var(--ink); }
+    .nav-pair { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+    /* Ticker bar */
+    .ticker-bar {
+      background: #0f172a; color: #fff;
+      padding: 10px 20px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+      font-size: 12px; font-weight: 500;
+    }
+    .ticker-pair { font-size: 15px; font-weight: 800; color: var(--orange); letter-spacing: 1px; }
+    .ticker-price { font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .ticker-change { font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 12px; }
+    .ticker-change.up { background: rgba(22,163,74,.2); color: #4ade80; }
+    .ticker-change.down { background: rgba(220,38,38,.2); color: #f87171; }
+    .ticker-change.flat { background: rgba(255,255,255,.1); color: #94a3b8; }
+    .ticker-stat { display: flex; flex-direction: column; gap: 1px; }
+    .ticker-stat .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+    .ticker-stat .val { font-weight: 700; color: #e2e8f0; }
+    .ticker-live { display: flex; align-items: center; gap: 5px; margin-left: auto; font-size: 11px; color: #64748b; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+    /* Main grid */
+    .exchange-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr 260px;
+      grid-template-rows: auto auto;
+      gap: 12px;
+      padding: 14px 20px;
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; overflow: hidden;
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .card-head h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+    .card-body { padding: 0; }
+
+    /* Order book */
+    .ob-col { font-variant-numeric: tabular-nums; }
+    .ob-header-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      padding: 6px 14px; font-size: 10px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .4px;
+      border-bottom: 1px solid var(--line); background: #fafafa;
+    }
+    .ob-header-row span:last-child { text-align: right; }
+    .ob-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      padding: 5px 14px; font-size: 12px; cursor: pointer;
+      position: relative; transition: background .1s;
+    }
+    .ob-row:hover { background: rgba(0,0,0,.03); }
+    .ob-row .depth-bar {
+      position: absolute; top: 0; bottom: 0; right: 0;
+      opacity: .12; pointer-events: none; border-radius: 2px 0 0 2px;
+    }
+    .ob-row span:last-child { text-align: right; position: relative; z-index: 1; }
+    .ob-row span { position: relative; z-index: 1; }
+    .ask-row .ob-price { color: var(--red); font-weight: 600; }
+    .bid-row .ob-price { color: var(--green); font-weight: 600; }
+    .ask-row .depth-bar { background: var(--red); }
+    .bid-row .depth-bar { background: var(--green); }
+    .ob-spread {
+      text-align: center; padding: 8px 14px;
+      font-size: 12px; font-weight: 700;
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      background: #fafafa; color: var(--ink);
+    }
+    .ob-spread .spread-price { font-size: 15px; color: var(--orange); }
+    .ob-spread .spread-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
+    .ob-empty { padding: 24px 14px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    /* Trade form */
+    .trade-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+    .trade-tab {
+      padding: 13px; text-align: center; font-size: 14px; font-weight: 700;
+      cursor: pointer; border: none; background: var(--bg); font-family: inherit;
+      color: var(--muted); border-bottom: 2px solid var(--line); transition: all .15s;
+    }
+    .trade-tab.active.buy { color: var(--green); border-bottom-color: var(--green); background: var(--green-bg); }
+    .trade-tab.active.sell { color: var(--red); border-bottom-color: var(--red); background: var(--red-bg); }
+    .trade-form-body { padding: 16px; }
+    .f-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; margin-top: 12px; display: block; }
+    .f-label:first-child { margin-top: 0; }
+    .f-input {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid var(--line); border-radius: 8px;
+      font-size: 14px; font-family: inherit; color: var(--ink);
+      outline: none; transition: border-color .15s;
+      background: #fff;
+    }
+    .f-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(247,147,26,.1); }
+    .f-input.readonly { background: var(--bg); color: var(--muted); }
+    .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .f-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .f-estimate {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      padding: 10px 12px; margin-top: 10px;
+    }
+    .f-estimate-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; color: var(--muted); }
+    .f-estimate-row:last-child { font-weight: 700; color: var(--ink); font-size: 13px; margin-bottom: 0; }
+    .btn-trade {
+      width: 100%; margin-top: 14px; padding: 12px;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: opacity .15s;
+    }
+    .btn-trade:disabled { opacity: .5; cursor: default; }
+    .btn-buy { background: var(--green); color: #fff; }
+    .btn-buy:hover:not(:disabled) { background: #15803d; }
+    .btn-sell { background: var(--red); color: #fff; }
+    .btn-sell:hover:not(:disabled) { background: #b91c1c; }
+    .f-msg { margin-top: 10px; padding: 9px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; display: none; }
+    .f-msg.ok  { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; display: block; }
+    .f-msg.err { background: var(--red-bg);   color: var(--red);   border: 1px solid #fecaca; display: block; }
+
+    /* Price chart */
+    .chart-wrap { padding: 12px 14px; }
+    #price-chart { width: 100%; height: 80px; display: block; }
+    .chart-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px 14px; }
+    .cs-cell { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+    .cs-val { font-size: 14px; font-weight: 700; color: var(--ink); }
+    .cs-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
+
+    /* Trade feed */
+    .trade-feed-wrap { grid-column: 1 / -1; }
+    .feed-header-row {
+      display: grid; grid-template-columns: 80px 110px 110px 110px 1fr;
+      padding: 7px 14px; font-size: 10px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .4px;
+      background: #fafafa; border-bottom: 1px solid var(--line);
+    }
+    .feed-row {
+      display: grid; grid-template-columns: 80px 110px 110px 110px 1fr;
+      padding: 8px 14px; font-size: 12px; border-bottom: 1px solid var(--line);
+      animation: fadein .3s ease;
+    }
+    @keyframes fadein { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .feed-row:last-child { border-bottom: none; }
+    .feed-side { font-weight: 700; }
+    .feed-side.sell { color: var(--red); }
+    .feed-side.buy  { color: var(--green); }
+    .feed-price { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .feed-xp    { color: var(--muted); }
+    .feed-scroll { color: var(--orange); font-weight: 600; }
+    .feed-time { color: var(--muted); text-align: right; }
+    .feed-empty { padding: 32px 14px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* Info box */
+    .info-box { background: #0f172a; border-radius: 10px; padding: 14px; margin: 14px; color: #e2e8f0; font-size: 12px; line-height: 1.6; }
+    .info-box strong { color: var(--orange); }
+    .info-box a { color: #94a3b8; }
+
+    /* Refresh button */
+    .btn-sm {
+      padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 5px;
+      border: 1px solid var(--line); background: #fff; cursor: pointer; font-family: inherit;
+      color: var(--muted); transition: border-color .12s, color .12s;
+    }
+    .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
+
+    @media (max-width: 860px) {
+      .exchange-grid { grid-template-columns: 1fr; }
+      .trade-feed-wrap { grid-column: auto; }
+      .ticker-bar { gap: 16px; }
+      .feed-header-row, .feed-row { grid-template-columns: 60px 90px 90px 90px 1fr; }
+    }
+    @media (max-width: 500px) {
+      .feed-header-row .feed-scroll-head, .feed-row .feed-scroll { display: none; }
+      .feed-header-row, .feed-row { grid-template-columns: 55px 80px 80px 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="/"><img src="icon128.png" alt="" />SCROLLPAY</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/market">XP Market</a>
+      <a href="/xp-scroll" class="active" style="color:var(--orange);">XP/SCROLL</a>
+      <a href="/advertiser">Advertise</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Ticker bar -->
+<div class="ticker-bar">
+  <div>
+    <div class="ticker-pair">XP / SCROLL</div>
+  </div>
+  <div class="ticker-price" id="ticker-price">—</div>
+  <span class="ticker-change flat" id="ticker-change">— 24h</span>
+  <div class="ticker-stat">
+    <span class="lbl">24h Volume</span>
+    <span class="val" id="ticker-vol">—</span>
+  </div>
+  <div class="ticker-stat">
+    <span class="lbl">Trades today</span>
+    <span class="val" id="ticker-trades">—</span>
+  </div>
+  <div class="ticker-stat">
+    <span class="lbl">$SCROLL price</span>
+    <span class="val" id="ticker-scroll-usd">—</span>
+  </div>
+  <div class="ticker-stat">
+    <span class="lbl">Best ask</span>
+    <span class="val" id="ticker-ask">—</span>
+  </div>
+  <div class="ticker-stat">
+    <span class="lbl">Best bid</span>
+    <span class="val" id="ticker-bid">—</span>
+  </div>
+  <div class="ticker-live">
+    <div class="live-dot"></div> LIVE
+  </div>
+</div>
+
+<!-- Exchange grid -->
+<div class="exchange-grid">
+
+  <!-- Order book -->
+  <div class="card ob-col">
+    <div class="card-head">
+      <h3>Order Book</h3>
+      <button class="btn-sm" id="ob-refresh">↻</button>
+    </div>
+    <div class="card-body">
+      <div class="ob-header-row">
+        <span>SCROLL/XP</span><span>XP</span><span style="text-align:right">Total SCROLL</span>
+      </div>
+      <!-- Asks -->
+      <div id="ob-asks"></div>
+      <!-- Spread / last price -->
+      <div class="ob-spread">
+        <div class="spread-price" id="spread-price">—</div>
+        <div class="spread-label">SCROLL per XP · last trade</div>
+      </div>
+      <!-- Bids -->
+      <div id="ob-bids"></div>
+    </div>
+  </div>
+
+  <!-- Trade form -->
+  <div class="card">
+    <div class="trade-tabs">
+      <button class="trade-tab buy active" id="tab-buy">▲ Buy XP</button>
+      <button class="trade-tab sell" id="tab-sell">▼ Sell XP</button>
+    </div>
+
+    <!-- Buy XP form -->
+    <div id="form-buy" class="trade-form-body">
+      <span class="f-label">SCROLL to spend</span>
+      <input class="f-input" type="number" id="buy-scroll" placeholder="e.g. 50000" min="1" step="1000" />
+
+      <span class="f-label">Price limit (SCROLL per XP)</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="f-input" type="number" id="buy-price" placeholder="e.g. 25" min="0.001" step="0.5" style="flex:1;" />
+        <button class="btn-sm" id="buy-fill-best" style="white-space:nowrap;">Best ask</button>
+      </div>
+      <div class="f-hint">You'll get the best available price at or below this limit.</div>
+
+      <div class="f-estimate" id="buy-estimate" style="display:none;">
+        <div class="f-estimate-row"><span>SCROLL</span><span id="be-scroll">—</span></div>
+        <div class="f-estimate-row"><span>Price</span><span id="be-price">—</span></div>
+        <div class="f-estimate-row"><span>≈ USD</span><span id="be-usd">—</span></div>
+        <div class="f-estimate-row"><span>You receive</span><span id="be-xp">— XP</span></div>
+      </div>
+
+      <span class="f-label">Your referral code</span>
+      <input class="f-input" type="text" id="buy-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
+
+      <span class="f-label">Your Solana address (send SCROLL from here)</span>
+      <input class="f-input" type="text" id="buy-sol" placeholder="Solana wallet address" />
+      <div class="f-hint">You'll send SCROLL to the seller's address to complete the trade.</div>
+
+      <button class="btn-trade btn-buy" id="btn-buy">Place Buy Order</button>
+      <div class="f-msg" id="buy-msg"></div>
+
+      <div class="info-box" style="margin-top:12px;">
+        <strong>How to complete a buy:</strong><br>
+        1. Place your order below<br>
+        2. A seller will be matched<br>
+        3. Send SCROLL to their Solana address<br>
+        4. <a href="mailto:support@scrollpay.app">Email us</a> the tx hash — we'll credit your XP within 24h
+      </div>
+    </div>
+
+    <!-- Sell XP form -->
+    <div id="form-sell" class="trade-form-body" style="display:none;">
+      <span class="f-label">XP to sell</span>
+      <input class="f-input" type="number" id="sell-xp" placeholder="e.g. 1000" min="100" step="100" />
+
+      <span class="f-label">Your price (SCROLL per XP)</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="f-input" type="number" id="sell-price" placeholder="e.g. 25" min="0.001" step="0.5" style="flex:1;" />
+        <button class="btn-sm" id="sell-fill-best" style="white-space:nowrap;">Best bid</button>
+      </div>
+
+      <div class="f-estimate" id="sell-estimate" style="display:none;">
+        <div class="f-estimate-row"><span>XP</span><span id="se-xp">—</span></div>
+        <div class="f-estimate-row"><span>Price</span><span id="se-price">—</span></div>
+        <div class="f-estimate-row"><span>≈ USD</span><span id="se-usd">—</span></div>
+        <div class="f-estimate-row"><span>You receive</span><span id="se-scroll">— SCROLL</span></div>
+      </div>
+
+      <span class="f-label">Your referral code</span>
+      <input class="f-input" type="text" id="sell-ref" placeholder="e.g. XKCD1234" maxlength="10" style="text-transform:uppercase" />
+
+      <span class="f-label">Your Solana address (receive SCROLL here)</span>
+      <input class="f-input" type="text" id="sell-sol" placeholder="Solana wallet address" />
+      <div class="f-hint">The buyer sends SCROLL directly to this address when your order fills.</div>
+
+      <button class="btn-trade btn-sell" id="btn-sell">List XP for Sale</button>
+      <div class="f-msg" id="sell-msg"></div>
+    </div>
+  </div>
+
+  <!-- Chart + stats -->
+  <div class="card" style="display:flex;flex-direction:column;">
+    <div class="card-head">
+      <h3>Price (SCROLL/XP)</h3>
+      <span id="chart-range" style="font-size:11px;color:var(--muted);">last 50 trades</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="price-chart"></canvas>
+    </div>
+    <div class="chart-stats">
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-high">—</div>
+        <div class="cs-lbl">24h High</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-low">—</div>
+        <div class="cs-lbl">24h Low</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-open">—</div>
+        <div class="cs-lbl">Open (24h ago)</div>
+      </div>
+      <div class="cs-cell">
+        <div class="cs-val" id="stat-spread">—</div>
+        <div class="cs-lbl">Spread</div>
+      </div>
+    </div>
+
+    <!-- SCROLL token quick info -->
+    <div style="padding:0 14px 14px;">
+      <div style="background:#0f172a;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--orange);margin-bottom:4px;">$SCROLL · Solana</div>
+        <div style="color:#fff;font-size:13px;font-weight:700;" id="scroll-token-price">—</div>
+        <div style="color:#64748b;font-size:11px;margin-top:2px;" id="scroll-token-mcap">—</div>
+        <a href="https://pump.fun/coin/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump" target="_blank" rel="noopener"
+          style="display:inline-block;margin-top:8px;font-size:11px;font-weight:700;color:var(--orange);text-decoration:none;">
+          Buy on pump.fun →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent trades feed -->
+  <div class="card trade-feed-wrap">
+    <div class="card-head">
+      <h3>Recent Trades</h3>
+      <div class="ticker-live" style="font-size:11px;color:var(--muted);">
+        <div class="live-dot"></div> live
+      </div>
+    </div>
+    <div class="feed-header-row">
+      <span>Side</span>
+      <span>Price (SCROLL/XP)</span>
+      <span>XP</span>
+      <span class="feed-scroll-head">SCROLL</span>
+      <span style="text-align:right;">Time</span>
+    </div>
+    <div id="trade-feed">
+      <div class="feed-empty">No trades yet — be the first to trade.</div>
+    </div>
+  </div>
+
+</div><!-- /exchange-grid -->
+
+<footer style="border-top:1px solid var(--line);padding:20px;text-align:center;color:var(--muted);font-size:12px;margin-top:8px;">
+  <div class="wrap">
+    ScrollPay XP/SCROLL Market · Trades settled peer-to-peer ·
+    <a href="/market" style="color:var(--muted);">XP/BTC Market</a> ·
+    <a href="/privacy" style="color:var(--muted);">Privacy</a>
+  </div>
+</footer>
+
+<script type="module">
+  import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import { getFirestore, collection, query, where, orderBy, limit, onSnapshot }
+    from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
+    authDomain: "scrollpay-1ce29.firebaseapp.com",
+    projectId: "scrollpay-1ce29",
+    storageBucket: "scrollpay-1ce29.firebasestorage.app",
+    messagingSenderId: "710989126022",
+    appId: "1:710989126022:web:50324119c803af284f7407"
+  };
+
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db  = getFirestore(app);
+
+  // ── State ─────────────────────────────────────────────────────
+  let orders = { asks: [], bids: [] };
+  let trades = [];
+  let scrollUsd = 0;
+  let lastPrice = null;
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function fmtN(n, dec = 0) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+
+  function timeAgo(ts) {
+    if (!ts) return '—';
+    const diff = Math.floor(Date.now() / 1000 - ts);
+    if (diff < 60)   return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    if (diff < 86400)return Math.floor(diff/3600) + 'h ago';
+    return Math.floor(diff/86400) + 'd ago';
+  }
+
+  // ── SCROLL price ──────────────────────────────────────────────
+  async function fetchScrollPrice() {
+    try {
+      const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/9yfXvj9pYzS92v8JKp7K25oFFjz9emH6nHGtbBexpump');
+      const d = await r.json();
+      const pair = d?.pairs?.[0];
+      if (!pair) return;
+      scrollUsd = parseFloat(pair.priceUsd) || 0;
+      const price = scrollUsd < 0.001
+        ? '$' + scrollUsd.toFixed(8)
+        : '$' + scrollUsd.toLocaleString(undefined, {maximumFractionDigits: 6});
+      const mcap = pair.fdv ? '$' + (pair.fdv >= 1e6 ? (pair.fdv/1e6).toFixed(2)+'M' : pair.fdv.toLocaleString()) + ' FDV' : '';
+      const change = pair.priceChange?.h24;
+      document.getElementById('ticker-scroll-usd').textContent = price;
+      document.getElementById('scroll-token-price').textContent = price + (change ? `  ${change > 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%` : '');
+      document.getElementById('scroll-token-mcap').textContent = mcap;
+      updateEstimates();
+    } catch (_) {}
+  }
+
+  // ── Real-time order book ──────────────────────────────────────
+  const ordersQ = query(
+    collection(db, 'sp_scroll_orders'),
+    where('status', '==', 'open')
+  );
+
+  onSnapshot(ordersQ, (snap) => {
+    const all = [];
+    snap.forEach(d => all.push({ id: d.id, ...d.data(), _ts: d.data().createdAt?.seconds || 0 }));
+    orders.asks = all.filter(o => o.type === 'ask').sort((a,b) => a.scrollPerXp - b.scrollPerXp);
+    orders.bids = all.filter(o => o.type === 'bid').sort((a,b) => b.scrollPerXp - a.scrollPerXp);
+    renderOrderBook();
+    updateTicker();
+  }, () => {
+    // If rules block snapshot, fall back to REST
+    loadFallback();
+  });
+
+  // ── Real-time trade feed ──────────────────────────────────────
+  const tradesQ = query(
+    collection(db, 'sp_scroll_trades'),
+    orderBy('tradedAt', 'desc'),
+    limit(100)
+  );
+
+  onSnapshot(tradesQ, (snap) => {
+    trades = [];
+    snap.forEach(d => trades.push({ id: d.id, ...d.data(), _ts: d.data().tradedAt?.seconds || 0 }));
+    renderTradeFeed();
+    updateTicker();
+    drawChart();
+  }, () => {});
+
+  // ── Fallback REST (if Firestore rules block direct reads) ─────
+  async function loadFallback() {
+    try {
+      const r = await fetch('/api/scroll-market');
+      const d = await r.json();
+      const all = d.orders || [];
+      orders.asks = all.filter(o => o.type === 'ask').sort((a,b) => a.scrollPerXp - b.scrollPerXp);
+      orders.bids = all.filter(o => o.type === 'bid').sort((a,b) => b.scrollPerXp - a.scrollPerXp);
+      trades = (d.trades || []).sort((a,b) => (b.tradedAt||0) - (a.tradedAt||0));
+      renderOrderBook();
+      renderTradeFeed();
+      updateTicker();
+      drawChart();
+    } catch (_) {}
+  }
+
+  // ── Render order book ─────────────────────────────────────────
+  function renderOrderBook() {
+    const asks = orders.asks.slice(0, 12);
+    const bids = orders.bids.slice(0, 12);
+
+    const maxAskVol = Math.max(...asks.map(o => o.xpAmount || 0), 1);
+    const maxBidVol = Math.max(...bids.map(o => o.xpAmount || 0), 1);
+
+    const asksEl = document.getElementById('ob-asks');
+    asksEl.innerHTML = asks.length
+      ? [...asks].reverse().map(o => {
+          const pct = ((o.xpAmount || 0) / maxAskVol * 100).toFixed(1);
+          return `<div class="ob-row ask-row" onclick="fillForm('buy',${o.scrollPerXp})">
+            <span class="ob-price">${fmtN(o.scrollPerXp, 2)}</span>
+            <span>${fmtN(o.xpAmount)}</span>
+            <span>${fmtN(o.totalScroll)}</span>
+            <div class="depth-bar" style="width:${pct}%;"></div>
+          </div>`;
+        }).join('')
+      : '<div class="ob-empty">No sell orders</div>';
+
+    const bidsEl = document.getElementById('ob-bids');
+    bidsEl.innerHTML = bids.length
+      ? bids.map(o => {
+          const pct = ((o.xpAmount || 0) / maxBidVol * 100).toFixed(1);
+          return `<div class="ob-row bid-row" onclick="fillForm('sell',${o.scrollPerXp})">
+            <span class="ob-price">${fmtN(o.scrollPerXp, 2)}</span>
+            <span>${fmtN(o.xpAmount)}</span>
+            <span>${fmtN(o.totalScroll)}</span>
+            <div class="depth-bar" style="width:${pct}%;"></div>
+          </div>`;
+        }).join('')
+      : '<div class="ob-empty">No buy orders</div>';
+
+    // Spread stats
+    const bestAsk = orders.asks[0]?.scrollPerXp;
+    const bestBid = orders.bids[0]?.scrollPerXp;
+    const spread = bestAsk != null && bestBid != null ? (bestAsk - bestBid).toFixed(2) : null;
+    document.getElementById('stat-spread').textContent = spread ? fmtN(parseFloat(spread), 2) : '—';
+    document.getElementById('ticker-ask').textContent = bestAsk != null ? fmtN(bestAsk, 2) : '—';
+    document.getElementById('ticker-bid').textContent = bestBid != null ? fmtN(bestBid, 2) : '—';
+  }
+
+  // ── Update ticker ─────────────────────────────────────────────
+  function updateTicker() {
+    if (!trades.length) return;
+    const now = Date.now() / 1000;
+    const dayAgo = now - 86400;
+    const todayTrades = trades.filter(t => (t._ts || t.tradedAt || 0) >= dayAgo);
+
+    lastPrice = trades[0]?.scrollPerXp;
+    if (lastPrice) {
+      document.getElementById('ticker-price').textContent = fmtN(lastPrice, 2) + ' SCROLL';
+      document.getElementById('spread-price').textContent = fmtN(lastPrice, 2) + ' SCROLL/XP';
+    }
+
+    const vol = todayTrades.reduce((s, t) => s + (t.xpAmount || 0), 0);
+    document.getElementById('ticker-vol').textContent = fmtN(vol) + ' XP';
+    document.getElementById('ticker-trades').textContent = todayTrades.length;
+
+    const prices = todayTrades.map(t => t.scrollPerXp || 0).filter(Boolean);
+    if (prices.length) {
+      document.getElementById('stat-high').textContent = fmtN(Math.max(...prices), 2);
+      document.getElementById('stat-low').textContent  = fmtN(Math.min(...prices), 2);
+    }
+
+    const open = todayTrades[todayTrades.length - 1]?.scrollPerXp;
+    if (open) document.getElementById('stat-open').textContent = fmtN(open, 2);
+
+    if (lastPrice && open) {
+      const pct = ((lastPrice - open) / open * 100);
+      const el = document.getElementById('ticker-change');
+      el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '% (24h)';
+      el.className = 'ticker-change ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat');
+    }
+  }
+
+  // ── Render trade feed ─────────────────────────────────────────
+  function renderTradeFeed() {
+    const el = document.getElementById('trade-feed');
+    if (!trades.length) {
+      el.innerHTML = '<div class="feed-empty">No trades yet — be the first to trade.</div>';
+      return;
+    }
+    el.innerHTML = trades.slice(0, 30).map(t => {
+      const side = t.side === 'buy' ? 'buy' : 'sell';
+      const label = side === 'sell' ? 'SELL' : 'BUY';
+      const ago = timeAgo(t._ts || t.tradedAt);
+      return `<div class="feed-row">
+        <span class="feed-side ${side}">${esc(label)}</span>
+        <span class="feed-price">${fmtN(t.scrollPerXp, 2)}</span>
+        <span class="feed-xp">${fmtN(t.xpAmount)} XP</span>
+        <span class="feed-scroll">${fmtN(t.totalScroll)}</span>
+        <span class="feed-time">${esc(ago)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Sparkline chart ───────────────────────────────────────────
+  function drawChart() {
+    const canvas = document.getElementById('price-chart');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.offsetWidth; const H = 80;
+    canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    const pts = [...trades].reverse().slice(-50).map(t => t.scrollPerXp || 0).filter(Boolean);
+    if (pts.length < 2) {
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#9ca3af'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+      ctx.fillText('Waiting for trades…', W/2, H/2);
+      return;
+    }
+
+    const mn = Math.min(...pts) * 0.98;
+    const mx = Math.max(...pts) * 1.02;
+    const pad = { t: 6, b: 6, l: 4, r: 4 };
+    const gw = W - pad.l - pad.r; const gh = H - pad.t - pad.b;
+
+    const px = (i) => pad.l + (i / (pts.length - 1)) * gw;
+    const py = (v) => pad.t + (1 - (v - mn) / (mx - mn)) * gh;
+
+    const isUp = pts[pts.length - 1] >= pts[0];
+    const lineColor = isUp ? '#16a34a' : '#dc2626';
+    const fillColor = isUp ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)';
+
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(pts[0]));
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(px(i), py(pts[i]));
+    ctx.lineTo(px(pts.length-1), H); ctx.lineTo(px(0), H); ctx.closePath();
+    ctx.fillStyle = fillColor; ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(pts[0]));
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(px(i), py(pts[i]));
+    ctx.strokeStyle = lineColor; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  window.addEventListener('resize', drawChart);
+
+  // ── Fill form from order book click ──────────────────────────
+  window.fillForm = (side, price) => {
+    if (side === 'buy') {
+      document.getElementById('tab-buy').click();
+      document.getElementById('buy-price').value = price;
+      updateEstimates();
+    } else {
+      document.getElementById('tab-sell').click();
+      document.getElementById('sell-price').value = price;
+      updateEstimates();
+    }
+  };
+
+  // ── Estimates ─────────────────────────────────────────────────
+  function updateEstimates() {
+    // Buy estimate
+    const bScroll = parseFloat(document.getElementById('buy-scroll').value) || 0;
+    const bPrice  = parseFloat(document.getElementById('buy-price').value) || 0;
+    const bEst = document.getElementById('buy-estimate');
+    if (bScroll > 0 && bPrice > 0) {
+      const xp = Math.floor(bScroll / bPrice);
+      const usd = scrollUsd ? (bScroll * scrollUsd).toFixed(2) : null;
+      document.getElementById('be-scroll').textContent = fmtN(bScroll) + ' SCROLL';
+      document.getElementById('be-price').textContent  = fmtN(bPrice, 2) + ' SCROLL/XP';
+      document.getElementById('be-usd').textContent    = usd ? '$' + usd : '—';
+      document.getElementById('be-xp').textContent     = fmtN(xp) + ' XP';
+      bEst.style.display = 'block';
+    } else { bEst.style.display = 'none'; }
+
+    // Sell estimate
+    const sXp    = parseFloat(document.getElementById('sell-xp').value) || 0;
+    const sPrice = parseFloat(document.getElementById('sell-price').value) || 0;
+    const sEst = document.getElementById('sell-estimate');
+    if (sXp > 0 && sPrice > 0) {
+      const scroll = Math.round(sXp * sPrice);
+      const usd = scrollUsd ? (scroll * scrollUsd).toFixed(2) : null;
+      document.getElementById('se-xp').textContent     = fmtN(sXp) + ' XP';
+      document.getElementById('se-price').textContent  = fmtN(sPrice, 2) + ' SCROLL/XP';
+      document.getElementById('se-usd').textContent    = usd ? '$' + usd : '—';
+      document.getElementById('se-scroll').textContent = fmtN(scroll) + ' SCROLL';
+      sEst.style.display = 'block';
+    } else { sEst.style.display = 'none'; }
+  }
+
+  ['buy-scroll','buy-price','sell-xp','sell-price'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateEstimates)
+  );
+
+  // Best ask/bid fill buttons
+  document.getElementById('buy-fill-best').addEventListener('click', () => {
+    const best = orders.asks[0]?.scrollPerXp;
+    if (best) { document.getElementById('buy-price').value = best; updateEstimates(); }
+  });
+  document.getElementById('sell-fill-best').addEventListener('click', () => {
+    const best = orders.bids[0]?.scrollPerXp;
+    if (best) { document.getElementById('sell-price').value = best; updateEstimates(); }
+  });
+
+  // ── Tab switching ─────────────────────────────────────────────
+  document.getElementById('tab-buy').addEventListener('click', () => {
+    document.getElementById('tab-buy').className  = 'trade-tab buy active';
+    document.getElementById('tab-sell').className = 'trade-tab sell';
+    document.getElementById('form-buy').style.display  = '';
+    document.getElementById('form-sell').style.display = 'none';
+  });
+  document.getElementById('tab-sell').addEventListener('click', () => {
+    document.getElementById('tab-sell').className = 'trade-tab sell active';
+    document.getElementById('tab-buy').className  = 'trade-tab buy';
+    document.getElementById('form-sell').style.display = '';
+    document.getElementById('form-buy').style.display  = 'none';
+  });
+
+  // ── Place order ───────────────────────────────────────────────
+  async function placeOrder(type) {
+    const isBuy  = type === 'bid';
+    const scroll = isBuy ? parseFloat(document.getElementById('buy-scroll').value) : null;
+    const price  = parseFloat(document.getElementById(isBuy ? 'buy-price' : 'sell-price').value);
+    const xp     = isBuy ? Math.floor(scroll / price) : parseFloat(document.getElementById('sell-xp').value);
+    const ref    = document.getElementById(isBuy ? 'buy-ref' : 'sell-ref').value.trim().toUpperCase();
+    const sol    = document.getElementById(isBuy ? 'buy-sol' : 'sell-sol').value.trim();
+    const msgEl  = document.getElementById(isBuy ? 'buy-msg' : 'sell-msg');
+    const btn    = document.getElementById(isBuy ? 'btn-buy' : 'btn-sell');
+
+    msgEl.className = 'f-msg';
+
+    if (!xp || xp < 100) { msgEl.textContent = 'Minimum 100 XP'; msgEl.className = 'f-msg err'; return; }
+    if (!price || price <= 0) { msgEl.textContent = 'Enter a valid price'; msgEl.className = 'f-msg err'; return; }
+    if (!ref) { msgEl.textContent = 'Enter your referral code'; msgEl.className = 'f-msg err'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Placing order…';
+
+    try {
+      const res = await fetch('/api/scroll-market', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, xpAmount: xp, scrollPerXp: price, refCode: ref, solanaAddress: sol }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+
+      const totalScroll = data.totalScroll?.toLocaleString() || '—';
+      msgEl.textContent = `✓ Order placed! ${fmtN(xp)} XP @ ${fmtN(price, 2)} SCROLL/XP = ${totalScroll} SCROLL total.`;
+      msgEl.className = 'f-msg ok';
+      document.getElementById(isBuy ? 'buy-scroll' : 'sell-xp').value = '';
+      document.getElementById(isBuy ? 'buy-price' : 'sell-price').value = '';
+      updateEstimates();
+    } catch (err) {
+      msgEl.textContent = err.message;
+      msgEl.className = 'f-msg err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = isBuy ? 'Place Buy Order' : 'List XP for Sale';
+    }
+  }
+
+  document.getElementById('btn-buy').addEventListener('click',  () => placeOrder('bid'));
+  document.getElementById('btn-sell').addEventListener('click', () => placeOrder('ask'));
+  document.getElementById('ob-refresh').addEventListener('click', loadFallback);
+
+  // ── Boot ──────────────────────────────────────────────────────
+  fetchScrollPrice();
+  setInterval(fetchScrollPrice, 60000);
+</script>
+</body>
+</html>

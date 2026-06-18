@@ -1,3 +1,4 @@
 /scrollpay-extension.zip
 dist/
 .claude/
+node_modules/
