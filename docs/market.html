@@ -570,6 +570,36 @@
       </div>
     </div>
 
+    <!-- ── Sweep / Campaign Card ───────────────────────────────── -->
+    <div id="sweep-card" style="display:none;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:14px;padding:18px 22px;margin-bottom:16px;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#f7931a;margin-bottom:5px;">⚡ Run an Ad Campaign</div>
+        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:3px;">Sweep all <span id="sweep-xp" style="color:#f7931a;">—</span></div>
+        <div style="color:#64748b;font-size:13px;font-variant-numeric:tabular-nums;"><span id="sweep-sats">—</span> &nbsp;·&nbsp; <span id="sweep-usd" style="color:#94a3b8;font-weight:600;"></span></div>
+      </div>
+      <button onclick="openSweepForm()" style="background:#f7931a;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">Buy All for Campaign →</button>
+    </div>
+
+    <div id="sweep-form-wrap" style="display:none;background:#fff;border:1.5px solid #f7931a;border-radius:14px;padding:22px 24px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:16px;font-weight:800;color:#111827;">Start a Campaign</div>
+        <button onclick="closeSweepForm()" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:18px;">Buy all listed XP at once to power your ad campaign. We'll reply within 24h with a BTC payment address.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Your Name</label><input id="sw-name" type="text" placeholder="Jane Smith" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
+        <div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Email *</label><input id="sw-email" type="email" placeholder="you@company.com" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
+      </div>
+      <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Website / Campaign Name</label><input id="sw-website" type="text" placeholder="myproject.com" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
+      <div style="margin-bottom:16px;"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Message (optional)</label><textarea id="sw-note" rows="2" placeholder="Tell us about your campaign..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;resize:vertical;"></textarea></div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#92400e;">You're requesting <strong id="sw-xp-label">—</strong> XP for <strong id="sw-sats-label">—</strong> sats (<strong id="sw-usd-label">—</strong>). We'll email BTC payment details within 24h.</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button id="sw-submit-btn" onclick="submitSweep()" style="background:#0f172a;color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Submit Campaign Request →</button>
+        <button onclick="closeSweepForm()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:11px 16px;font-size:13px;color:#6b7280;cursor:pointer;font-family:inherit;">Cancel</button>
+      </div>
+      <div id="sw-out" style="margin-top:12px;font-size:13px;display:none;padding:10px 14px;border-radius:8px;"></div>
+    </div>
+
     <div class="market-layout">
       <!-- Order book -->
       <div class="order-book">
@@ -1012,11 +1042,13 @@
           document.getElementById('stat-best').textContent = Math.min(...prices).toLocaleString();
           document.getElementById('stat-avg').textContent = avg.toLocaleString();
           document.getElementById('stat-supply').textContent = supply.toLocaleString();
+          updateSweepCard(listings);
           document.getElementById('stat-orders').textContent = listings.length;
         } else {
           ['stat-best','stat-avg','stat-supply','stat-orders'].forEach(id => {
             document.getElementById(id).textContent = '—';
           });
+          document.getElementById('sweep-card').style.display = 'none';
         }
 
         renderOrderBookRows(listings);
@@ -1580,6 +1612,74 @@
 
     loadXpChart();
     setInterval(loadXpChart, 120000);
+
+    // ── Sweep / Campaign ─────────────────────────────────────────
+    let _sweepData = { xp: 0, sats: 0 };
+
+    function updateSweepCard(listings) {
+      const xp   = listings.reduce((s, l) => s + (l.xpAmount     || 0), 0);
+      const sats = listings.reduce((s, l) => s + (l.satsRequested || 0), 0);
+      _sweepData = { xp, sats };
+      const usd = satsToUsd(sats);
+      document.getElementById('sweep-xp').textContent   = xp.toLocaleString() + ' XP available';
+      document.getElementById('sweep-sats').textContent = sats.toLocaleString() + ' sats';
+      document.getElementById('sweep-usd').textContent  = usd ? fmtUsd(usd) : '';
+      document.getElementById('sw-xp-label').textContent   = xp.toLocaleString() + ' XP';
+      document.getElementById('sw-sats-label').textContent = sats.toLocaleString();
+      document.getElementById('sw-usd-label').textContent  = usd ? fmtUsd(usd) : '—';
+      document.getElementById('sweep-card').style.display = xp > 0 ? 'flex' : 'none';
+    }
+
+    function openSweepForm() {
+      document.getElementById('sweep-form-wrap').style.display = 'block';
+      document.getElementById('sweep-form-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function closeSweepForm() {
+      document.getElementById('sweep-form-wrap').style.display = 'none';
+      document.getElementById('sw-out').style.display = 'none';
+    }
+
+    async function submitSweep() {
+      const email   = document.getElementById('sw-email').value.trim();
+      const name    = document.getElementById('sw-name').value.trim();
+      const website = document.getElementById('sw-website').value.trim();
+      const note    = document.getElementById('sw-note').value.trim();
+      const out     = document.getElementById('sw-out');
+      const btn     = document.getElementById('sw-submit-btn');
+
+      out.style.display = 'none';
+      if (!email) {
+        out.textContent = 'Please enter your email address.';
+        out.style.background = '#fef2f2'; out.style.color = '#dc2626';
+        out.style.display = 'block'; return;
+      }
+      btn.disabled = true; btn.textContent = 'Submitting…';
+
+      try {
+        const res = await fetch('/api/sweep-xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, email, website, message: note,
+            totalXp: _sweepData.xp, totalSats: _sweepData.sats,
+            usdEstimate: satsToUsd(_sweepData.sats) || 0,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        out.textContent = '✓ Campaign request received! We\'ll email you within 24h with BTC payment details.';
+        out.style.background = '#f0fdf4'; out.style.color = '#16a34a';
+        out.style.display = 'block';
+        btn.textContent = 'Request sent ✓';
+        ['sw-name','sw-email','sw-website','sw-note'].forEach(id => document.getElementById(id).value = '');
+      } catch(err) {
+        out.textContent = err.message;
+        out.style.background = '#fef2f2'; out.style.color = '#dc2626';
+        out.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Submit Campaign Request →';
+      }
+    }
 
     // XP Halving countdown
     (function () {

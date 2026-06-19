@@ -8,6 +8,7 @@
     { "source": "/economics",        "destination": "/docs/economics.html" },
     { "source": "/xp-scroll",        "destination": "/docs/xp-scroll.html" },
     { "source": "/api/scroll-market","destination": "/api/scroll-market.js" },
+    { "source": "/api/sweep-xp",     "destination": "/api/sweep-xp.js" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
     { "source": "/advertiser/(.*)", "destination": "/advertiser/$1" },
     { "source": "/partners",        "destination": "/docs/partners/index.html" },
