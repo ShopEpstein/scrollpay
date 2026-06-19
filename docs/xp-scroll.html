@@ -217,6 +217,9 @@
     }
     .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
 
+    @media (max-width: 640px) {
+      .nav-links a:not(.active):not(:last-child) { display: none; }
+    }
     @media (max-width: 860px) {
       .exchange-grid { grid-template-columns: 1fr; }
       .trade-feed-wrap { grid-column: auto; }
@@ -244,7 +247,11 @@
     </div>
   </div>
 </nav>
-<div style="text-align:center;font-size:11px;color:#64748b;padding:4px 0 10px;letter-spacing:0.3px;">Proudly sponsored by <a href="https://stacverse.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Stacverse.com</a> &amp; <a href="https://staccana.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Staccana.com</a></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:2px 0 12px;">
+  <span style="font-size:11px;color:#64748b;">Proudly sponsored by</span>
+  <a href="https://stacverse.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Stacverse.com</a>
+  <a href="https://staccana.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Staccana.com</a>
+</div>
 
 <!-- Ticker bar -->
 <div class="ticker-bar">

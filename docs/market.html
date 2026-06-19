@@ -368,6 +368,10 @@
       .ob-hide-mobile { display: none; }
     }
 
+    @media (max-width: 640px) {
+      .nav-links { gap: 10px; }
+      .nav-links a:not(:last-child) { display: none; }
+    }
     @media (max-width: 480px) {
       .hero h1 { font-size: 26px; }
       .stats-bar { flex-wrap: wrap; }
@@ -450,7 +454,11 @@
         <span id="nav-auth-pill" style="font-size:12px;margin-left:4px;"></span>
       </div>
     </nav>
-    <div style="text-align:center;font-size:11px;color:#94a3b8;padding:4px 0 14px;letter-spacing:0.3px;">Proudly sponsored by <a href="https://stacverse.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Stacverse.com</a> &amp; <a href="https://staccana.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Staccana.com</a></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:2px 0 18px;">
+      <span style="font-size:11px;color:#94a3b8;">Proudly sponsored by</span>
+      <a href="https://stacverse.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Stacverse.com</a>
+      <a href="https://staccana.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Staccana.com</a>
+    </div>
 
     <!-- XP Halving Banner -->
     <div style="background:#0f172a;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
