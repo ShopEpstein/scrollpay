@@ -6,6 +6,30 @@ const MIN_PRICE_SATS = 1;
 module.exports = async (req, res) => {
   if (initError) return res.status(500).json({ error: initError.message });
 
+  if (req.method === 'GET' && req.query.chart) {
+    try {
+      const snap = await db.collection('sp_xp_listings')
+        .where('status', '==', 'fulfilled')
+        .limit(500)
+        .get();
+      const points = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.pricePerXp && data.fulfilledAt) {
+          points.push({
+            price: data.pricePerXp,
+            xp: data.xpAmount || 0,
+            t: data.fulfilledAt._seconds || 0,
+          });
+        }
+      });
+      points.sort((a, b) => a.t - b.t);
+      return res.status(200).json({ points });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method === 'GET' && req.query.status === 'fulfilled') {
     try {
       const snap = await db.collection('sp_xp_listings')

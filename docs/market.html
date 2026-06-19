@@ -437,6 +437,19 @@
       color: #64748b; font-size: 12px; padding: 2px 6px;
       border-radius: 4px; font-family: inherit;
     }
+
+    /* XP price chart */
+    .tf-btn {
+      padding: 3px 9px; font-size: 11px; font-weight: 700;
+      border: 1px solid #e5e7eb; border-radius: 6px;
+      background: #fff; color: #6b7280; cursor: pointer;
+      font-family: inherit; transition: all .1s;
+    }
+    .tf-btn.active { background: #f7931a; border-color: #f7931a; color: #fff; }
+    #xp-chart-stats { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+    @media (max-width: 480px) {
+      #xp-chart-stats { gap: 12px; }
+    }
     .dw-close:hover { background: #1e293b; color: #f8fafc; }
     #dw-progress { height: 3px; background: #e5e7eb; }
     #dw-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#f7931a,#fbbf24); border-radius: 0 2px 2px 0; }
@@ -467,6 +480,44 @@
         <div style="margin-top:7px;background:#1e293b;border-radius:4px;height:3px;overflow:hidden;"><div id="mkt-bar" style="height:100%;background:linear-gradient(90deg,#f7931a,#fbbf24);transition:width 1s linear;border-radius:4px;"></div></div>
       </div>
       <div style="font-size:11px;color:#64748b;text-align:right">Mine now while<br>rates are high</div>
+    </div>
+
+    <!-- XP Price Chart -->
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-bottom:20px;">
+      <!-- Stats row -->
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid #f3f4f6;">
+        <div style="min-width:110px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px;">XP Price</div>
+          <div style="display:flex;align-items:baseline;gap:5px;">
+            <span id="cp-price" style="font-size:24px;font-weight:800;color:#111827;font-variant-numeric:tabular-nums;">—</span>
+            <span style="font-size:11px;color:#94a3b8;">sats</span>
+          </div>
+          <div id="cp-change" style="font-size:12px;font-weight:700;margin-top:1px;color:#94a3b8;">—</div>
+        </div>
+        <div id="xp-chart-stats">
+          <div><div style="font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">24H High</div><div id="cp-high" style="font-size:14px;font-weight:700;color:#16a34a;">—</div></div>
+          <div><div style="font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">24H Low</div><div id="cp-low" style="font-size:14px;font-weight:700;color:#dc2626;">—</div></div>
+          <div><div style="font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">All-Time High</div><div id="cp-ath" style="font-size:14px;font-weight:700;color:#f7931a;">—</div></div>
+          <div><div style="font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">24H Volume</div><div id="cp-vol" style="font-size:14px;font-weight:700;color:#111827;">—</div></div>
+        </div>
+      </div>
+      <!-- Timeframe selector -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid #f3f4f6;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;">Price History · sats/XP</div>
+        <div style="display:flex;gap:4px;">
+          <button class="tf-btn active" data-tf="24H" onclick="setChartTf('24H')">24H</button>
+          <button class="tf-btn" data-tf="7D" onclick="setChartTf('7D')">7D</button>
+          <button class="tf-btn" data-tf="30D" onclick="setChartTf('30D')">30D</button>
+          <button class="tf-btn" data-tf="ALL" onclick="setChartTf('ALL')">ALL</button>
+        </div>
+      </div>
+      <!-- Canvas -->
+      <canvas id="xp-price-canvas" style="width:100%;display:block;" height="140"></canvas>
+      <div id="cp-empty" style="display:none;text-align:center;padding:36px;color:#94a3b8;font-size:13px;">No trade history yet — place the first order below!</div>
+      <div style="padding:5px 16px 8px;font-size:10px;color:#cbd5e1;display:flex;justify-content:space-between;">
+        <span><span id="cp-count">—</span> total trades</span>
+        <span id="cp-updated"></span>
+      </div>
     </div>
 
     <header class="hero">
@@ -1400,6 +1451,135 @@
     setInterval(fetchRates, 60000);
     loadOrderBook();
     loadRecentSales();
+
+    // ── XP Price Chart ───────────────────────────────────────────
+    let _xpPts = [];
+    let _xpTf = '24H';
+
+    async function loadXpChart() {
+      try {
+        const res = await fetch('/api/xp-market?chart=1');
+        const data = await res.json();
+        _xpPts = data.points || [];
+        renderXpChart();
+      } catch(e) {}
+    }
+
+    function setChartTf(tf) {
+      _xpTf = tf;
+      document.querySelectorAll('.tf-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.tf === tf));
+      renderXpChart();
+    }
+
+    function renderXpChart() {
+      const canvas = document.getElementById('xp-price-canvas');
+      const emptyEl = document.getElementById('cp-empty');
+      if (!canvas) return;
+      const now = Math.floor(Date.now() / 1000);
+      const cutoffs = { '24H': now - 86400, '7D': now - 604800, '30D': now - 2592000, 'ALL': 0 };
+      const pts = _xpPts.filter(p => p.t >= cutoffs[_xpTf]);
+
+      // Stats (always from full dataset)
+      const all = _xpPts;
+      const last = all.length ? all[all.length - 1].price : null;
+      const ath  = all.length ? Math.max(...all.map(p => p.price)) : null;
+      const h24  = all.filter(p => p.t >= now - 86400);
+      const hi24 = h24.length ? Math.max(...h24.map(p => p.price)) : null;
+      const lo24 = h24.length ? Math.min(...h24.map(p => p.price)) : null;
+      const vol24 = h24.reduce((s, p) => s + (p.xp || 0), 0);
+      const open24 = h24.length ? h24[0].price : null;
+      const chg = (last && open24) ? ((last - open24) / open24 * 100) : null;
+
+      document.getElementById('cp-price').textContent = last != null ? last.toLocaleString() : '—';
+      document.getElementById('cp-high').textContent  = hi24 != null ? hi24.toLocaleString() + ' sats' : '—';
+      document.getElementById('cp-low').textContent   = lo24 != null ? lo24.toLocaleString() + ' sats' : '—';
+      document.getElementById('cp-ath').textContent   = ath  != null ? ath.toLocaleString() + ' sats' : '—';
+      document.getElementById('cp-vol').textContent   = vol24 > 0 ? vol24.toLocaleString() + ' XP' : '—';
+      document.getElementById('cp-count').textContent = all.length.toLocaleString();
+
+      const chgEl = document.getElementById('cp-change');
+      if (chg != null) {
+        const sign = chg >= 0 ? '+' : '';
+        chgEl.textContent = sign + chg.toFixed(1) + '% (24h)';
+        chgEl.style.color = chg >= 0 ? '#16a34a' : '#dc2626';
+      } else { chgEl.textContent = ''; }
+
+      if (!pts.length) {
+        canvas.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      canvas.style.display = 'block';
+      emptyEl.style.display = 'none';
+
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.parentElement.offsetWidth || 360;
+      const H = 140;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, W, H);
+
+      const prices = pts.map(p => p.price);
+      const minP = Math.min(...prices), maxP = Math.max(...prices);
+      const range = maxP - minP || 1;
+      const PAD = { t: 16, b: 22, l: 38, r: 10 };
+      const CW = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
+      const xPos = i => PAD.l + (i / Math.max(pts.length - 1, 1)) * CW;
+      const yPos = v => PAD.t + (1 - (v - minP) / range) * CH;
+
+      // Grid
+      ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+      [0, .25, .5, .75, 1].forEach(f => {
+        const y = PAD.t + f * CH;
+        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + CW, y); ctx.stroke();
+        ctx.fillStyle = '#94a3b8'; ctx.font = '9px Inter,sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(Math.round(maxP - f * range), PAD.l - 4, y + 3);
+      });
+
+      const isUp = prices[prices.length - 1] >= prices[0];
+      const lc = isUp ? '#16a34a' : '#dc2626';
+
+      // Fill
+      ctx.beginPath();
+      ctx.moveTo(xPos(0), yPos(pts[0].price));
+      pts.forEach((p, i) => ctx.lineTo(xPos(i), yPos(p.price)));
+      ctx.lineTo(xPos(pts.length - 1), H - PAD.b);
+      ctx.lineTo(PAD.l, H - PAD.b);
+      ctx.closePath();
+      ctx.fillStyle = isUp ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)';
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(xPos(0), yPos(pts[0].price));
+      pts.forEach((p, i) => ctx.lineTo(xPos(i), yPos(p.price)));
+      ctx.strokeStyle = lc; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Last price dot
+      const lx = xPos(pts.length - 1), ly = yPos(pts[pts.length - 1].price);
+      ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+      ctx.fillStyle = lc; ctx.fill();
+
+      // Time axis labels
+      ctx.fillStyle = '#94a3b8'; ctx.font = '9px Inter,sans-serif'; ctx.textAlign = 'center';
+      [0, .25, .5, .75, 1].forEach(f => {
+        const idx = Math.round(f * (pts.length - 1));
+        const d = new Date(pts[idx].t * 1000);
+        const label = _xpTf === '24H'
+          ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        ctx.fillText(label, xPos(idx), H - 4);
+      });
+    }
+
+    loadXpChart();
+    setInterval(loadXpChart, 120000);
 
     // XP Halving countdown
     (function () {
