@@ -447,8 +447,10 @@
         <a href="/">Home</a>
         <a href="/advertiser">Advertise</a>
         <a href="/xp-scroll" style="color:#f7931a;font-weight:700;">XP/SCROLL Exchange</a>
+        <span id="nav-auth-pill" style="font-size:12px;margin-left:4px;"></span>
       </div>
     </nav>
+    <div style="text-align:center;font-size:11px;color:#94a3b8;padding:4px 0 14px;letter-spacing:0.3px;">Proudly sponsored by <a href="https://stacverse.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Stacverse.com</a> &amp; <a href="https://staccana.com" target="_blank" rel="noopener" style="color:#f7931a;font-weight:600;text-decoration:none;">Staccana.com</a></div>
 
     <!-- XP Halving Banner -->
     <div style="background:#0f172a;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -1720,6 +1722,40 @@
       } catch (_) {}
     }
     loadScrollWidget();
+  </script>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const _app = initializeApp({
+      apiKey: "AIzaSyCeJ0Egs5CZjzRDXCMoEL54GbvRR-14Z14",
+      authDomain: "scrollpay-1ce29.firebaseapp.com",
+      projectId: "scrollpay-1ce29",
+      storageBucket: "scrollpay-1ce29.firebasestorage.app",
+      messagingSenderId: "710989126022",
+      appId: "1:710989126022:web:50324119c803af284f7407"
+    }, 'mkt-nav');
+    const _auth = getAuth(_app);
+    const _db   = getFirestore(_app);
+
+    onAuthStateChanged(_auth, async user => {
+      const pill = document.getElementById('nav-auth-pill');
+      if (!pill) return;
+      if (!user) {
+        pill.innerHTML = '· <a href="/" style="color:#f7931a;font-weight:600;text-decoration:none;">Sign in →</a>';
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(_db, 'sp_users', user.uid));
+        if (snap.exists()) {
+          const u = snap.data();
+          const handle = u.nickname || `Miner #${u.signupNumber || '?'}`;
+          pill.innerHTML = `· <span style="font-weight:700;color:#1e293b;">${handle}</span> <span style="color:#94a3b8;">${(u.totalSats||0).toLocaleString()} XP</span>`;
+        }
+      } catch(e) {}
+    });
   </script>
 </body>
 </html>
