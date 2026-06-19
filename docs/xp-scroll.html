@@ -217,6 +217,9 @@
     }
     .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
 
+    @media (max-width: 640px) {
+      .nav-links a:not(.active):not(:last-child) { display: none; }
+    }
     @media (max-width: 860px) {
       .exchange-grid { grid-template-columns: 1fr; }
       .trade-feed-wrap { grid-column: auto; }
@@ -240,9 +243,15 @@
       <a href="/market">XP Market</a>
       <a href="/xp-scroll" class="active" style="color:var(--orange);">XP/SCROLL</a>
       <a href="/advertiser">Advertise</a>
+      <span id="nav-auth-pill" style="font-size:12px;margin-left:4px;"></span>
     </div>
   </div>
 </nav>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:2px 0 12px;">
+  <span style="font-size:11px;color:#64748b;">Proudly sponsored by</span>
+  <a href="https://stacverse.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Stacverse.com</a>
+  <a href="https://staccana.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Staccana.com</a>
+</div>
 
 <!-- Ticker bar -->
 <div class="ticker-bar">
@@ -474,7 +483,8 @@
 
 <script type="module">
   import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getFirestore, collection, query, where, orderBy, limit, onSnapshot }
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+  import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDoc, doc }
     from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
   const FIREBASE_CONFIG = {
@@ -988,6 +998,25 @@
   loadMarketplaceData();
   setInterval(fetchScrollPrice, 60000);
   setInterval(loadMarketplaceData, 60000);
+
+  // ── Nav auth state ───────────────────────────────────────────
+  const auth = getAuth(app);
+  onAuthStateChanged(auth, async user => {
+    const pill = document.getElementById('nav-auth-pill');
+    if (!pill) return;
+    if (!user) {
+      pill.innerHTML = '· <a href="/" style="color:var(--orange);font-weight:600;text-decoration:none;">Sign in →</a>';
+      return;
+    }
+    try {
+      const snap = await getDoc(doc(db, 'sp_users', user.uid));
+      if (snap.exists()) {
+        const u = snap.data();
+        const handle = u.nickname || `Miner #${u.signupNumber || '?'}`;
+        pill.innerHTML = `· <span style="font-weight:700;color:#1e293b;">${handle}</span> <span style="color:#94a3b8;">${(u.totalSats||0).toLocaleString()} XP</span>`;
+      }
+    } catch(e) {}
+  });
 </script>
 </body>
 </html>

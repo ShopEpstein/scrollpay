@@ -117,6 +117,10 @@
       .steps, .privacy-grid { grid-template-columns: 1fr; }
     }
 
+    @media (max-width: 640px) {
+      .nav-page-links { display: none; }
+      #demo-widget { display: none !important; }
+    }
     @media (max-width: 480px) {
       .hero h1 { font-size: 28px; }
       .steps { grid-template-columns: 1fr; }
@@ -378,13 +382,20 @@
     <nav>
       <a class="brand" href="/"><img src="icon128.png" alt="ScrollPay" /></a>
       <div style="display:flex;align-items:center;gap:16px;">
-        <a href="/market" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">XP Market</a>
-        <a href="/partners" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">Partners</a>
-        <a href="/advertiser" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">Advertise</a>
-        <a href="/economics" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">How It Works</a>
+        <div class="nav-page-links" style="display:flex;align-items:center;gap:16px;">
+          <a href="/market" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">XP Market</a>
+          <a href="/partners" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">Partners</a>
+          <a href="/advertiser" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">Advertise</a>
+          <a href="/economics" style="font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;">How It Works</a>
+        </div>
         <a class="nav-cta" href="#get-started">Install Free</a>
       </div>
     </nav>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:2px 0 18px;">
+      <span style="font-size:11px;color:#94a3b8;">Proudly sponsored by</span>
+      <a href="https://stacverse.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Stacverse.com</a>
+      <a href="https://staccana.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:4px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;font-size:12px;font-weight:700;color:#f7931a;text-decoration:none;">Staccana.com</a>
+    </div>
 
     <div id="ref-banner" style="display:none;background:var(--cream);border:1px solid #fed7aa;border-radius:10px;padding:14px 20px;margin-bottom:20px;text-align:center;font-size:14px;">
       ₿ You were invited! Use code <strong id="ref-banner-code" style="font-size:15px;letter-spacing:1px;color:var(--orange-dark)"></strong> during setup to give your friend a Bitcoin bonus.
