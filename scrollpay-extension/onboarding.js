@@ -75,7 +75,7 @@ function proceedFromScreen2() {
 document.getElementById('btn-screen-2').addEventListener('click', proceedFromScreen2);
 document.getElementById('skip-screen-2').addEventListener('click', proceedFromScreen2);
 
-// Screen 3 → Create user + open Twitter
+// Screen 3 → Create user
 document.getElementById('btn-screen-3').addEventListener('click', async () => {
   const btn = document.getElementById('btn-screen-3');
   btn.textContent = 'Setting up...';
@@ -105,10 +105,9 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
         [USER_REF_CODE_KEY]: response.refCode || ''
       });
 
-      setStatus('Account created! Opening Twitter...', 'success');
+      setStatus('Account created! Start browsing to earn XP.', 'success');
 
       setTimeout(() => {
-        chrome.tabs.create({ url: 'https://twitter.com' });
         window.close();
       }, 1000);
     } else {
@@ -119,7 +118,6 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
       });
       setStatus('Offline mode — account saved locally.', 'success');
       setTimeout(() => {
-        chrome.tabs.create({ url: 'https://twitter.com' });
         window.close();
       }, 1200);
     }
@@ -134,7 +132,6 @@ document.getElementById('btn-screen-3').addEventListener('click', async () => {
 (async function init() {
   const result = await chrome.storage.local.get([USER_KEY, 'scrollpay_pending_ref']);
   if (result[USER_KEY]) {
-    chrome.tabs.create({ url: 'https://twitter.com' });
     window.close();
     return;
   }
