@@ -369,8 +369,7 @@
     }
 
     @media (max-width: 640px) {
-      .nav-links { gap: 10px; }
-      .nav-links a:not(:last-child) { display: none; }
+      .nav-links a:not(.nav-primary) { display: none; }
     }
     @media (max-width: 480px) {
       .hero h1 { font-size: 26px; }
@@ -450,7 +449,7 @@
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/advertiser">Advertise</a>
-        <a href="/xp-scroll" style="color:#f7931a;font-weight:700;">XP/SCROLL Exchange</a>
+        <a href="/xp-scroll" class="nav-primary" style="color:#f7931a;font-weight:700;">XP/SCROLL Exchange</a>
         <span id="nav-auth-pill" style="font-size:12px;margin-left:4px;"></span>
       </div>
     </nav>
