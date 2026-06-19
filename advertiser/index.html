@@ -61,6 +61,7 @@
         <a href="#inbox-section"    class="admin-jump-link">📬 Inbox</a>
         <a href="#partners-section" class="admin-jump-link">🔗 Partners</a>
         <a href="#miners-section"   class="admin-jump-link">⛏️ Miners</a>
+        <a href="#sweep-section"    class="admin-jump-link">🎯 Campaign Requests</a>
       </div>
 
       <!-- Admin-only: Stats Dashboard -->
@@ -181,6 +182,15 @@
           </div>
         </div>
         <div id="miners-container"></div>
+      </div>
+
+      <!-- Admin-only: Campaign Sweep Requests -->
+      <div id="sweep-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:16px;">
+          <h2 style="font-size:20px;font-weight:700;">🎯 Campaign Requests</h2>
+          <button id="sweep-refresh" class="btn-ghost-sm">↻ Refresh</button>
+        </div>
+        <div id="sweep-container"></div>
       </div>
 
       <!-- Miner message compose (floating) -->
