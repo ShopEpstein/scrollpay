@@ -56,7 +56,7 @@ onAuthStateChanged(auth, user => {
     loadCampaigns();
     if (isAdminUser) {
       document.getElementById('admin-jump-nav').style.display = 'flex';
-      loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners();
+      loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); loadSweepOrders();
     }
   } else {
     showView('view-auth');
@@ -1424,3 +1424,86 @@ function esc(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Campaign Sweep Requests ─────────────────────────────────────
+async function loadSweepOrders() {
+  const section = document.getElementById('sweep-section');
+  const container = document.getElementById('sweep-container');
+  if (!section || !container) return;
+  section.style.display = 'block';
+  container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Loading…</p>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-sweep', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+
+    const orders = data.orders || [];
+    if (!orders.length) {
+      container.innerHTML = '<p style="color:#9ca3af;font-size:13px;padding:16px 0;">No campaign requests yet.</p>';
+      return;
+    }
+
+    const SC = {
+      pending:   { bg:'#fff7ed', border:'#fed7aa', text:'#92400e', label:'⏳ Pending'   },
+      contacted: { bg:'#eff6ff', border:'#bfdbfe', text:'#1e40af', label:'📧 Contacted' },
+      fulfilled: { bg:'#f0fdf4', border:'#bbf7d0', text:'#166534', label:'✓ Fulfilled'  },
+      cancelled: { bg:'#fef2f2', border:'#fecaca', text:'#991b1b', label:'✕ Cancelled'  },
+    };
+
+    container.innerHTML = orders.map(o => {
+      const sc = SC[o.status] || SC.pending;
+      const created = o.createdAt ? new Date(o.createdAt._seconds * 1000).toLocaleString() : '—';
+      const usd = o.usdEstimate ? '$' + Number(o.usdEstimate).toFixed(2) : '—';
+      const actions = o.status === 'pending' ? `
+        <button onclick="updateSweepStatus('${o.id}','contacted')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📧 Mark Contacted</button>
+        <button onclick="updateSweepStatus('${o.id}','fulfilled')" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Mark Fulfilled</button>
+        <button onclick="updateSweepStatus('${o.id}','cancelled')" style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cancel</button>`
+      : o.status === 'contacted' ? `
+        <button onclick="updateSweepStatus('${o.id}','fulfilled')" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Mark Fulfilled</button>
+        <button onclick="updateSweepStatus('${o.id}','cancelled')" style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cancel</button>` : '';
+
+      return `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:12px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:2px;">${esc(o.name||'Anonymous')}</div>
+            <a href="mailto:${esc(o.email)}" style="font-size:13px;color:#f7931a;font-weight:600;">${esc(o.email)}</a>
+            ${o.website ? `<span style="font-size:12px;color:#6b7280;margin-left:8px;">· ${esc(o.website)}</span>` : ''}
+          </div>
+          <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.text};font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;">${sc.label}</span>
+        </div>
+        <div style="display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;">
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">XP Requested</div><div style="font-size:18px;font-weight:800;color:#f7931a;">${Number(o.totalXp||0).toLocaleString()} XP</div></div>
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Total Sats</div><div style="font-size:18px;font-weight:800;color:#111827;">${Number(o.totalSats||0).toLocaleString()}</div></div>
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">USD Est.</div><div style="font-size:18px;font-weight:800;color:#111827;">${usd}</div></div>
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Submitted</div><div style="font-size:13px;color:#6b7280;font-weight:600;margin-top:4px;">${created}</div></div>
+        </div>
+        ${o.message ? `<div style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;padding:10px 12px;font-size:13px;color:#374151;margin-bottom:10px;">"${esc(o.message)}"</div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          ${actions}
+          <a href="mailto:${esc(o.email)}?subject=ScrollPay+Campaign+Request" style="background:#fff7ed;color:#f7931a;border:1px solid #fed7aa;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none;">✉ Reply</a>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<p style="color:#dc2626;font-size:13px;">${esc(e.message)}</p>`;
+  }
+}
+
+async function updateSweepStatus(id, status) {
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-sweep', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+    await loadSweepOrders();
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
+document.getElementById('sweep-refresh')?.addEventListener('click', loadSweepOrders);
