@@ -13,6 +13,7 @@
   const DISMISS_KEY = 'scrollpay_dismissed_until';
   const USER_KEY = 'scrollpay_user_id';
   const WIDGET_SIZE_KEY = 'scrollpay_widget_size';
+  const OPACITY_KEY = 'scrollpay_widget_opacity';
   const REF_CODE_KEY = 'scrollpay_ref_code';
   const PENDING_REF_KEY = 'scrollpay_pending_ref';
   const COOLDOWN_MS = 10 * 60 * 1000;   // close button hides widget for 10 min
@@ -135,6 +136,11 @@
             <button class="sp-cta-btn" id="sp-cta-btn"></button>
           </div>
         </div>
+      </div>
+      <div id="sp-opacity-row">
+        <span class="sp-opacity-label">Opacity</span>
+        <input type="range" id="sp-opacity-slider" class="sp-opacity-slider" min="15" max="100" value="100" step="5" aria-label="Widget opacity" />
+        <span class="sp-opacity-pct" id="sp-opacity-pct">100%</span>
       </div>
       <div id="sp-footer">
         <span class="sp-earnings" id="sp-earnings-label">₿ <span id="sp-sats-count">0</span> XP mined</span>
@@ -276,6 +282,17 @@
     });
 
     chrome.storage.local.set({ [WIDGET_SIZE_KEY]: size });
+  }
+
+  function setWidgetOpacity(pct) {
+    const clamped = Math.max(15, Math.min(100, pct));
+    const widget = document.getElementById(WIDGET_ID);
+    if (widget) widget.style.setProperty('opacity', (clamped / 100).toFixed(2), 'important');
+    const slider = document.getElementById('sp-opacity-slider');
+    if (slider) slider.value = String(clamped);
+    const pctEl = document.getElementById('sp-opacity-pct');
+    if (pctEl) pctEl.textContent = clamped + '%';
+    chrome.storage.local.set({ [OPACITY_KEY]: clamped });
   }
 
   async function flush() {
@@ -478,11 +495,25 @@
       });
     });
 
+    // Load and apply saved opacity, then wire the slider
+    const opacityResult = await chrome.storage.local.get([OPACITY_KEY]);
+    setWidgetOpacity(opacityResult[OPACITY_KEY] ?? 100);
+    const opacitySlider = document.getElementById('sp-opacity-slider');
+    if (opacitySlider) {
+      opacitySlider.addEventListener('input', (e) => {
+        e.stopPropagation();
+        setWidgetOpacity(parseInt(e.target.value, 10));
+      });
+      opacitySlider.addEventListener('click', (e) => e.stopPropagation());
+    }
+
     makeDraggable(widget);
     setupActivityTracking();
     startLoops();
 
-    // Pause ad rotation while the user hovers so they can read/click comfortably
+    // Pause ad rotation while the user hovers so they can read/click comfortably.
+    // Also reveal at full opacity on hover so streamers can interact with a
+    // semi-transparent widget without fumbling, then fade back on mouseleave.
     widget.addEventListener('mouseenter', () => {
       if (rotateTimer) {
         clearInterval(rotateTimer);
@@ -490,10 +521,14 @@
       }
       const fill = document.getElementById('sp-progress-fill');
       if (fill) fill.style.animationPlayState = 'paused', fill.style.transition = 'none';
+      widget.style.setProperty('opacity', '1', 'important');
     });
     widget.addEventListener('mouseleave', () => {
       if (!rotateTimer) rotateTimer = setInterval(rotateAd, AD_ROTATE_MS);
       restartProgressBar();
+      const slider = document.getElementById('sp-opacity-slider');
+      const saved = slider ? parseInt(slider.value, 10) : 100;
+      widget.style.setProperty('opacity', (Math.max(15, saved) / 100).toFixed(2), 'important');
     });
 
     requestAnimationFrame(() => widget.classList.add('sp-visible'));
