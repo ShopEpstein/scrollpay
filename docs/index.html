@@ -343,6 +343,34 @@
       height: 100%; width: 0%; background: linear-gradient(90deg,#f7931a,#fbbf24);
       border-radius: 0 2px 2px 0;
     }
+    #demo-widget #dw-opacity-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 12px; background: #0f172a;
+      border-top: 1px solid #1e293b; box-sizing: border-box;
+    }
+    #demo-widget .dw-opacity-label {
+      font-size: 9px; font-weight: 600; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
+      font-family: inherit;
+    }
+    #demo-widget .dw-opacity-pct {
+      font-size: 9px; font-weight: 600; color: #94a3b8;
+      flex-shrink: 0; min-width: 30px; text-align: right; font-family: inherit;
+    }
+    #demo-widget .dw-opacity-slider {
+      -webkit-appearance: none; appearance: none;
+      flex: 1; height: 3px; background: #334155;
+      border-radius: 2px; outline: none; cursor: pointer;
+      margin: 0; padding: 0; border: none; min-width: 0;
+    }
+    #demo-widget .dw-opacity-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #f7931a; cursor: pointer; border: none;
+    }
+    #demo-widget .dw-opacity-slider::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #f7931a; cursor: pointer; border: none;
+    }
   </style>
 </head>
 <body>
@@ -767,6 +795,11 @@
         <button class="dw-close" id="dw-close" aria-label="Hide demo widget">✕</button>
       </div>
     </div>
+    <div id="dw-opacity-row">
+      <span class="dw-opacity-label">Opacity</span>
+      <input type="range" id="dw-opacity-slider" class="dw-opacity-slider" min="15" max="100" value="100" step="5" aria-label="Widget opacity" />
+      <span class="dw-opacity-pct" id="dw-opacity-pct">100%</span>
+    </div>
     <div id="dw-progress"><div id="dw-progress-fill"></div></div>
   </div>
 
@@ -1029,6 +1062,39 @@
         widgetEl.classList.add('dw-' + size);
         xpMultiplier = SIZE_XP[size];
       });
+    });
+
+    // ── Opacity slider ───────────────────────────────────────────
+
+    const DW_OPACITY_KEY = 'scrollpay_demo_opacity';
+
+    function setDemoOpacity(pct) {
+      const clamped = Math.max(15, Math.min(100, pct));
+      widgetEl.style.opacity = (clamped / 100).toFixed(2);
+      const slider = document.getElementById('dw-opacity-slider');
+      if (slider) slider.value = String(clamped);
+      const pctEl = document.getElementById('dw-opacity-pct');
+      if (pctEl) pctEl.textContent = clamped + '%';
+      try { localStorage.setItem(DW_OPACITY_KEY, String(clamped)); } catch (_) {}
+    }
+
+    (function initDemoOpacity() {
+      let saved = 100;
+      try { saved = parseInt(localStorage.getItem(DW_OPACITY_KEY) || '100', 10) || 100; } catch (_) {}
+      setDemoOpacity(saved);
+    })();
+
+    document.getElementById('dw-opacity-slider').addEventListener('input', e => {
+      setDemoOpacity(parseInt(e.target.value, 10));
+    });
+
+    widgetEl.addEventListener('mouseenter', () => {
+      widgetEl.style.opacity = '1';
+    });
+    widgetEl.addEventListener('mouseleave', () => {
+      const slider = document.getElementById('dw-opacity-slider');
+      const saved = slider ? parseInt(slider.value, 10) : 100;
+      widgetEl.style.opacity = (Math.max(15, saved) / 100).toFixed(2);
     });
 
     // ── Auth + XP farming ────────────────────────────────────────
