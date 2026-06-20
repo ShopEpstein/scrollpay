@@ -624,6 +624,33 @@
         </div>
       </div>
 
+      <!-- Weekly Raffle Countdown -->
+      <div style="background:#0f172a;border-radius:14px;padding:16px 18px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f7931a;">🎟 Draw #<span id="mkt-draw-num">1</span></div>
+          <span style="font-size:10px;color:#475569;font-weight:600;">1 XP = 1 ticket</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">
+          <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px 4px;text-align:center;">
+            <div id="mkt-raffle-days" style="font-size:20px;font-weight:800;color:#f7931a;line-height:1;font-variant-numeric:tabular-nums;">0</div>
+            <div style="font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Days</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px 4px;text-align:center;">
+            <div id="mkt-raffle-hours" style="font-size:20px;font-weight:800;color:#f7931a;line-height:1;font-variant-numeric:tabular-nums;">00</div>
+            <div style="font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Hours</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px 4px;text-align:center;">
+            <div id="mkt-raffle-mins" style="font-size:20px;font-weight:800;color:#f7931a;line-height:1;font-variant-numeric:tabular-nums;">00</div>
+            <div style="font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Mins</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px 4px;text-align:center;">
+            <div id="mkt-raffle-secs" style="font-size:20px;font-weight:800;color:#f7931a;line-height:1;font-variant-numeric:tabular-nums;">00</div>
+            <div style="font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">Secs</div>
+          </div>
+        </div>
+        <a href="/#weekly-draw" style="display:block;background:#f7931a;color:#fff;text-align:center;padding:9px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">Enter the Draw →</a>
+      </div>
+
       <!-- Sell form -->
       <!-- SCROLL Exchange widget -->
       <div class="scroll-widget">
@@ -2043,6 +2070,30 @@
         }
       } catch(e) {}
     });
+  </script>
+  <script>
+    (function () {
+      const LAUNCH_TS = new Date('2026-06-14T21:25:00Z').getTime();
+      const PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
+      function p(n) { return String(n).padStart(2, '0'); }
+      function tick() {
+        const now = Date.now();
+        const n   = Math.max(1, Math.floor((now - LAUNCH_TS) / PERIOD_MS) + 1);
+        const ms  = Math.max(0, LAUNCH_TS + n * PERIOD_MS - now);
+        const d = Math.floor(ms / 86400000);
+        const h = Math.floor(ms % 86400000 / 3600000);
+        const m = Math.floor(ms % 3600000 / 60000);
+        const s = Math.floor(ms % 60000 / 1000);
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('mkt-draw-num',    n);
+        set('mkt-raffle-days', d);
+        set('mkt-raffle-hours', p(h));
+        set('mkt-raffle-mins',  p(m));
+        set('mkt-raffle-secs',  p(s));
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
   </script>
 </body>
 </html>

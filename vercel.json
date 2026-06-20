@@ -20,6 +20,7 @@
     { "source": "/api/wallets",         "destination": "/api/wallets.js" },
     { "source": "/api/record-click",   "destination": "/api/record-click.js" },
     { "source": "/api/faucet",          "destination": "/api/faucet.js" },
+    { "source": "/api/raffle-entry",   "destination": "/api/raffle-entry.js" },
     { "source": "/",                "destination": "/docs/index.html" },
     { "source": "/(.*)",            "destination": "/docs/$1" }
   ]
