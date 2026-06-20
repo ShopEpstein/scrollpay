@@ -56,7 +56,7 @@ onAuthStateChanged(auth, user => {
     loadCampaigns();
     if (isAdminUser) {
       document.getElementById('admin-jump-nav').style.display = 'flex';
-      loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); loadSweepOrders();
+      loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); loadSweepOrders(); loadRaffleEntries();
     }
   } else {
     showView('view-auth');
@@ -1507,3 +1507,83 @@ async function updateSweepStatus(id, status) {
 }
 
 document.getElementById('sweep-refresh')?.addEventListener('click', loadSweepOrders);
+
+// ── Raffle Entries ──────────────────────────────────────────────
+async function loadRaffleEntries(drawOverride) {
+  const section   = document.getElementById('raffle-section');
+  const container = document.getElementById('raffle-container');
+  const summary   = document.getElementById('raffle-summary');
+  const picker    = document.getElementById('raffle-draw-picker');
+  if (!section || !container) return;
+  section.style.display = 'block';
+
+  const draw = drawOverride || parseInt(picker?.value) || null;
+  const url  = '/api/admin-raffle' + (draw ? `?draw=${draw}` : '');
+
+  container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Loading…</p>';
+  if (summary) summary.style.display = 'none';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res  = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    const { entries, drawNumber, totalTickets, endsAt, currentDraw } = data;
+
+    if (picker && !picker.value) picker.value = drawNumber;
+
+    const endsDate = new Date(endsAt);
+    const closed   = endsDate < new Date();
+    const endsStr  = endsDate.toLocaleString();
+
+    if (summary) {
+      summary.style.display = 'block';
+      summary.innerHTML = `
+        <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
+          <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Draw</span><div style="font-size:20px;font-weight:800;color:#f7931a;">#${drawNumber}</div></div>
+          <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Total Tickets</span><div style="font-size:20px;font-weight:800;">${totalTickets.toLocaleString()}</div></div>
+          <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Entrants</span><div style="font-size:20px;font-weight:800;">${entries.length}</div></div>
+          <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">${closed ? 'Closed' : 'Closes'}</span><div style="font-size:13px;font-weight:600;margin-top:4px;">${endsStr}</div></div>
+          ${drawNumber < currentDraw ? '<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Draw closed</span>' : '<span style="background:#fff7ed;border:1px solid #fed7aa;color:#92400e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Active</span>'}
+        </div>`;
+    }
+
+    if (!entries.length) {
+      container.innerHTML = '<p style="color:#9ca3af;font-size:13px;padding:16px 0;">No entries for this draw yet.</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">#</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Handle / Ref</th>
+            <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Tickets</th>
+            <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Odds</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${entries.map((e, i) => {
+            const odds = totalTickets > 0 ? ((e.tickets / totalTickets) * 100).toFixed(1) : '0.0';
+            const handle = e.nickname || `Miner #${e.refCode || '?'}`;
+            return `<tr style="border-bottom:1px solid #f3f4f6;">
+              <td style="padding:10px 14px;color:#9ca3af;font-weight:600;">${i + 1}</td>
+              <td style="padding:10px 14px;">
+                <div style="font-weight:700;color:#111827;">${esc(handle)}</div>
+                ${e.refCode ? `<div style="font-size:11px;color:#9ca3af;font-family:monospace;">${esc(e.refCode)}</div>` : ''}
+              </td>
+              <td style="padding:10px 14px;text-align:right;font-weight:800;color:#f7931a;">${(e.tickets||0).toLocaleString()}</td>
+              <td style="padding:10px 14px;text-align:right;color:#6b7280;">${odds}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    container.innerHTML = `<p style="color:#dc2626;font-size:13px;">${esc(e.message)}</p>`;
+  }
+}
+
+window.loadRaffleEntries = loadRaffleEntries;
+document.getElementById('raffle-refresh')?.addEventListener('click', () => loadRaffleEntries());

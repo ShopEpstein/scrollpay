@@ -35,17 +35,28 @@ module.exports = async (req, res) => {
     const tickets = parseInt(req.body?.tickets) || 0;
     if (tickets < 1) return res.status(400).json({ error: 'Must enter at least 1 ticket' });
 
-    const userRef  = db.collection('sp_users').doc(userId);
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) return res.status(404).json({ error: 'User not found' });
+    const userRef = db.collection('sp_users').doc(userId);
 
-    const balance = userSnap.data().totalSats || 0;
-    if (tickets > balance) return res.status(400).json({ error: `Not enough XP — you have ${balance.toLocaleString()} XP` });
+    // Transaction: atomically validate balance and deduct XP
+    let userData;
+    try {
+      await db.runTransaction(async t => {
+        const userSnap = await t.get(userRef);
+        if (!userSnap.exists) throw new Error('User not found');
+        const balance = userSnap.data().totalSats || 0;
+        if (tickets > balance) {
+          const err = new Error(`Not enough XP — you have ${balance.toLocaleString()} XP`);
+          err.status = 400;
+          throw err;
+        }
+        userData = userSnap.data();
+        t.update(userRef, { totalSats: admin.firestore.FieldValue.increment(-tickets) });
+      });
+    } catch (e) {
+      return res.status(e.status || 500).json({ error: e.message });
+    }
 
-    // Deduct XP
-    await userRef.update({ totalSats: admin.firestore.FieldValue.increment(-tickets) });
-
-    // Upsert entry
+    // Upsert entry outside transaction (no read-write on same doc needed)
     const existing = await db.collection('sp_raffle_entries')
       .where('userId', '==', userId).where('drawNumber', '==', drawNumber).limit(1).get();
 
@@ -53,7 +64,8 @@ module.exports = async (req, res) => {
     if (existing.empty) {
       await db.collection('sp_raffle_entries').add({
         userId,
-        refCode:    userSnap.data().refCode || '',
+        refCode:    userData.refCode || '',
+        nickname:   userData.nickname || '',
         drawNumber,
         tickets,
         enteredAt:  admin.firestore.FieldValue.serverTimestamp(),
