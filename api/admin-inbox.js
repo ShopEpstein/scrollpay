@@ -1,4 +1,5 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
+const { sendEmail } = require('./_email');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
@@ -97,6 +98,23 @@ module.exports = async (req, res) => {
       });
 
       await batch.commit();
+
+      // Email user — look up their address from Firebase Auth
+      try {
+        const authUser = await admin.auth().getUser(userId);
+        if (authUser.email) {
+          sendEmail({
+            to: authUser.email,
+            subject: 'New message from ScrollPay',
+            html: `
+              <h2 style="margin:0 0 8px;">You have a new message</h2>
+              <p style="color:#475569;">${text.trim().replace(/\n/g, '<br>')}</p>
+              <p style="margin-top:24px;"><a href="https://scrollpay.app" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Open ScrollPay</a></p>
+              <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+            `,
+          });
+        }
+      } catch (_) {}
 
       return res.status(200).json({ id: newMsgRef.id, ok: true });
     }

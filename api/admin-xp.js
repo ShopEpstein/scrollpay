@@ -1,4 +1,5 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
+const { sendEmail } = require('./_email');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
 
@@ -143,6 +144,26 @@ module.exports = async (req, res) => {
           txUrl: txHash ? explorerBase + txHash : '',
           fulfilledAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+
+        // Email seller
+        try {
+          const authUser = await admin.auth().getUser(listing.userId);
+          if (authUser.email) {
+            const xpFmt = Number(listing.xpAmount || 0).toLocaleString();
+            const txLink = txHash ? `<p><a href="${explorerBase}${txHash}" style="color:#f97316;">View transaction ↗</a></p>` : '';
+            sendEmail({
+              to: authUser.email,
+              subject: `Your XP listing has been fulfilled — ${xpFmt} XP sold`,
+              html: `
+                <h2 style="margin:0 0 8px;">XP Sold!</h2>
+                <p style="color:#475569;">Your listing of <strong>${xpFmt} XP</strong> has been fulfilled. Payment has been sent via ${txChainNorm.toUpperCase()}.</p>
+                ${txLink}
+                <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+              `,
+            });
+          }
+        } catch (_) {}
+
         return res.status(200).json({ ok: true });
       }
 
@@ -151,6 +172,25 @@ module.exports = async (req, res) => {
           status: 'cancelled',
           cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+
+        // Email seller
+        try {
+          const authUser = await admin.auth().getUser(listing.userId);
+          if (authUser.email) {
+            const xpFmt = Number(listing.xpAmount || 0).toLocaleString();
+            sendEmail({
+              to: authUser.email,
+              subject: `Your XP listing has been cancelled — ${xpFmt} XP`,
+              html: `
+                <h2 style="margin:0 0 8px;">Listing Cancelled</h2>
+                <p style="color:#475569;">Your listing of <strong>${xpFmt} XP</strong> has been cancelled. Your XP balance has not been affected.</p>
+                <p style="color:#475569;">If you have questions, visit <a href="https://scrollpay.app" style="color:#f97316;">scrollpay.app</a>.</p>
+                <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+              `,
+            });
+          }
+        } catch (_) {}
+
         return res.status(200).json({ ok: true });
       }
 
