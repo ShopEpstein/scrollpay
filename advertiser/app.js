@@ -53,10 +53,13 @@ onAuthStateChanged(auth, user => {
     document.getElementById('nav-email').textContent =
       user.email + (isAdminUser ? ' ⚡ Admin' : '');
     showView('view-dashboard');
-    loadCampaigns();
     if (isAdminUser) {
-      document.getElementById('admin-jump-nav').style.display = 'flex';
+      document.getElementById('admin-tab-nav').style.display = 'block';
+      document.getElementById('advertiser-panel').style.display = 'none';
+      switchAdminTab('inbox');
       loadStats(); loadXpMarket(); loadFulfilledListings(); loadInbox(); loadPartners(); loadMiners(); loadSweepOrders(); loadRaffleEntries();
+    } else {
+      loadCampaigns();
     }
   } else {
     showView('view-auth');
@@ -99,6 +102,45 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
 });
 
 document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
+
+// ── Admin tabs ───────────────────────────────────────────────────
+
+const ADMIN_TAB_MAP = {
+  inbox:     { show: ['inbox-section'] },
+  stats:     { show: ['stats-section'] },
+  miners:    { show: ['miners-section'] },
+  market:    { show: ['xp-market-section', 'fulfilled-section'] },
+  campaigns: { show: ['advertiser-panel'] },
+  partners:  { show: ['partners-section'] },
+  sweep:     { show: ['sweep-section'] },
+  raffle:    { show: ['raffle-section'] },
+};
+const ALL_ADMIN_SECTIONS = ['stats-section', 'xp-market-section', 'fulfilled-section',
+  'inbox-section', 'partners-section', 'miners-section', 'sweep-section', 'raffle-section', 'advertiser-panel'];
+
+function switchAdminTab(tabName) {
+  ALL_ADMIN_SECTIONS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const tab = ADMIN_TAB_MAP[tabName];
+  if (tab) {
+    tab.show.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'block';
+    });
+  }
+  document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  // Load campaigns if switching to that tab and not yet loaded
+  if (tabName === 'campaigns' && !campaignsLoaded) { loadCampaigns(); campaignsLoaded = true; }
+}
+let campaignsLoaded = false;
+
+document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchAdminTab(btn.dataset.tab));
+});
 
 function friendlyAuthError(code) {
   return ({
@@ -363,7 +405,11 @@ document.getElementById('new-campaign-btn').addEventListener('click', async () =
 
 document.getElementById('back-to-dashboard').addEventListener('click', () => {
   showView('view-dashboard');
-  loadCampaigns();
+  if (isAdmin()) {
+    switchAdminTab('campaigns');
+  } else {
+    loadCampaigns();
+  }
 });
 
 // ── Wizard ──────────────────────────────────────────────────────
@@ -603,7 +649,6 @@ document.getElementById('edit-save').addEventListener('click', async () => {
 // ── Admin Stats (admin only) ────────────────────────────────────
 
 async function loadStats() {
-  document.getElementById('stats-section').style.display = 'block';
   ['sc-total','sc-today','sc-week','sc-xp','sc-override'].forEach(id => {
     document.getElementById(id).textContent = '…';
   });
@@ -701,9 +746,7 @@ function satsToUsdStr(sats) {
 }
 
 async function loadXpMarket() {
-  const section = document.getElementById('xp-market-section');
   const container = document.getElementById('xp-market-container');
-  section.style.display = 'block';
   container.innerHTML = '<div class="loading">Loading sell requests…</div>';
 
   try {
@@ -796,10 +839,8 @@ async function handleXpAction(listingId, action) {
 }
 
 async function loadFulfilledListings() {
-  const section = document.getElementById('fulfilled-section');
   const container = document.getElementById('fulfilled-container');
   if (!container) return;
-  if (section) section.style.display = 'block';
   try {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch('/api/admin-xp?status=recent-fulfilled', {
@@ -866,9 +907,7 @@ document.getElementById('xp-market-refresh')?.addEventListener('click', () => { 
 // ── Admin Inbox ─────────────────────────────────────────────────
 
 async function loadInbox() {
-  const section = document.getElementById('inbox-section');
   const container = document.getElementById('inbox-container');
-  section.style.display = 'block';
   container.innerHTML = '<div class="loading">Loading messages…</div>';
 
   try {
@@ -908,6 +947,9 @@ async function loadInbox() {
         ? `<span style="font-size:12px;color:#374151;font-weight:600;margin-left:8px;">${esc(thread.userHandle)}</span>`
         : '';
       const refBadge = `<span style="font-family:monospace;font-size:11px;color:#9ca3af;margin-left:6px;">${esc(thread.refCode)}</span>`;
+      const subjectLine = thread.subject
+        ? `<div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px;">📌 ${esc(thread.subject)}</div>`
+        : '';
 
       const bubbles = thread.messages.map(m => {
         const isAdmin = m.from === 'admin';
@@ -926,7 +968,8 @@ async function loadInbox() {
       const uid = esc(thread.userId);
       const ref = esc(thread.refCode);
 
-      return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;">
+      return `<div style="background:#fff;border:1.5px solid ${thread.unreadCount > 0 ? '#fed7aa' : '#e5e7eb'};border-radius:12px;padding:16px;margin-bottom:16px;">
+        ${subjectLine}
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:12px;">
           ${emailLink}${handleBadge}${refBadge}${unreadPill}
         </div>
@@ -968,14 +1011,80 @@ async function sendAdminReply(userId, refCode, btn, textarea) {
 
 document.getElementById('inbox-refresh')?.addEventListener('click', loadInbox);
 
+// ── Admin Compose ────────────────────────────────────────────────
+
+document.getElementById('compose-btn')?.addEventListener('click', () => {
+  const panel = document.getElementById('inbox-compose');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) document.getElementById('compose-to').focus();
+});
+
+document.getElementById('compose-cancel-btn')?.addEventListener('click', () => {
+  document.getElementById('inbox-compose').style.display = 'none';
+  ['compose-to', 'compose-subject', 'compose-text'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  const st = document.getElementById('compose-status');
+  st.style.display = 'none';
+});
+
+document.getElementById('compose-send-btn')?.addEventListener('click', composeAdminMessage);
+document.getElementById('compose-text')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) composeAdminMessage();
+});
+
+async function composeAdminMessage() {
+  const to      = document.getElementById('compose-to').value.trim();
+  const subject = document.getElementById('compose-subject').value.trim();
+  const text    = document.getElementById('compose-text').value.trim();
+  const btn     = document.getElementById('compose-send-btn');
+  const status  = document.getElementById('compose-status');
+
+  if (!to)   { status.textContent = 'Please enter a recipient.'; status.style.color = '#dc2626'; status.style.display = 'inline'; return; }
+  if (!text) { status.textContent = 'Please enter a message.'; status.style.color = '#dc2626'; status.style.display = 'inline'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  status.style.display = 'none';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-inbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action: 'compose', to, subject, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send');
+
+    status.textContent = data.emailOnly ? '✓ Email sent (external address)' : '✓ Message sent!';
+    status.style.color = '#16a34a';
+    status.style.display = 'inline';
+    document.getElementById('compose-to').value = '';
+    document.getElementById('compose-subject').value = '';
+    document.getElementById('compose-text').value = '';
+    setTimeout(() => {
+      document.getElementById('inbox-compose').style.display = 'none';
+      status.style.display = 'none';
+    }, 2000);
+    loadInbox();
+  } catch (err) {
+    status.textContent = err.message;
+    status.style.color = '#dc2626';
+    status.style.display = 'inline';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send →';
+  }
+}
+
 // ── SEO Partners (admin only) ────────────────────────────────────
 
 let partnersData = [];
 
 async function loadPartners() {
-  const section = document.getElementById('partners-section');
   const container = document.getElementById('partners-container');
-  section.style.display = 'block';
   container.innerHTML = '<div class="loading">Loading partners…</div>';
 
   try {
@@ -1141,9 +1250,7 @@ let allMiners = [];
 let minerMsgTarget = null;
 
 async function loadMiners() {
-  const section = document.getElementById('miners-section');
   const container = document.getElementById('miners-container');
-  section.style.display = 'block';
   container.innerHTML = '<div class="loading">Loading miners…</div>';
   try {
     const token = await auth.currentUser.getIdToken();
@@ -1427,10 +1534,8 @@ function esc(str) {
 
 // ── Campaign Sweep Requests ─────────────────────────────────────
 async function loadSweepOrders() {
-  const section = document.getElementById('sweep-section');
   const container = document.getElementById('sweep-container');
-  if (!section || !container) return;
-  section.style.display = 'block';
+  if (!container) return;
   container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Loading…</p>';
 
   try {
@@ -1510,12 +1615,10 @@ document.getElementById('sweep-refresh')?.addEventListener('click', loadSweepOrd
 
 // ── Raffle Entries ──────────────────────────────────────────────
 async function loadRaffleEntries(drawOverride) {
-  const section   = document.getElementById('raffle-section');
   const container = document.getElementById('raffle-container');
   const summary   = document.getElementById('raffle-summary');
   const picker    = document.getElementById('raffle-draw-picker');
-  if (!section || !container) return;
-  section.style.display = 'block';
+  if (!container) return;
 
   const draw = drawOverride || parseInt(picker?.value) || null;
   const url  = '/api/admin-raffle' + (draw ? `?draw=${draw}` : '');

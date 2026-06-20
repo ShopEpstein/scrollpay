@@ -27,9 +27,11 @@ module.exports = async (req, res) => {
             refCode: data.refCode || '',
             userEmail: data.userEmail || '',
             userHandle: data.userHandle || '',
+            subject: data.subject || '',
             messages: [],
           };
         }
+        if (!threadMap[uid].subject && data.subject) threadMap[uid].subject = data.subject;
         threadMap[uid].messages.push({
           id: d.id,
           ...data,
@@ -60,6 +62,93 @@ module.exports = async (req, res) => {
       });
 
       return res.status(200).json({ threads });
+    }
+
+    // POST { action:'compose', to, subject, text } — admin starts a new conversation
+    if (req.method === 'POST' && req.body?.action === 'compose') {
+      const { to, subject, text } = req.body;
+      if (!to || !text?.trim()) {
+        return res.status(400).json({ error: 'Missing "to" or "text"' });
+      }
+
+      const toTrimmed = String(to).trim();
+      let targetUserId = null;
+      let targetEmail  = '';
+      let targetRefCode = '';
+      let targetHandle  = '';
+
+      if (toTrimmed.includes('@')) {
+        // Look up by email in Firebase Auth
+        try {
+          const authUser = await admin.auth().getUserByEmail(toTrimmed);
+          targetUserId = authUser.uid;
+          targetEmail  = toTrimmed;
+          // Enrich with Firestore profile
+          try {
+            const ud = await db.collection('sp_users').doc(targetUserId).get();
+            if (ud.exists) { targetRefCode = ud.data().refCode || ''; targetHandle = ud.data().nickname || ''; }
+          } catch (_) {}
+        } catch (_) {
+          // Not a registered user — send email only, no Firestore thread
+          await sendEmail({
+            to: toTrimmed,
+            subject: (subject || 'Message from ScrollPay').trim(),
+            html: `
+              <h2 style="margin:0 0 8px;">${(subject || 'Message from ScrollPay').trim()}</h2>
+              <p style="color:#475569;">${text.trim().replace(/\n/g, '<br>')}</p>
+              <p style="margin-top:24px;"><a href="https://scrollpay.app" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Open ScrollPay</a></p>
+              <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+            `,
+          });
+          return res.status(200).json({ ok: true, emailOnly: true });
+        }
+      } else {
+        // Resolve by refCode or handle
+        const upper = toTrimmed.toUpperCase();
+        let snap = await db.collection('sp_users').where('refCode', '==', upper).limit(1).get();
+        if (snap.empty) snap = await db.collection('sp_users').where('nickname', '==', toTrimmed).limit(1).get();
+        if (snap.empty) return res.status(404).json({ error: 'User not found. Try their email, ref code, or handle.' });
+        const d = snap.docs[0];
+        targetUserId  = d.id;
+        targetRefCode = d.data().refCode  || '';
+        targetHandle  = d.data().nickname || '';
+        try {
+          const au = await admin.auth().getUser(targetUserId);
+          targetEmail = au.email || '';
+        } catch (_) {}
+      }
+
+      if (!targetUserId) return res.status(400).json({ error: 'Could not resolve user' });
+
+      // Store admin message
+      const msgRef = db.collection('sp_inbox').doc();
+      await msgRef.set({
+        userId: targetUserId,
+        refCode: targetRefCode,
+        userEmail: targetEmail,
+        userHandle: targetHandle,
+        subject: (subject || '').trim(),
+        from: 'admin',
+        text: text.trim(),
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Email notification
+      if (targetEmail) {
+        sendEmail({
+          to: targetEmail,
+          subject: (subject || 'New message from ScrollPay').trim(),
+          html: `
+            <h2 style="margin:0 0 8px;">${(subject || 'You have a new message').trim()}</h2>
+            <p style="color:#475569;">${text.trim().replace(/\n/g, '<br>')}</p>
+            <p style="margin-top:24px;"><a href="https://scrollpay.app" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Open ScrollPay</a></p>
+            <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+          `,
+        });
+      }
+
+      return res.status(200).json({ id: msgRef.id, ok: true });
     }
 
     // POST { userId, refCode, text } — admin replies, marks user msgs as read

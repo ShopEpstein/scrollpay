@@ -53,16 +53,18 @@
   <div id="view-dashboard" class="view hidden" style="display:none">
     <div class="page">
 
-      <!-- Admin jump nav -->
-      <div id="admin-jump-nav" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:28px;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
-        <span style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;align-self:center;margin-right:4px;">Jump to:</span>
-        <a href="#stats-section"    class="admin-jump-link">📊 Stats</a>
-        <a href="#xp-market-section" class="admin-jump-link">₿ XP Market</a>
-        <a href="#inbox-section"    class="admin-jump-link">📬 Inbox</a>
-        <a href="#partners-section" class="admin-jump-link">🔗 Partners</a>
-        <a href="#miners-section"   class="admin-jump-link">⛏️ Miners</a>
-        <a href="#sweep-section"    class="admin-jump-link">🎯 Campaign Requests</a>
-        <a href="#raffle-section"   class="admin-jump-link">🎟 Raffle Entries</a>
+      <!-- Admin tab nav -->
+      <div id="admin-tab-nav" style="display:none;border-bottom:2px solid #e5e7eb;margin-bottom:28px;overflow-x:auto;">
+        <div style="display:flex;gap:0;min-width:max-content;">
+          <button class="admin-tab-btn active" data-tab="inbox">📬 Inbox</button>
+          <button class="admin-tab-btn" data-tab="stats">📊 Stats</button>
+          <button class="admin-tab-btn" data-tab="miners">⛏️ Miners</button>
+          <button class="admin-tab-btn" data-tab="market">₿ XP Market</button>
+          <button class="admin-tab-btn" data-tab="campaigns">📢 Campaigns</button>
+          <button class="admin-tab-btn" data-tab="partners">🔗 Partners</button>
+          <button class="admin-tab-btn" data-tab="sweep">🎯 Requests</button>
+          <button class="admin-tab-btn" data-tab="raffle">🎟 Raffle</button>
+        </div>
       </div>
 
       <!-- Admin-only: Stats Dashboard -->
@@ -99,11 +101,13 @@
         </div>
       </div>
 
-      <div class="page-head">
-        <h1>Your Campaigns</h1>
-        <button id="new-campaign-btn" class="btn-primary">+ New Campaign</button>
+      <div id="advertiser-panel">
+        <div class="page-head">
+          <h1>Your Campaigns</h1>
+          <button id="new-campaign-btn" class="btn-primary">+ New Campaign</button>
+        </div>
+        <div id="campaigns-container"></div>
       </div>
-      <div id="campaigns-container"></div>
 
       <!-- Admin-only: XP Marketplace -->
       <div id="xp-market-section" style="display:none;margin-top:48px;">
@@ -121,14 +125,38 @@
       </div>
 
       <!-- Admin-only: Inbox -->
-      <div id="inbox-section" style="display:none;margin-top:48px;">
+      <div id="inbox-section" style="display:none;margin-top:0">
         <div class="page-head" style="margin-bottom:16px;">
           <h2 style="font-size:20px;font-weight:700;">📬 Inbox</h2>
           <div style="display:flex;align-items:center;gap:8px;">
             <span id="inbox-unread-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700;"></span>
-            <button id="inbox-refresh" class="btn-ghost-sm">Refresh</button>
+            <button id="compose-btn" class="btn-primary" style="font-size:12px;padding:6px 14px;">✏ Compose</button>
+            <button id="inbox-refresh" class="btn-ghost-sm">↻ Refresh</button>
           </div>
         </div>
+
+        <!-- Compose panel -->
+        <div id="inbox-compose" style="display:none;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:20px 22px;margin-bottom:20px;">
+          <h3 style="font-size:14px;font-weight:700;color:#111827;margin-bottom:14px;">New Message</h3>
+          <div class="field">
+            <label>To — email, handle, or ref code</label>
+            <input type="text" id="compose-to" placeholder="user@email.com · satoshi_21 · XKCD1234" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>Subject <span style="font-weight:400;color:#9ca3af;font-size:12px;">(optional — good for deal tracking)</span></label>
+            <input type="text" id="compose-subject" placeholder="Partnership inquiry, Deal proposal…" />
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Message</label>
+            <textarea id="compose-text" rows="4" placeholder="Write your message…" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#f7931a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="compose-send-btn" class="btn-primary" style="font-size:13px;padding:8px 20px;">Send →</button>
+            <button id="compose-cancel-btn" class="btn-ghost-sm">Cancel</button>
+            <span id="compose-status" style="font-size:13px;display:none;margin-left:4px;"></span>
+          </div>
+        </div>
+
         <div id="inbox-container"></div>
       </div>
 
