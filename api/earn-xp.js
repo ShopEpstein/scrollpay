@@ -1,6 +1,7 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const MAX_PER_WRITE = 50;
+const DAILY_CAP = 25000;
 
 // Awards override XP to a referrer (fire-and-forget — never blocks the caller).
 function awardOverrideXp(referrerId, override) {
@@ -24,9 +25,6 @@ module.exports = async (req, res) => {
     const decoded = await verifyToken(authHeader.slice(7));
     const { amount, type } = req.body;
 
-    const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE);
-    if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
-
     const userRef = db.collection('sp_users').doc(decoded.uid);
     const snap = await userRef.get();
     if (!snap.exists) return res.status(404).json({ error: 'Account not found — please reload the page.' });
@@ -35,6 +33,15 @@ module.exports = async (req, res) => {
     const today = new Date().toDateString();
     const lastDate = data.lastActiveAt?.toDate?.()?.toDateString?.() || '';
     const isToday = lastDate === today;
+    const satsToday = isToday ? (data.satsToday || 0) : 0;
+
+    if (satsToday >= DAILY_CAP) {
+      return res.status(200).json({ awarded: 0, capped: true, total: data.totalSats || 0 });
+    }
+
+    const remaining = DAILY_CAP - satsToday;
+    const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE, remaining);
+    if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
     const update = {
       totalSats: admin.firestore.FieldValue.increment(awarded),
@@ -55,7 +62,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       awarded,
       overrideAwarded: override,
-      capped: false,
+      capped: (satsToday + awarded) >= DAILY_CAP,
       total: (data.totalSats || 0) + awarded,
     });
   } catch (err) {
