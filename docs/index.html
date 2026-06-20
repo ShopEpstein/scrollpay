@@ -898,6 +898,24 @@
     <div id="dw-progress"><div id="dw-progress-fill"></div></div>
   </div>
 
+  <script>
+    // Widget show/hide runs unconditionally — does NOT depend on Firebase CDN
+    (function () {
+      var widget = document.getElementById('demo-widget');
+      function showWidget() {
+        if (widget) { widget.classList.remove('dw-hiding'); widget.classList.add('dw-visible'); }
+      }
+      function hideWidget() {
+        if (widget) { widget.classList.add('dw-hiding'); widget.classList.remove('dw-visible'); }
+      }
+      document.getElementById('dw-close').addEventListener('click', function () {
+        hideWidget();
+        setTimeout(showWidget, 8000);
+      });
+      setTimeout(showWidget, 800);
+    })();
+  </script>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import {
@@ -1014,17 +1032,8 @@
     }
 
     // ── Widget visibility ────────────────────────────────────────
-
-    function showWidget() {
-      document.getElementById('demo-widget').classList.remove('dw-hiding');
-      document.getElementById('demo-widget').classList.add('dw-visible');
-    }
-
-    function hideWidget() {
-      const w = document.getElementById('demo-widget');
-      w.classList.add('dw-hiding');
-      w.classList.remove('dw-visible');
-    }
+    // showWidget / hideWidget live in the plain <script> above so the widget
+    // always appears even if the Firebase module import fails.
 
     async function shareUrl(url, btn, originalLabel) {
       try {
@@ -1055,12 +1064,6 @@
       // Use logged-in ref URL if available, otherwise site root
       const url = document.getElementById('farm-copy-btn')?.dataset?.url || 'https://scrollpay.app';
       await shareUrl(url, btn, '🔗');
-    });
-
-    document.getElementById('dw-close').addEventListener('click', () => {
-      hideWidget();
-      // Slide back in after 8 seconds so it's always present
-      setTimeout(showWidget, 8000);
     });
 
     document.getElementById('dw-cta').addEventListener('click', e => {
@@ -1656,8 +1659,6 @@
 
     // ── Init ─────────────────────────────────────────────────────
 
-    // Slide widget in after 800ms
-    setTimeout(showWidget, 800);
     loadAds();
     loadLeaderboard();
   </script>
