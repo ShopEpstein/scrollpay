@@ -21,7 +21,7 @@ const DEFAULT_ADS = [
     id: 'ad_001',
     brandName: 'ScrollPay',
     brandLogo: '',
-    headline: 'Invite friends. Earn 100 XP per install + build your downline.',
+    headline: 'Invite friends. Earn 2,500 XP per install + build your downline.',
     ctaText: 'Share now',
     ctaUrl: 'https://scrollpay.app',
     pointsPerImpression: 5
@@ -44,12 +44,12 @@ function getCurrentXpRate() {
 const POINTS_CONFIG = {
   get perImpression() { return getCurrentXpRate(); },
   perClick: 25,
-  referralBonusL1: 100,       // direct recruit (paid in ≤50 XP writes)
-  referralBonusL2: 25,        // L2 downline — your recruit recruits someone
-  referralBonusL3: 10,        // L3 downline
+  referralBonusL1: 2500,      // direct recruit
+  referralBonusL2: 500,       // your recruit recruits someone
+  referralBonusL3: 100,       // L3 downline
   earlyAdopterThreshold: 500, // first N users get the early bonus
   earlyAdopterMultiplier: 1.5,// +50% referral XP for early adopters
-  dailyCap: Infinity,
+  dailyCap: 25000,            // daily mining cap (referral bonuses bypass this)
   payoutThreshold: 1000
 };
 
@@ -132,6 +132,7 @@ async function awardXp(userId, amount) {
     const remaining = POINTS_CONFIG.dailyCap - satsToday;
     if (remaining <= 0) return { awarded: 0, capped: true };
 
+
     const award = Math.min(amount, remaining, MAX_AWARD);
 
     await updateDoc(userRef, {
@@ -183,18 +184,23 @@ async function awardPoints(userId, points, type = 'impression') {
   try {
     const userRef = doc(db, 'sp_users', userId);
     const userSnap = await getDoc(userRef);
-
     if (!userSnap.exists()) return false;
 
     const userData = userSnap.data();
     const today = new Date().toDateString();
     const lastActiveDate = userData.lastActiveAt?.toDate?.()?.toDateString?.() || '';
 
-    // Reset daily stats if new day
-    const satsToday = lastActiveDate === today ? (userData.satsToday || 0) : 0;
-    const impressionsToday = lastActiveDate === today ? (userData.impressionsToday || 0) : 0;
+    // Referral bonuses bypass the daily mining cap and don't count toward it
+    if (type === 'referral') {
+      await updateDoc(userRef, {
+        totalSats: increment(points),
+        lastActiveAt: serverTimestamp()
+      });
+      return true;
+    }
 
-    // Enforce daily cap
+    // Mining (impression/click): enforce daily cap
+    const satsToday = lastActiveDate === today ? (userData.satsToday || 0) : 0;
     if (satsToday >= POINTS_CONFIG.dailyCap) return false;
 
     const actualPoints = Math.min(points, POINTS_CONFIG.dailyCap - satsToday);
@@ -205,7 +211,7 @@ async function awardPoints(userId, points, type = 'impression') {
       totalImpressions: type === 'impression' ? increment(1) : increment(0),
       impressionsToday: type === 'impression'
         ? (lastActiveDate === today ? increment(1) : 1)
-        : (lastActiveDate === today ? impressionsToday : 0),
+        : 0,
       lastActiveAt: serverTimestamp()
     });
 
