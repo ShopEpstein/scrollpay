@@ -21,6 +21,7 @@
     { "source": "/api/admin-partners", "destination": "/api/admin-partners.js" },
     { "source": "/api/admin-users",    "destination": "/api/admin-users.js" },
     { "source": "/api/wallets",         "destination": "/api/wallets.js" },
+    { "source": "/api/xp-balance",      "destination": "/api/xp-balance.js" },
     { "source": "/api/record-click",   "destination": "/api/record-click.js" },
     { "source": "/api/faucet",          "destination": "/api/faucet.js" },
     { "source": "/api/raffle-entry",   "destination": "/api/raffle-entry.js" },

@@ -39,6 +39,8 @@ module.exports = async (req, res) => {
         instagram:    data.instagram    || '',
         telegram:     data.telegram     || '',
         website:      data.website      || '',
+        btcAddress:   data.btcAddress   || '',
+        solAddress:   data.solAddress   || '',
         joinedAt:     data.createdAt
           ? new Date((data.createdAt._seconds || data.createdAt.seconds || 0) * 1000).toISOString()
           : null,

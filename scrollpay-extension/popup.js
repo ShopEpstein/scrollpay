@@ -54,6 +54,18 @@ async function loadUserData() {
     // Every XP = one entry in the next draw.
     document.getElementById('draw-entries').textContent = totalXp.toLocaleString();
 
+    // XP wallet breakdown (mined / listed / available)
+    fetch(`https://scrollpay.app/api/xp-balance?userId=${encodeURIComponent(userId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(w => {
+        if (!w) return;
+        document.getElementById('wallet-mined').textContent     = (w.minedXp    || 0).toLocaleString() + ' XP';
+        document.getElementById('wallet-listed').textContent    = (w.listedXp   || 0).toLocaleString() + ' XP';
+        document.getElementById('wallet-available').textContent = (w.availableXp || 0).toLocaleString() + ' XP';
+        document.getElementById('wallet-breakdown').style.display = 'block';
+      })
+      .catch(() => {});
+
     // Referral link
     if (data.refCode) {
       document.getElementById('referral-link').textContent = `scrollpay.app/r/${data.refCode}`;
