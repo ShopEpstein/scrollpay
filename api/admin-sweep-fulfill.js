@@ -139,11 +139,27 @@ module.exports = async (req, res) => {
           const xpFmt = Number(l.xpAmount || 0).toLocaleString();
           sendEmail({
             to: authUser.email,
-            subject: `Your XP listing has been fulfilled — ${xpFmt} XP sold`,
+            subject: `✅ Your XP has been swept — payment processing within 24–48 hrs`,
             html: `
-              <h2 style="margin:0 0 8px;">XP Sold!</h2>
-              <p style="color:#475569;">Your listing of <strong>${xpFmt} XP</strong> has been purchased. Payment will be sent to your registered address.</p>
-              <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+              <h2 style="margin:0 0 12px;">Your XP Has Been Sold!</h2>
+              <p style="color:#475569;margin-bottom:12px;">
+                Your listing of <strong>${xpFmt} XP</strong> was swept as part of a bulk purchase.
+                Payment will be sent to your registered address, minus platform fees.
+              </p>
+              <p style="color:#475569;margin-bottom:20px;">
+                <strong>⏱ Please allow 24–48 hours</strong> for funds to arrive in your account.
+              </p>
+              <p style="color:#dc2626;font-weight:600;margin-bottom:8px;">
+                ⚠️ Action required: confirm your payment address
+              </p>
+              <p style="color:#475569;margin-bottom:20px;">
+                To make sure your payment reaches you, log in and verify your BTC, SOL, or other
+                payment details are correct before funds are sent.
+              </p>
+              <p style="margin-bottom:32px;">
+                <a href="https://scrollpay.app/market" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Confirm My Payment Info →</a>
+              </p>
+              <p style="color:#94a3b8;font-size:12px;">— The ScrollPay Team</p>
             `,
           });
         }
@@ -152,14 +168,24 @@ module.exports = async (req, res) => {
 
     // Email buyer
     try {
+      const buyerData = buyerSnap.data();
+      const buyerHandle = buyerData.nickname ? `@${buyerData.nickname}` : 'there';
       sendEmail({
         to: buyerEmail,
-        subject: `ScrollPay XP Delivered — ${totalXp.toLocaleString()} XP`,
+        subject: `⚡ ${totalXp.toLocaleString()} XP delivered — check your balance now`,
         html: `
-          <h2 style="margin:0 0 8px;">Your XP has been delivered!</h2>
-          <p style="color:#475569;"><strong>${totalXp.toLocaleString()} XP</strong> has been added to your ScrollPay account.</p>
-          <p style="margin-top:24px;"><a href="https://scrollpay.app" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Open ScrollPay</a></p>
-          <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+          <h2 style="margin:0 0 12px;">Your XP Is in Your Account!</h2>
+          <p style="color:#475569;margin-bottom:12px;">
+            Hey ${buyerHandle}, <strong>${totalXp.toLocaleString()} XP</strong> has been credited to
+            your ScrollPay account instantly. No waiting — it's there right now.
+          </p>
+          <p style="color:#475569;margin-bottom:20px;">
+            Log in and check your balance to confirm the XP has arrived.
+          </p>
+          <p style="margin-bottom:32px;">
+            <a href="https://scrollpay.app" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Check My Balance →</a>
+          </p>
+          <p style="color:#94a3b8;font-size:12px;">— The ScrollPay Team</p>
         `,
       });
     } catch (_) {}
