@@ -99,6 +99,9 @@ async function loadUserData() {
 
   // Leaderboard (fire after user data loads so we can highlight the user's row)
   loadLeaderboard(data.nickname || null);
+
+  // Profile section — only show if user has set a handle
+  if (data.nickname) loadProfile(userId, data.nickname);
 }
 
 function renderRecentAds(impressions) {
@@ -172,9 +175,12 @@ async function loadLeaderboard(myHandle) {
     list.innerHTML = leaders.map((l, i) => {
       const isMe = myHandle && l.handle === myHandle;
       const medal = i < 3 ? POPUP_MEDALS[i] : l.rank;
+      const handleEl = l.hasNickname
+        ? `<a href="https://scrollpay.app/profile/${encodeURIComponent(l.handle)}" target="_blank" class="lb-handle${isMe ? ' me' : ''}" style="text-decoration:none;color:inherit;">${escapeHtml(l.handle)}</a>`
+        : `<span class="lb-handle anon">${escapeHtml(l.handle)}</span>`;
       return `<div class="lb-row${isMe ? ' lb-me' : ''}">
         <span class="lb-rank">${medal}</span>
-        <span class="lb-handle${l.hasNickname ? (isMe ? ' me' : '') : ' anon'}">${escapeHtml(l.handle)}</span>
+        ${handleEl}
         <span class="lb-xp">₿ ${l.xp.toLocaleString()}</span>
       </div>`;
     }).join('');
@@ -528,6 +534,82 @@ function tickHalving() {
 
 tickHalving();
 setInterval(tickHalving, 1000);
+
+// ── Profile ──────────────────────────────────────────────────
+const PROFILE_API = 'https://scrollpay.app/api/profile';
+
+async function loadProfile(userId, handle) {
+  const section = document.getElementById('profile-section');
+  if (!userId || !handle) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  // Link to public profile
+  const linkEl = document.getElementById('profile-public-link');
+  if (linkEl) {
+    linkEl.href = `https://scrollpay.app/profile/${encodeURIComponent(handle)}`;
+    document.getElementById('profile-view-row').style.display = 'block';
+  }
+
+  // Fetch current profile to pre-fill fields
+  try {
+    const res = await fetch(`${PROFILE_API}?handle=${encodeURIComponent(handle)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const p = data.profile || {};
+    const bioEl = document.getElementById('profile-bio');
+    if (bioEl) {
+      bioEl.value = p.bio || '';
+      document.getElementById('bio-chars').textContent = (p.bio || '').length;
+    }
+    document.getElementById('profile-twitter').value   = p.twitter   ? '@' + p.twitter   : '';
+    document.getElementById('profile-instagram').value = p.instagram ? '@' + p.instagram : '';
+    document.getElementById('profile-telegram').value  = p.telegram  ? '@' + p.telegram  : '';
+    document.getElementById('profile-website').value   = p.website   || '';
+  } catch (_) {}
+}
+
+document.getElementById('profile-bio')?.addEventListener('input', function () {
+  document.getElementById('bio-chars').textContent = this.value.length;
+});
+
+document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+  const stored = await chrome.storage.local.get([USER_KEY]);
+  const userId = stored[USER_KEY];
+  if (!userId) return;
+
+  const btn = document.getElementById('save-profile-btn');
+  const statusEl = document.getElementById('profile-save-status');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  statusEl.style.display = 'none';
+
+  const strip = s => s.replace(/^@/, '').trim();
+
+  try {
+    const res = await fetch(PROFILE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        bio:       document.getElementById('profile-bio').value.trim(),
+        twitter:   strip(document.getElementById('profile-twitter').value),
+        instagram: strip(document.getElementById('profile-instagram').value),
+        telegram:  strip(document.getElementById('profile-telegram').value),
+        website:   document.getElementById('profile-website').value.trim(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save');
+    statusEl.textContent = '✓ Profile saved!';
+    statusEl.style.color = '#16a34a';
+  } catch (err) {
+    statusEl.textContent = err.message;
+    statusEl.style.color = '#dc2626';
+  }
+  statusEl.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Save Profile';
+});
 
 // Init
 loadUserData();

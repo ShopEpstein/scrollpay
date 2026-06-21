@@ -24,19 +24,31 @@ module.exports = async (req, res) => {
     const sweepSnap = await sweepRef.get();
     if (!sweepSnap.exists) return res.status(404).json({ error: 'Sweep order not found' });
 
-    // Look up buyer in Firebase Auth + Firestore
+    // Resolve buyer — accept email, handle, or refCode
     let buyerUid = null;
-    try {
-      const buyerAuth = await admin.auth().getUserByEmail(buyerEmail);
-      buyerUid = buyerAuth.uid;
-    } catch (_) {
-      return res.status(404).json({ error: `No ScrollPay account found for ${buyerEmail}. They need to sign up first.` });
+    const toTrimmed = String(buyerEmail).trim();
+
+    if (toTrimmed.includes('@')) {
+      // Email lookup via Firebase Auth
+      try {
+        const authUser = await admin.auth().getUserByEmail(toTrimmed);
+        buyerUid = authUser.uid;
+      } catch (_) {
+        return res.status(404).json({ error: `No ScrollPay account found for ${toTrimmed}. Ask them to sign up first.` });
+      }
+    } else {
+      // Handle or refCode lookup via Firestore
+      const upper = toTrimmed.toUpperCase();
+      let snap = await db.collection('sp_users').where('refCode', '==', upper).limit(1).get();
+      if (snap.empty) snap = await db.collection('sp_users').where('nickname', '==', toTrimmed.toLowerCase()).limit(1).get();
+      if (snap.empty) return res.status(404).json({ error: `User not found for "${toTrimmed}". Try their email, handle, or ref code.` });
+      buyerUid = snap.docs[0].id;
     }
 
     const buyerRef = db.collection('sp_users').doc(buyerUid);
     const buyerSnap = await buyerRef.get();
     if (!buyerSnap.exists) {
-      return res.status(404).json({ error: `User profile not found for ${buyerEmail}` });
+      return res.status(404).json({ error: `User profile not found for ${toTrimmed}` });
     }
 
     // Get all open sell listings
