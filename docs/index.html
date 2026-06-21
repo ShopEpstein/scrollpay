@@ -119,7 +119,6 @@
 
     @media (max-width: 640px) {
       .nav-page-links { display: none; }
-      #demo-widget { display: none !important; }
     }
     @media (max-width: 480px) {
       .hero h1 { font-size: 28px; }
@@ -1297,7 +1296,7 @@
                 const handleClass = `lb-handle${l.hasNickname ? '' : ' anon'}`;
                 return `<tr${isMe ? ' class="lb-me"' : ''}>
                   <td class="lb-rank ${rc}">${medal}</td>
-                  <td class="${handleClass}">${esc(l.handle)}${youTag}</td>
+                  <td class="${handleClass}">${l.hasNickname ? `<a href="/profile/${encodeURIComponent(l.handle)}" style="color:inherit;text-decoration:none;">${esc(l.handle)}</a>` : esc(l.handle)}${youTag}</td>
                   <td class="lb-xp td-r">₿ ${l.xp.toLocaleString()}</td>
                   <td class="lb-recruits td-r">${l.recruits.toLocaleString()}</td>
                 </tr>`;
