@@ -657,3 +657,26 @@ body {
 .msg-status { font-size: 11px; margin-top: 4px; }
 .msg-status.ok { color: #16a34a; }
 .msg-status.err { color: #dc2626; }
+
+/* Profile section */
+.field-group { margin-bottom: 10px; }
+.field-label { display: block; font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+#profile-bio, .profile-input {
+  width: 100%; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 6px;
+  font-family: inherit; font-size: 12px; outline: none; color: #111827; background: #fff;
+  transition: border-color .15s;
+}
+#profile-bio { resize: vertical; }
+#profile-bio:focus, .profile-input:focus { border-color: #f7931a; }
+.btn-save-profile {
+  width: 100%; padding: 8px; background: #f7931a; color: #fff; border: none;
+  border-radius: 8px; font-size: 12px; font-weight: 700; font-family: inherit;
+  cursor: pointer; margin-top: 4px;
+}
+.btn-save-profile:hover { background: #e6851a; }
+.btn-save-profile:disabled { background: #d1d5db; cursor: not-allowed; }
+.btn-view-profile {
+  display: inline-block; font-size: 12px; font-weight: 600; color: #f7931a;
+  text-decoration: none; padding: 4px 0;
+}
+.btn-view-profile:hover { text-decoration: underline; }

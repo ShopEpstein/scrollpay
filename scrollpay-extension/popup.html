@@ -173,6 +173,36 @@
       </div>
     </div>
 
+    <!-- Profile -->
+    <div class="section" id="profile-section" style="display:none">
+      <div class="section-label">My Profile</div>
+      <div id="profile-view-row" style="display:none;margin-bottom:10px;">
+        <a id="profile-public-link" href="#" target="_blank" class="btn-view-profile">↗ View public profile</a>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Bio <span style="font-weight:400;color:#9ca3af;font-size:10px;float:right"><span id="bio-chars">0</span>/280</span></label>
+        <textarea id="profile-bio" maxlength="280" rows="3" placeholder="Tell the community about yourself…"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Twitter / X</label>
+        <input type="text" id="profile-twitter" placeholder="@handle" class="profile-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Instagram</label>
+        <input type="text" id="profile-instagram" placeholder="@handle" class="profile-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telegram</label>
+        <input type="text" id="profile-telegram" placeholder="@username" class="profile-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Website</label>
+        <input type="url" id="profile-website" placeholder="https://yoursite.com" class="profile-input" />
+      </div>
+      <button class="btn-save-profile" id="save-profile-btn">Save Profile</button>
+      <p id="profile-save-status" style="font-size:11px;margin-top:6px;display:none;"></p>
+    </div>
+
     <!-- Footer -->
     <div class="popup-footer">
       <a href="privacy.html" target="_blank" class="footer-link">Privacy Policy</a>
