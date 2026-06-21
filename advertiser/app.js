@@ -1616,12 +1616,19 @@ async function updateSweepStatus(id, status) {
   } catch(e) { alert('Failed: ' + e.message); }
 }
 
-async function fulfillSweepAndTransfer(sweepOrderId, buyerEmail) {
+async function fulfillSweepAndTransfer(sweepOrderId, defaultEmail) {
+  // Let admin confirm or override the destination account
+  const buyerEmail = prompt(
+    `⚡ Fulfill Sweep\n\nCredit XP to which ScrollPay account?\n(Edit if the buyer's account email differs from their order email)`,
+    defaultEmail
+  );
+  if (!buyerEmail || !buyerEmail.trim()) return;
+
   if (!confirm(
-    `⚡ Fulfill Sweep — This will:\n\n` +
+    `⚡ Confirm Sweep Fulfillment\n\n` +
     `• Fulfill ALL open XP sell orders\n` +
     `• Deduct XP from each seller\n` +
-    `• Credit total XP to ${buyerEmail}\n` +
+    `• Credit total XP → ${buyerEmail.trim()}\n` +
     `• Email all sellers + buyer\n` +
     `• Mark this sweep as fulfilled\n\n` +
     `This cannot be undone. Continue?`
@@ -1632,7 +1639,7 @@ async function fulfillSweepAndTransfer(sweepOrderId, buyerEmail) {
     const res = await fetch('/api/admin-sweep-fulfill', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ sweepOrderId, buyerEmail }),
+      body: JSON.stringify({ sweepOrderId, buyerEmail: buyerEmail.trim() }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
