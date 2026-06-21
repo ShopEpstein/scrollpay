@@ -21,17 +21,25 @@ module.exports = async (req, res) => {
       if (snap.empty) return res.status(404).json({ error: 'Profile not found' });
 
       const data = snap.docs[0].data();
+      const userXp = data.totalSats || 0;
+
+      const aboveSnap = await db.collection('sp_users')
+        .where('totalSats', '>', userXp)
+        .get();
+      const xpRank = aboveSnap.size + 1;
+
       const profile = {
-        handle:      data.nickname     || handle,
-        refCode:     data.refCode      || '',
-        xp:          data.totalSats    || 0,
+        handle:       data.nickname     || handle,
+        refCode:      data.refCode      || '',
+        xp:           userXp,
+        xpRank,
         signupNumber: data.signupNumber || null,
-        bio:         data.bio          || '',
-        twitter:     data.twitter      || '',
-        instagram:   data.instagram    || '',
-        telegram:    data.telegram     || '',
-        website:     data.website      || '',
-        joinedAt:    data.createdAt
+        bio:          data.bio          || '',
+        twitter:      data.twitter      || '',
+        instagram:    data.instagram    || '',
+        telegram:     data.telegram     || '',
+        website:      data.website      || '',
+        joinedAt:     data.createdAt
           ? new Date((data.createdAt._seconds || data.createdAt.seconds || 0) * 1000).toISOString()
           : null,
       };

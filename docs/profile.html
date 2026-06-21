@@ -142,8 +142,8 @@
             ? `<span class="badge badge-founder">⚡ Early Adopter #${p.signupNumber}</span>`
             : '';
 
-        const rankBadge = p.signupNumber
-          ? `<span class="badge badge-rank">Miner #${p.signupNumber.toLocaleString()}</span>`
+        const rankBadge = p.xpRank
+          ? `<span class="badge badge-rank">Rank #${p.xpRank.toLocaleString()}</span>`
           : '';
 
         const socials = [];
@@ -173,7 +173,7 @@
               <div class="stat-val">${xpFmt}</div>
               <div class="stat-lbl">Total XP</div>
             </div>
-            ${p.signupNumber ? `<div class="stat-card"><div class="stat-val">#${p.signupNumber.toLocaleString()}</div><div class="stat-lbl">Miner rank</div></div>` : ''}
+            ${p.xpRank ? `<div class="stat-card"><div class="stat-val">#${p.xpRank.toLocaleString()}</div><div class="stat-lbl">XP Rank</div></div>` : ''}
             ${joinYear ? `<div class="stat-card"><div class="stat-val">${joinYear}</div><div class="stat-lbl">Joined</div></div>` : ''}
           </div>
 
