@@ -1563,6 +1563,9 @@ async function loadSweepOrders() {
       const sc = SC[o.status] || SC.pending;
       const created = o.createdAt ? new Date(o.createdAt._seconds * 1000).toLocaleString() : '—';
       const usd = o.usdEstimate ? '$' + Number(o.usdEstimate).toFixed(2) : '—';
+      const emailEsc = esc(o.email || '');
+      const fulfillSweepBtn = (o.status === 'pending' || o.status === 'contacted') ? `
+        <button onclick="fulfillSweepAndTransfer('${esc(o.id)}','${emailEsc}')" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">⚡ Fulfill Sweep + Transfer XP</button>` : '';
       const actions = o.status === 'pending' ? `
         <button onclick="updateSweepStatus('${o.id}','contacted')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📧 Mark Contacted</button>
         <button onclick="updateSweepStatus('${o.id}','fulfilled')" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Mark Fulfilled</button>
@@ -1588,6 +1591,7 @@ async function loadSweepOrders() {
         </div>
         ${o.message ? `<div style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;padding:10px 12px;font-size:13px;color:#374151;margin-bottom:10px;">"${esc(o.message)}"</div>` : ''}
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          ${fulfillSweepBtn}
           ${actions}
           <a href="mailto:${esc(o.email)}?subject=ScrollPay+Campaign+Request" style="background:#fff7ed;color:#f7931a;border:1px solid #fed7aa;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none;">✉ Reply</a>
         </div>
@@ -1598,6 +1602,7 @@ async function loadSweepOrders() {
   }
 }
 
+window.updateSweepStatus = updateSweepStatus;
 async function updateSweepStatus(id, status) {
   try {
     const token = await auth.currentUser.getIdToken();
@@ -1610,6 +1615,48 @@ async function updateSweepStatus(id, status) {
     await loadSweepOrders();
   } catch(e) { alert('Failed: ' + e.message); }
 }
+
+async function fulfillSweepAndTransfer(sweepOrderId, defaultEmail) {
+  // Let admin confirm or override the destination account
+  const buyerEmail = prompt(
+    `⚡ Fulfill Sweep\n\nCredit XP to which ScrollPay account?\n(Edit if the buyer's account email differs from their order email)`,
+    defaultEmail
+  );
+  if (!buyerEmail || !buyerEmail.trim()) return;
+
+  if (!confirm(
+    `⚡ Confirm Sweep Fulfillment\n\n` +
+    `• Fulfill ALL open XP sell orders\n` +
+    `• Deduct XP from each seller\n` +
+    `• Credit total XP → ${buyerEmail.trim()}\n` +
+    `• Email all sellers + buyer\n` +
+    `• Mark this sweep as fulfilled\n\n` +
+    `This cannot be undone. Continue?`
+  )) return;
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-sweep-fulfill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ sweepOrderId, buyerEmail: buyerEmail.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    alert(
+      `✓ Done!\n\n` +
+      `${data.fulfilled} listings fulfilled\n` +
+      `${data.totalXp.toLocaleString()} XP transferred to ${data.buyerEmail}` +
+      (data.skipped ? `\n${data.skipped} listings skipped (insufficient seller balance)` : '')
+    );
+    loadSweepOrders();
+    loadXpMarket();
+    loadFulfilledListings();
+  } catch(e) {
+    alert('Failed: ' + e.message);
+  }
+}
+window.fulfillSweepAndTransfer = fulfillSweepAndTransfer;
 
 document.getElementById('sweep-refresh')?.addEventListener('click', loadSweepOrders);
 

@@ -10,6 +10,7 @@
     { "source": "/api/scroll-market","destination": "/api/scroll-market.js" },
     { "source": "/api/sweep-xp",     "destination": "/api/sweep-xp.js" },
     { "source": "/api/admin-sweep",   "destination": "/api/admin-sweep.js" },
+    { "source": "/api/admin-sweep-fulfill", "destination": "/api/admin-sweep-fulfill.js" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
     { "source": "/advertiser/(.*)", "destination": "/advertiser/$1" },
     { "source": "/partners",        "destination": "/docs/partners/index.html" },
