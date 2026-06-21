@@ -50,10 +50,19 @@
     .stat-lbl { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
 
     /* Socials */
-    .socials { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }
+    .socials { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
     .social-link { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; background: #1f2937; border: 1px solid #374151; border-radius: 8px; font-size: 13px; font-weight: 600; color: #d1d5db; transition: border-color .15s, color .15s; }
     .social-link:hover { border-color: #F97316; color: #F97316; }
     .social-icon { font-size: 14px; }
+
+    /* Tip addresses */
+    .tip-section { margin-bottom: 32px; }
+    .tip-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #6b7280; margin-bottom: 10px; }
+    .tip-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px 12px; }
+    .tip-chain { font-size: 11px; font-weight: 700; color: #F97316; width: 30px; flex-shrink: 0; }
+    .tip-addr { font-family: monospace; font-size: 12px; color: #9ca3af; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tip-copy { background: none; border: 1px solid #374151; border-radius: 5px; color: #6b7280; font-size: 11px; font-weight: 600; padding: 3px 8px; cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s; }
+    .tip-copy:hover { color: #F97316; border-color: #F97316; }
 
     /* Not found */
     .not-found { text-align: center; padding: 80px 24px; }
@@ -179,6 +188,23 @@
 
           ${socials.length ? `<div class="socials">${socials.join('')}</div>` : ''}
 
+          ${(p.btcAddress || p.solAddress) ? `
+          <div class="tip-section">
+            <div class="tip-label">Tip this miner</div>
+            ${p.btcAddress ? `
+            <div class="tip-row">
+              <span class="tip-chain">BTC</span>
+              <span class="tip-addr" title="${esc(p.btcAddress)}">${esc(p.btcAddress)}</span>
+              <button class="tip-copy" onclick="copyAddr(this,'${esc(p.btcAddress)}')">Copy</button>
+            </div>` : ''}
+            ${p.solAddress ? `
+            <div class="tip-row">
+              <span class="tip-chain">SOL</span>
+              <span class="tip-addr" title="${esc(p.solAddress)}">${esc(p.solAddress)}</span>
+              <button class="tip-copy" onclick="copyAddr(this,'${esc(p.solAddress)}')">Copy</button>
+            </div>` : ''}
+          </div>` : ''}
+
           <div style="margin-top:8px;">
             <a href="/#get-started" style="display:inline-block;background:#F97316;color:#fff;padding:11px 24px;border-radius:9px;font-size:14px;font-weight:700;">Start mining XP →</a>
           </div>
@@ -190,6 +216,16 @@
       function esc(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       }
+
+      window.copyAddr = function(btn, addr) {
+        navigator.clipboard.writeText(addr).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.style.color = '#22c55e';
+          btn.style.borderColor = '#22c55e';
+          setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1800);
+        });
+      };
     })();
   </script>
 </body>

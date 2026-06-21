@@ -163,6 +163,32 @@ body {
   color: #d1d5db;
 }
 
+/* XP Wallet Breakdown */
+.wallet-breakdown {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-size: 12px;
+  text-align: left;
+}
+.wallet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+.wallet-label { color: #6b7280; }
+.wallet-val { font-weight: 600; color: #374151; }
+.wallet-listed { color: #9ca3af; }
+.wallet-avail-row {
+  border-top: 1px solid #fde8cc;
+  margin-top: 5px;
+  padding-top: 5px;
+}
+.wallet-avail { color: #f7931a !important; }
+
 .withdraw-btn {
   width: 100%;
   padding: 10px;

@@ -58,6 +58,34 @@ module.exports = async (req, res) => {
       `,
     });
 
+    // Notify XP sellers (fire async — don't block response)
+    db.collection('sp_xp_listings').where('status', '==', 'open').get()
+      .then(listingsSnap => {
+        const sellerEmails = [...new Set(
+          listingsSnap.docs.map(d => d.data().userEmail).filter(Boolean)
+        )].slice(0, 200);
+        for (const sellerEmail of sellerEmails) {
+          sendEmail({
+            to: sellerEmail,
+            subject: `💸 New XP sweep offer — ${xpFmt} XP wanted`,
+            html: `
+              <h2 style="margin:0 0 12px;">A buyer wants to sweep XP</h2>
+              <p style="color:#475569;margin-bottom:12px;">
+                A buyer just submitted a request to purchase <strong>${xpFmt} XP</strong> (~$${usdFmt} USD).
+                If you have XP listed for sale, this could be a match.
+              </p>
+              <p style="color:#475569;margin-bottom:20px;">
+                Check the market and consider adjusting your listing price if you'd like to close this deal.
+                The buyer may also make a counter-offer.
+              </p>
+              <p><a href="https://scrollpay.app/market" style="background:#f97316;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">View XP Market →</a></p>
+              <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+            `,
+          });
+        }
+      })
+      .catch(() => {});
+
     return res.status(200).json({ id: ref.id });
   } catch (err) {
     return res.status(500).json({ error: err.message });
