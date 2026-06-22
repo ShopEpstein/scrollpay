@@ -1751,23 +1751,31 @@ function satsUsd(sats) {
   return '$' + (sats * btcUsd / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-async function copyPayoutAddr(btn, addr) {
-  try {
-    await navigator.clipboard.writeText(addr);
+function copyPayoutAddr(btn, addr) {
+  function markCopied() {
     btn.textContent = '✓ Copied';
     btn.style.background = '#16a34a';
-    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = '#374151'; }, 2000);
-  } catch (_) {
-    // Fallback for browsers that block clipboard
-    const el = document.createElement('textarea');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = '#374151'; }, 2500);
+  }
+
+  // Modern clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(markCopied).catch(iosFallback);
+  } else {
+    iosFallback();
+  }
+
+  function iosFallback() {
+    // iOS Safari needs a contenteditable element + setSelectionRange
+    const el = document.createElement('input');
     el.value = addr;
-    el.style.position = 'fixed'; el.style.opacity = '0';
-    document.body.appendChild(el); el.select();
-    document.execCommand('copy');
+    el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px;';
+    document.body.appendChild(el);
+    el.focus();
+    el.setSelectionRange(0, addr.length);
+    try { document.execCommand('copy'); } catch (_) {}
     document.body.removeChild(el);
-    btn.textContent = '✓ Copied';
-    btn.style.background = '#16a34a';
-    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = '#374151'; }, 2000);
+    markCopied();
   }
 }
 
