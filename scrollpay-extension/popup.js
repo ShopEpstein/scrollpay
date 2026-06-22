@@ -26,9 +26,14 @@ function sendToBackground(message) {
 }
 
 async function loadUserData() {
-  const result = await chrome.storage.local.get([USER_KEY, IMPRESSIONS_KEY]);
-  const userId = result[USER_KEY];
+  const result = await chrome.storage.local.get([USER_KEY, IMPRESSIONS_KEY, LINKED_EMAIL_KEY]);
+  const userId       = result[USER_KEY];
+  const linkedEmail  = result[LINKED_EMAIL_KEY];
   const recentImpressions = result[IMPRESSIONS_KEY] || [];
+
+  // Show sync banner if logged in but not yet linked to a website account
+  const banner = document.getElementById('sync-banner');
+  if (banner) banner.style.display = (userId && !linkedEmail) ? 'block' : 'none';
 
   if (!userId) {
     document.getElementById('total-xp').textContent = '0';
@@ -481,6 +486,8 @@ document.getElementById('btn-link-account').addEventListener('click', async () =
     }
 
     await chrome.storage.local.set({ [USER_KEY]: uid, [LINKED_EMAIL_KEY]: confirmedEmail });
+    const banner = document.getElementById('sync-banner');
+    if (banner) banner.style.display = 'none';
     statusEl.textContent = '✓ Connected! Reloading…';
     statusEl.style.color = '#16a34a';
     statusEl.style.display = 'block';
@@ -518,6 +525,18 @@ document.getElementById('btn-unlink').addEventListener('click', async () => {
   await chrome.storage.local.remove([LINKED_EMAIL_KEY]);
   document.getElementById('linked-account-view').style.display = 'none';
   document.getElementById('link-account-form').style.display = 'block';
+});
+
+// Sync banner button — scroll to + highlight the link account section
+document.getElementById('sync-banner-btn')?.addEventListener('click', () => {
+  const section = document.getElementById('link-account-section');
+  if (!section) return;
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Flash highlight
+  section.style.transition = 'box-shadow 0.2s';
+  section.style.boxShadow  = '0 0 0 2px #f7931a';
+  setTimeout(() => { section.style.boxShadow = ''; }, 1800);
+  document.getElementById('link-email')?.focus();
 });
 
 // ── XP Halving Countdown ─────────────────────────────────────
