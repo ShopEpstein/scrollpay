@@ -1930,6 +1930,25 @@ async function confirmMarkPaid(userId, userEmail, handle, sweepOrderId, grossSat
   }
 }
 
+async function sendSweepSummary() {
+  const result = document.getElementById('sweep-summary-result');
+  result.style.display = 'none';
+  try {
+    const token = await auth.currentUser.getIdToken(true);
+    const res   = await fetch('/api/admin-send-sweep-summary', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    result.style.display = 'block';
+    result.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;font-size:13px;color:#15803d;font-weight:700;">✓ Sweep summary + X thread sent to ${esc('contactfire757@gmail.com')}</div>`;
+  } catch (e) {
+    result.style.display = 'block';
+    result.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;font-size:13px;color:#dc2626;">Error: ${esc(e.message)}</div>`;
+  }
+}
+
 async function sendBroadcast() {
   const btn    = document.getElementById('broadcast-send-btn');
   const result = document.getElementById('broadcast-result');
@@ -1962,4 +1981,5 @@ window.loadPayoutReport  = loadPayoutReport;
 window.requestPayment    = requestPayment;
 window.confirmMarkPaid   = confirmMarkPaid;
 window.copyPayoutAddr    = copyPayoutAddr;
-window.sendBroadcast     = sendBroadcast;
+window.sendBroadcast       = sendBroadcast;
+window.sendSweepSummary    = sendSweepSummary;
