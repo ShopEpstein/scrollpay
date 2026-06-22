@@ -1831,10 +1831,15 @@ async function loadPayoutReport() {
            </div>`
         : `<div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#dc2626;font-weight:600;">⚠️ No payment address on file</div>`;
 
+      const txInfo    = isPaid && p.paid.txNote ? `<div style="font-size:11px;color:#6b7280;margin-top:3px;font-family:monospace;word-break:break-all;">${esc(p.paid.txNote)}</div>` : '';
       const actionRow = isPaid
-        ? `<div style="padding:10px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;font-size:12px;font-weight:700;color:#15803d;">✓ Paid ${paidDate}</div>`
-        : `<div style="padding:10px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;">
-             <button onclick="markAsPaid('${esc(p.userId)}','${esc(p.userEmail)}','${esc(p.handle||'')}','${esc(sweepId)}',${p.grossSats})"
+        ? `<div style="padding:12px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;">
+             <div style="font-size:12px;font-weight:700;color:#15803d;">✓ Paid ${paidDate}</div>
+             ${txInfo}
+             ${p.paid.emailSent !== false ? '<div style="font-size:10px;color:#6b7280;margin-top:3px;">📧 Confirmation email sent</div>' : ''}
+           </div>`
+        : `<div id="pa-${esc(p.userId)}" style="padding:10px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;">
+             <button onclick="requestPayment(this,'${esc(p.userId)}','${esc(p.userEmail)}','${esc(p.handle||'')}','${esc(sweepId)}',${p.grossSats})"
                style="width:100%;background:#f7931a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">
                Mark Paid
              </button>
@@ -1878,27 +1883,53 @@ async function loadPayoutReport() {
   }
 }
 
-async function markAsPaid(userId, userEmail, handle, sweepOrderId, grossSats) {
-  const btn = event.target;
-  btn.disabled = true;
-  btn.textContent = '…';
+function requestPayment(btn, userId, userEmail, handle, sweepOrderId, grossSats) {
+  const area = document.getElementById('pa-' + userId);
+  if (!area) return;
+  const safeUe = userEmail.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const safeHe = (handle || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const safeSo = (sweepOrderId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  area.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="font-size:11px;color:#dc2626;font-weight:700;">⚠️ Enter TXN / payment reference — this will be emailed to the seller</div>
+      <input id="txni-${userId}" type="text" placeholder="BTC tx hash · Venmo ref · CashApp ID · etc."
+        style="width:100%;box-sizing:border-box;border:2px solid #f7931a;border-radius:7px;padding:9px 11px;font-size:13px;outline:none;background:#fff;color:#111;" />
+      <div style="display:flex;gap:8px;">
+        <button onclick="loadPayoutReport()"
+          style="flex:1;background:#e5e7eb;color:#374151;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+        <button id="txnbtn-${userId}" onclick="confirmMarkPaid('${userId}','${safeUe}','${safeHe}','${safeSo}',${grossSats})"
+          style="flex:2;background:#f7931a;color:#fff;border:none;border-radius:7px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">✓ Confirm &amp; Email Seller</button>
+      </div>
+    </div>`;
+  document.getElementById('txni-' + userId)?.focus();
+}
+
+async function confirmMarkPaid(userId, userEmail, handle, sweepOrderId, grossSats) {
+  const input = document.getElementById('txni-' + userId);
+  const txNote = input ? input.value.trim() : '';
+  if (!txNote) {
+    if (input) { input.style.borderColor = '#dc2626'; input.focus(); }
+    return;
+  }
+  const confirmBtn = document.getElementById('txnbtn-' + userId);
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Sending…'; }
   try {
     const token = await auth.currentUser.getIdToken(true);
     const res   = await fetch('/api/admin-mark-paid', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, userEmail, handle, sweepOrderId: sweepOrderId || null, grossSats }),
+      body: JSON.stringify({ userId, userEmail, handle, sweepOrderId: sweepOrderId || null, grossSats, txNote }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
     loadPayoutReport();
   } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Mark Paid';
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '✓ Confirm & Email Seller'; }
     alert('Error: ' + e.message);
   }
 }
 
-window.loadPayoutReport = loadPayoutReport;
-window.markAsPaid = markAsPaid;
-window.copyPayoutAddr = copyPayoutAddr;
+window.loadPayoutReport  = loadPayoutReport;
+window.requestPayment    = requestPayment;
+window.confirmMarkPaid   = confirmMarkPaid;
+window.copyPayoutAddr    = copyPayoutAddr;

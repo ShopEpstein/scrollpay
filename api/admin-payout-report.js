@@ -90,9 +90,10 @@ module.exports = async (req, res) => {
     paidSnap.forEach(d => {
       const p = d.data();
       if (p.userId) paidMap[p.userId] = {
-        paidAt: p.paidAt ? new Date(p.paidAt._seconds * 1000).toISOString() : null,
-        netSats: p.netSats,
-        txNote: p.txNote || '',
+        paidAt:    p.paidAt ? new Date(p.paidAt._seconds * 1000).toISOString() : null,
+        netSats:   p.netSats,
+        txNote:    p.txNote    || '',
+        emailSent: p.emailSent || false,
       };
     });
 
