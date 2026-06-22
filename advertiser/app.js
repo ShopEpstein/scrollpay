@@ -114,9 +114,11 @@ const ADMIN_TAB_MAP = {
   partners:  { show: ['partners-section'] },
   sweep:     { show: ['sweep-section'] },
   raffle:    { show: ['raffle-section'] },
+  payouts:   { show: ['payouts-section'] },
 };
 const ALL_ADMIN_SECTIONS = ['stats-section', 'xp-market-section', 'fulfilled-section',
-  'inbox-section', 'partners-section', 'miners-section', 'sweep-section', 'raffle-section', 'advertiser-panel'];
+  'inbox-section', 'partners-section', 'miners-section', 'sweep-section', 'raffle-section',
+  'payouts-section', 'advertiser-panel'];
 
 function switchAdminTab(tabName) {
   ALL_ADMIN_SECTIONS.forEach(id => {
@@ -1737,3 +1739,77 @@ async function loadRaffleEntries(drawOverride) {
 
 window.loadRaffleEntries = loadRaffleEntries;
 document.getElementById('raffle-refresh')?.addEventListener('click', () => loadRaffleEntries());
+
+// ── Payout Report ─────────────────────────────────────────────────
+
+async function loadPayoutReport() {
+  const container = document.getElementById('payout-container');
+  const summary   = document.getElementById('payout-summary');
+  const sweepId   = (document.getElementById('payout-sweep-id')?.value || '').trim();
+
+  container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Loading…</p>';
+  summary.style.display = 'none';
+
+  try {
+    const token = await currentUser.getIdToken();
+    const url   = '/api/admin-payout-report' + (sweepId ? `?sweepOrderId=${encodeURIComponent(sweepId)}` : '');
+    const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const data  = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+
+    const { payouts = [], totalSats = 0, totalXp = 0 } = data;
+
+    if (payouts.length === 0) {
+      container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">No fulfilled sweep payouts found.</p>';
+      return;
+    }
+
+    const totalUsd = btcUsd ? (totalSats * btcUsd / 1e8) : null;
+    const usdStr   = totalUsd ? ` ≈ <strong>$${totalUsd.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>` : '';
+
+    summary.style.display = 'block';
+    summary.innerHTML = `
+      <strong>${payouts.length} sellers</strong> · ${totalXp.toLocaleString()} XP sold ·
+      <strong>${totalSats.toLocaleString()} sats</strong>${usdStr} total owed
+    `;
+
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:2px solid #e5e7eb;">
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">HANDLE</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">PAYMENT ADDRESS</th>
+            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">XP SOLD</th>
+            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">SATS OWED</th>
+            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">USD</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${payouts.map(p => {
+            const addr    = p.btcAddress || p.solAddress || p.cashapp || p.venmo || '—';
+            const addrType = p.btcAddress ? '₿' : p.solAddress ? 'SOL' : p.cashapp ? '$' : '';
+            const usd     = btcUsd ? (p.satsOwed * btcUsd / 1e8) : null;
+            const usdCell = usd
+              ? `$${usd.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`
+              : '—';
+            return `<tr style="border-bottom:1px solid #f3f4f6;">
+              <td style="padding:10px 12px;">
+                <div style="font-weight:700;color:#111827;">${esc(p.handle || '—')}</div>
+                <div style="font-size:11px;color:#9ca3af;">${esc(p.userEmail)}</div>
+              </td>
+              <td style="padding:10px 12px;font-family:monospace;font-size:11px;color:#374151;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                ${addrType ? `<span style="color:#f7931a;font-weight:700;margin-right:4px;">${addrType}</span>` : ''}${esc(addr)}
+              </td>
+              <td style="text-align:right;padding:10px 12px;color:#6b7280;">${p.xpSold.toLocaleString()}</td>
+              <td style="text-align:right;padding:10px 12px;font-weight:700;color:#111827;">${p.satsOwed.toLocaleString()}</td>
+              <td style="text-align:right;padding:10px 12px;font-weight:700;color:#16a34a;">${usdCell}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    container.innerHTML = `<p style="color:#dc2626;font-size:13px;">${esc(e.message)}</p>`;
+  }
+}
+
+window.loadPayoutReport = loadPayoutReport;
