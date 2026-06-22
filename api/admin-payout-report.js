@@ -1,6 +1,7 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const ADMIN_EMAIL = 'contactfire757@gmail.com';
+const PLATFORM_FEE = 0.30;
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,8 +18,6 @@ module.exports = async (req, res) => {
     const decoded = await verifyToken(authHeader.slice(7));
     if (decoded.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
 
-    // Query fulfilled sweep listings (txChain = 'internal' = fulfilled via admin sweep)
-    // Optionally filter by sweepOrderId
     const sweepOrderId = req.query.sweepOrderId || null;
 
     // Single equality filter only — avoids composite index requirement.
@@ -29,40 +28,27 @@ module.exports = async (req, res) => {
 
     const rawSnap = await baseQuery.get();
 
-    // Apply remaining filters in JS
     const listingDocs = rawSnap.docs.filter(d => {
       const l = d.data();
-      if (sweepOrderId) return true; // sweepOrderId filter already applied
+      if (sweepOrderId) return true;
       return l.txChain === 'internal';
     });
 
-    // Wrap in an object that mimics QuerySnapshot.forEach / .empty
-    const listingsSnap = {
-      empty: listingDocs.length === 0,
-      forEach: cb => listingDocs.forEach(cb),
-    };
-
-    if (listingsSnap.empty) {
-      return res.status(200).json({ payouts: [], totalSats: 0, totalXp: 0 });
+    if (listingDocs.length === 0) {
+      return res.status(200).json({ payouts: [], totalGrossSats: 0, totalNetSats: 0, totalFeeSats: 0, totalXp: 0 });
     }
 
-    // Group by userId so multiple listings from same seller are merged
+    // Group by userId
     const byUser = {};
-    listingsSnap.forEach(d => {
+    listingDocs.forEach(d => {
       const l = d.data();
       const uid = l.userId;
       if (!byUser[uid]) {
-        byUser[uid] = {
-          userId: uid,
-          userEmail: l.userEmail || '',
-          xpSold: 0,
-          satsOwed: 0,
-          listings: [],
-        };
+        byUser[uid] = { userId: uid, userEmail: l.userEmail || '', xpSold: 0, grossSats: 0, listings: [] };
       }
       const sats = (l.pricePerXp || 0) * (l.xpAmount || 0);
       byUser[uid].xpSold    += l.xpAmount || 0;
-      byUser[uid].satsOwed  += sats;
+      byUser[uid].grossSats += sats;
       byUser[uid].listings.push({
         id: d.id,
         xpAmount: l.xpAmount,
@@ -73,7 +59,13 @@ module.exports = async (req, res) => {
       });
     });
 
-    // Enrich with handle + payment addresses from sp_users
+    // Compute fee/net per user
+    Object.values(byUser).forEach(u => {
+      u.feeSats = Math.round(u.grossSats * PLATFORM_FEE);
+      u.netSats = u.grossSats - u.feeSats;
+    });
+
+    // Enrich with handle + payment addresses
     const uids = Object.keys(byUser);
     await Promise.all(uids.map(async uid => {
       try {
@@ -89,13 +81,35 @@ module.exports = async (req, res) => {
       } catch (_) {}
     }));
 
-    const payouts = Object.values(byUser).sort((a, b) => b.satsOwed - a.satsOwed);
-    const totalSats = payouts.reduce((s, p) => s + p.satsOwed, 0);
-    const totalXp   = payouts.reduce((s, p) => s + p.xpSold, 0);
+    // Fetch paid status from sp_payouts
+    const paidSnap = sweepOrderId
+      ? await db.collection('sp_payouts').where('sweepOrderId', '==', sweepOrderId).get()
+      : await db.collection('sp_payouts').limit(500).get();
 
-    return res.status(200).json({ payouts, totalSats, totalXp, count: payouts.length });
+    const paidMap = {};
+    paidSnap.forEach(d => {
+      const p = d.data();
+      if (p.userId) paidMap[p.userId] = {
+        paidAt: p.paidAt ? new Date(p.paidAt._seconds * 1000).toISOString() : null,
+        netSats: p.netSats,
+        txNote: p.txNote || '',
+      };
+    });
+
+    Object.values(byUser).forEach(u => {
+      u.paid = paidMap[u.userId] || null;
+    });
+
+    const payouts = Object.values(byUser).sort((a, b) => b.grossSats - a.grossSats);
+    const totalGrossSats = payouts.reduce((s, p) => s + p.grossSats, 0);
+    const totalFeeSats   = payouts.reduce((s, p) => s + p.feeSats,   0);
+    const totalNetSats   = payouts.reduce((s, p) => s + p.netSats,   0);
+    const totalXp        = payouts.reduce((s, p) => s + p.xpSold,    0);
+
+    return res.status(200).json({ payouts, totalGrossSats, totalFeeSats, totalNetSats, totalXp, count: payouts.length });
   } catch (err) {
     const status = err.code?.startsWith('auth/') ? 401 : 500;
     return res.status(status).json({ error: err.message });
   }
 };
+

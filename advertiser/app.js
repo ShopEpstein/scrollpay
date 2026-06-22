@@ -1744,6 +1744,13 @@ document.getElementById('raffle-refresh')?.addEventListener('click', () => loadR
 
 // ── Payout Report ─────────────────────────────────────────────────
 
+const PLATFORM_FEE_PCT = 30;
+
+function satsUsd(sats) {
+  if (!btcUsd || !sats) return '—';
+  return '$' + (sats * btcUsd / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 async function loadPayoutReport() {
   const container = document.getElementById('payout-container');
   const summary   = document.getElementById('payout-summary');
@@ -1759,52 +1766,63 @@ async function loadPayoutReport() {
     const data  = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load');
 
-    const { payouts = [], totalSats = 0, totalXp = 0 } = data;
+    const { payouts = [], totalGrossSats = 0, totalNetSats = 0, totalFeeSats = 0, totalXp = 0 } = data;
 
     if (payouts.length === 0) {
       container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">No fulfilled sweep payouts found.</p>';
       return;
     }
 
-    const totalUsd = btcUsd ? (totalSats * btcUsd / 1e8) : null;
-    const usdStr   = totalUsd ? ` ≈ <strong>$${totalUsd.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>` : '';
+    const paidCount = payouts.filter(p => p.paid).length;
 
     summary.style.display = 'block';
     summary.innerHTML = `
-      <strong>${payouts.length} sellers</strong> · ${totalXp.toLocaleString()} XP sold ·
-      <strong>${totalSats.toLocaleString()} sats</strong>${usdStr} total owed
-    `;
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">Sellers</span><strong>${payouts.length}</strong> (${paidCount} paid)</div>
+        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">XP Sold</span><strong>${totalXp.toLocaleString()}</strong></div>
+        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">Gross (buyer paid)</span><strong>${totalGrossSats.toLocaleString()} sats</strong> · ${satsUsd(totalGrossSats)}</div>
+        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">ScrollPay fee (${PLATFORM_FEE_PCT}%)</span><strong style="color:#f7931a;">${totalFeeSats.toLocaleString()} sats</strong> · ${satsUsd(totalFeeSats)}</div>
+        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">You send sellers (${100 - PLATFORM_FEE_PCT}%)</span><strong style="color:#16a34a;">${totalNetSats.toLocaleString()} sats</strong> · ${satsUsd(totalNetSats)}</div>
+      </div>`;
 
     container.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
-          <tr style="border-bottom:2px solid #e5e7eb;">
-            <th style="text-align:left;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">HANDLE</th>
-            <th style="text-align:left;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">PAYMENT ADDRESS</th>
-            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">XP SOLD</th>
-            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">SATS OWED</th>
-            <th style="text-align:right;padding:8px 12px;font-size:11px;color:#6b7280;font-weight:600;">USD</th>
+          <tr style="border-bottom:2px solid #e5e7eb;background:#f9fafb;">
+            <th style="text-align:left;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">HANDLE / EMAIL</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">SEND TO</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">XP SOLD</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">GROSS</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#f7931a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">FEE 30%</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">YOU SEND</th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">STATUS</th>
           </tr>
         </thead>
         <tbody>
           ${payouts.map(p => {
-            const addr    = p.btcAddress || p.solAddress || p.cashapp || p.venmo || '—';
-            const addrType = p.btcAddress ? '₿' : p.solAddress ? 'SOL' : p.cashapp ? '$' : '';
-            const usd     = btcUsd ? (p.satsOwed * btcUsd / 1e8) : null;
-            const usdCell = usd
-              ? `$${usd.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`
-              : '—';
-            return `<tr style="border-bottom:1px solid #f3f4f6;">
-              <td style="padding:10px 12px;">
+            const addr     = p.btcAddress || p.solAddress || p.cashapp || p.venmo || '—';
+            const addrType = p.btcAddress ? '₿ BTC' : p.solAddress ? 'SOL' : p.cashapp ? 'CashApp' : p.venmo ? 'Venmo' : '';
+            const isPaid   = !!p.paid;
+            const paidDate = isPaid && p.paid.paidAt ? new Date(p.paid.paidAt).toLocaleDateString() : '';
+            const statusCell = isPaid
+              ? `<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;">✓ Paid ${paidDate}</span>`
+              : `<button onclick="markAsPaid('${esc(p.userId)}','${esc(p.userEmail)}','${esc(p.handle||'')}','${esc(sweepId)}',${p.grossSats})"
+                   style="background:#f7931a;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                   Mark Paid
+                 </button>`;
+            return `<tr style="border-bottom:1px solid #f3f4f6;${isPaid ? 'opacity:0.6;' : ''}">
+              <td style="padding:10px 10px;">
                 <div style="font-weight:700;color:#111827;">${esc(p.handle || '—')}</div>
-                <div style="font-size:11px;color:#9ca3af;">${esc(p.userEmail)}</div>
+                <div style="font-size:10px;color:#9ca3af;">${esc(p.userEmail)}</div>
               </td>
-              <td style="padding:10px 12px;font-family:monospace;font-size:11px;color:#374151;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                ${addrType ? `<span style="color:#f7931a;font-weight:700;margin-right:4px;">${addrType}</span>` : ''}${esc(addr)}
+              <td style="padding:10px 10px;font-size:11px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                ${addrType ? `<span style="font-size:10px;font-weight:700;color:#f7931a;margin-right:3px;">${addrType}</span>` : ''}${esc(addr)}
               </td>
-              <td style="text-align:right;padding:10px 12px;color:#6b7280;">${p.xpSold.toLocaleString()}</td>
-              <td style="text-align:right;padding:10px 12px;font-weight:700;color:#111827;">${p.satsOwed.toLocaleString()}</td>
-              <td style="text-align:right;padding:10px 12px;font-weight:700;color:#16a34a;">${usdCell}</td>
+              <td style="text-align:right;padding:10px 10px;color:#6b7280;">${p.xpSold.toLocaleString()}</td>
+              <td style="text-align:right;padding:10px 10px;color:#6b7280;">${p.grossSats.toLocaleString()}<div style="font-size:10px;color:#9ca3af;">${satsUsd(p.grossSats)}</div></td>
+              <td style="text-align:right;padding:10px 10px;color:#f7931a;font-weight:600;">${p.feeSats.toLocaleString()}<div style="font-size:10px;color:#fbbf24;">${satsUsd(p.feeSats)}</div></td>
+              <td style="text-align:right;padding:10px 10px;font-weight:800;color:#16a34a;">${p.netSats.toLocaleString()}<div style="font-size:10px;color:#86efac;">${satsUsd(p.netSats)}</div></td>
+              <td style="text-align:center;padding:10px 10px;">${statusCell}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1814,4 +1832,27 @@ async function loadPayoutReport() {
   }
 }
 
+async function markAsPaid(userId, userEmail, handle, sweepOrderId, grossSats) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const token = await auth.currentUser.getIdToken(true);
+    const res   = await fetch('/api/admin-mark-paid', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, userEmail, handle, sweepOrderId: sweepOrderId || null, grossSats }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    // Reload the report to show updated status
+    loadPayoutReport();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Mark Paid';
+    alert('Error: ' + e.message);
+  }
+}
+
 window.loadPayoutReport = loadPayoutReport;
+window.markAsPaid = markAsPaid;
