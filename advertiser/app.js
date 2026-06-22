@@ -115,10 +115,11 @@ const ADMIN_TAB_MAP = {
   sweep:     { show: ['sweep-section'] },
   raffle:    { show: ['raffle-section'] },
   payouts:   { show: ['payouts-section'] },
+  broadcast: { show: ['broadcast-section'] },
 };
 const ALL_ADMIN_SECTIONS = ['stats-section', 'xp-market-section', 'fulfilled-section',
   'inbox-section', 'partners-section', 'miners-section', 'sweep-section', 'raffle-section',
-  'payouts-section', 'advertiser-panel'];
+  'payouts-section', 'broadcast-section', 'advertiser-panel'];
 
 function switchAdminTab(tabName) {
   ALL_ADMIN_SECTIONS.forEach(id => {
@@ -1929,7 +1930,36 @@ async function confirmMarkPaid(userId, userEmail, handle, sweepOrderId, grossSat
   }
 }
 
+async function sendBroadcast() {
+  const btn    = document.getElementById('broadcast-send-btn');
+  const result = document.getElementById('broadcast-result');
+  if (!confirm('Send the payment profile email to ALL users? This cannot be undone.')) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending…';
+  result.style.display = 'none';
+  try {
+    const token = await auth.currentUser.getIdToken(true);
+    const res   = await fetch('/api/admin-broadcast-email', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    result.style.display = 'block';
+    result.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;font-size:13px;color:#15803d;font-weight:700;">
+      ✓ Broadcast sent — ${data.sent} emails delivered (${data.errors} errors) out of ${data.total} users
+    </div>`;
+    btn.textContent = '✓ Sent';
+  } catch (e) {
+    result.style.display = 'block';
+    result.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;font-size:13px;color:#dc2626;">Error: ${esc(e.message)}</div>`;
+    btn.disabled = false;
+    btn.textContent = '📧 Send to All Users Now';
+  }
+}
+
 window.loadPayoutReport  = loadPayoutReport;
 window.requestPayment    = requestPayment;
 window.confirmMarkPaid   = confirmMarkPaid;
 window.copyPayoutAddr    = copyPayoutAddr;
+window.sendBroadcast     = sendBroadcast;

@@ -65,6 +65,7 @@
           <button class="admin-tab-btn" data-tab="sweep">🎯 Requests</button>
           <button class="admin-tab-btn" data-tab="raffle">🎟 Raffle</button>
           <button class="admin-tab-btn" data-tab="payouts">💸 Payouts</button>
+          <button class="admin-tab-btn" data-tab="broadcast">📧 Broadcast</button>
         </div>
       </div>
 
@@ -249,6 +250,35 @@
         </div>
         <div id="payout-summary" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;"></div>
         <div id="payout-container"></div>
+      </div>
+
+      <!-- Admin-only: Broadcast Email -->
+      <div id="broadcast-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:20px;">
+          <h2 style="font-size:20px;font-weight:700;">📧 Broadcast Email</h2>
+        </div>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:18px 20px;margin-bottom:20px;font-size:13px;color:#92400e;line-height:1.6;">
+          <strong>System-wide email blast</strong> — sends to every user who has an email address on file.
+          Each email is personalized with their handle and shows which addresses are missing.
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">Subject line</div>
+          <div style="font-size:13px;color:#6b7280;padding:10px 14px;background:#f9fafb;border-radius:8px;font-family:monospace;">⚡ Sweep Payouts Have Begun — Update Your Payment Profile</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:10px;line-height:1.7;">
+            Email covers:<br>
+            • Sweep payouts are live now<br>
+            • BTC (native Bitcoin network) address needed<br>
+            • Solana address needed (wBTC / SOL / P2P)<br>
+            • "Miner" handle needed for social + referral features<br>
+            • How to update (open extension → Settings)<br>
+            • Personalized — shows what's missing per user
+          </div>
+        </div>
+        <div id="broadcast-result" style="display:none;margin-bottom:16px;"></div>
+        <button id="broadcast-send-btn" onclick="sendBroadcast()"
+          style="width:100%;background:#f7931a;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px;">
+          📧 Send to All Users Now
+        </button>
       </div>
 
       <!-- Miner message compose (floating) -->
