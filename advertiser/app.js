@@ -1751,6 +1751,26 @@ function satsUsd(sats) {
   return '$' + (sats * btcUsd / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+async function copyPayoutAddr(btn, addr) {
+  try {
+    await navigator.clipboard.writeText(addr);
+    btn.textContent = '✓ Copied';
+    btn.style.background = '#16a34a';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = '#374151'; }, 2000);
+  } catch (_) {
+    // Fallback for browsers that block clipboard
+    const el = document.createElement('textarea');
+    el.value = addr;
+    el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    btn.textContent = '✓ Copied';
+    btn.style.background = '#16a34a';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = '#374151'; }, 2000);
+  }
+}
+
 async function loadPayoutReport() {
   const container = document.getElementById('payout-container');
   const summary   = document.getElementById('payout-summary');
@@ -1777,56 +1797,74 @@ async function loadPayoutReport() {
 
     summary.style.display = 'block';
     summary.innerHTML = `
-      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
-        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">Sellers</span><strong>${payouts.length}</strong> (${paidCount} paid)</div>
-        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">XP Sold</span><strong>${totalXp.toLocaleString()}</strong></div>
-        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">Gross (buyer paid)</span><strong>${totalGrossSats.toLocaleString()} sats</strong> · ${satsUsd(totalGrossSats)}</div>
-        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">ScrollPay fee (${PLATFORM_FEE_PCT}%)</span><strong style="color:#f7931a;">${totalFeeSats.toLocaleString()} sats</strong> · ${satsUsd(totalFeeSats)}</div>
-        <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;">You send sellers (${100 - PLATFORM_FEE_PCT}%)</span><strong style="color:#16a34a;">${totalNetSats.toLocaleString()} sats</strong> · ${satsUsd(totalNetSats)}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;font-size:13px;">
+        <div><div style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">Sellers</div><strong>${payouts.length}</strong> <span style="color:#9ca3af;">(${paidCount} paid)</span></div>
+        <div><div style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">XP Sold</div><strong>${totalXp.toLocaleString()}</strong></div>
+        <div><div style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">Buyer Paid</div><strong>${totalGrossSats.toLocaleString()}</strong> <span style="color:#9ca3af;font-size:11px;">${satsUsd(totalGrossSats)}</span></div>
+        <div><div style="color:#f7931a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">Your Fee 30%</div><strong style="color:#f7931a;">${totalFeeSats.toLocaleString()}</strong> <span style="color:#fbbf24;font-size:11px;">${satsUsd(totalFeeSats)}</span></div>
+        <div><div style="color:#16a34a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">You Send 70%</div><strong style="color:#16a34a;">${totalNetSats.toLocaleString()}</strong> <span style="color:#86efac;font-size:11px;">${satsUsd(totalNetSats)}</span></div>
       </div>`;
 
-    container.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead>
-          <tr style="border-bottom:2px solid #e5e7eb;background:#f9fafb;">
-            <th style="text-align:left;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">HANDLE / EMAIL</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">SEND TO</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">XP SOLD</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">GROSS</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#f7931a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">FEE 30%</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">YOU SEND</th>
-            <th style="text-align:center;padding:8px 10px;font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">STATUS</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${payouts.map(p => {
-            const addr     = p.btcAddress || p.solAddress || p.cashapp || p.venmo || '—';
-            const addrType = p.btcAddress ? '₿ BTC' : p.solAddress ? 'SOL' : p.cashapp ? 'CashApp' : p.venmo ? 'Venmo' : '';
-            const isPaid   = !!p.paid;
-            const paidDate = isPaid && p.paid.paidAt ? new Date(p.paid.paidAt).toLocaleDateString() : '';
-            const statusCell = isPaid
-              ? `<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;">✓ Paid ${paidDate}</span>`
-              : `<button onclick="markAsPaid('${esc(p.userId)}','${esc(p.userEmail)}','${esc(p.handle||'')}','${esc(sweepId)}',${p.grossSats})"
-                   style="background:#f7931a;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">
-                   Mark Paid
-                 </button>`;
-            return `<tr style="border-bottom:1px solid #f3f4f6;${isPaid ? 'opacity:0.6;' : ''}">
-              <td style="padding:10px 10px;">
-                <div style="font-weight:700;color:#111827;">${esc(p.handle || '—')}</div>
-                <div style="font-size:10px;color:#9ca3af;">${esc(p.userEmail)}</div>
-              </td>
-              <td style="padding:10px 10px;font-size:11px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                ${addrType ? `<span style="font-size:10px;font-weight:700;color:#f7931a;margin-right:3px;">${addrType}</span>` : ''}${esc(addr)}
-              </td>
-              <td style="text-align:right;padding:10px 10px;color:#6b7280;">${p.xpSold.toLocaleString()}</td>
-              <td style="text-align:right;padding:10px 10px;color:#6b7280;">${p.grossSats.toLocaleString()}<div style="font-size:10px;color:#9ca3af;">${satsUsd(p.grossSats)}</div></td>
-              <td style="text-align:right;padding:10px 10px;color:#f7931a;font-weight:600;">${p.feeSats.toLocaleString()}<div style="font-size:10px;color:#fbbf24;">${satsUsd(p.feeSats)}</div></td>
-              <td style="text-align:right;padding:10px 10px;font-weight:800;color:#16a34a;">${p.netSats.toLocaleString()}<div style="font-size:10px;color:#86efac;">${satsUsd(p.netSats)}</div></td>
-              <td style="text-align:center;padding:10px 10px;">${statusCell}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
+    container.innerHTML = payouts.map(p => {
+      const addr     = p.btcAddress || p.solAddress || p.cashapp || p.venmo || '';
+      const addrType = p.btcAddress ? '₿ BTC' : p.solAddress ? 'SOL' : p.cashapp ? 'CashApp' : p.venmo ? 'Venmo' : '';
+      const isPaid   = !!p.paid;
+      const paidDate = isPaid && p.paid.paidAt ? new Date(p.paid.paidAt).toLocaleDateString() : '';
+      const addrEsc  = esc(addr);
+      // escape for onclick attribute — replace single quotes
+      const addrJs   = addr.replace(/'/g, "\\'");
+
+      const addrRow = addr
+        ? `<div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+             ${addrType ? `<span style="font-size:10px;font-weight:700;color:#f7931a;background:#fff7ed;padding:2px 7px;border-radius:4px;flex-shrink:0;">${addrType}</span>` : ''}
+             <span style="font-family:monospace;font-size:11px;color:#374151;flex:1;min-width:0;word-break:break-all;">${addrEsc}</span>
+             <button onclick="copyPayoutAddr(this,'${addrJs}')"
+               style="flex-shrink:0;background:#374151;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">Copy</button>
+           </div>`
+        : `<div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#dc2626;font-weight:600;">⚠️ No payment address on file</div>`;
+
+      const actionRow = isPaid
+        ? `<div style="padding:10px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;font-size:12px;font-weight:700;color:#15803d;">✓ Paid ${paidDate}</div>`
+        : `<div style="padding:10px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;">
+             <button onclick="markAsPaid('${esc(p.userId)}','${esc(p.userEmail)}','${esc(p.handle||'')}','${esc(sweepId)}',${p.grossSats})"
+               style="width:100%;background:#f7931a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">
+               Mark Paid
+             </button>
+           </div>`;
+
+      return `
+        <div style="border:1px solid #e5e7eb;border-radius:10px;margin-bottom:14px;overflow:hidden;${isPaid ? 'opacity:0.65;' : ''}">
+          <div style="background:#f9fafb;padding:12px 14px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div>
+              <div style="font-weight:700;color:#111827;font-size:14px;">${esc(p.handle || 'No handle')}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${esc(p.userEmail)}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:11px;color:#6b7280;">${p.xpSold.toLocaleString()} XP</div>
+            </div>
+          </div>
+          ${addrRow}
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid #f3f4f6;">
+            <div style="padding:12px 14px;border-right:1px solid #f3f4f6;">
+              <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Gross</div>
+              <div style="font-size:13px;font-weight:600;color:#374151;">${p.grossSats.toLocaleString()}</div>
+              <div style="font-size:11px;color:#9ca3af;">${satsUsd(p.grossSats)}</div>
+            </div>
+            <div style="padding:12px 14px;border-right:1px solid #f3f4f6;">
+              <div style="font-size:10px;color:#f7931a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Fee 30%</div>
+              <div style="font-size:13px;font-weight:600;color:#f7931a;">${p.feeSats.toLocaleString()}</div>
+              <div style="font-size:11px;color:#fbbf24;">${satsUsd(p.feeSats)}</div>
+            </div>
+            <div style="padding:12px 14px;">
+              <div style="font-size:10px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">You Send</div>
+              <div style="font-size:15px;font-weight:800;color:#16a34a;">${p.netSats.toLocaleString()}</div>
+              <div style="font-size:11px;color:#86efac;">${satsUsd(p.netSats)}</div>
+            </div>
+          </div>
+          ${actionRow}
+        </div>`;
+    }).join('');
+
   } catch (e) {
     container.innerHTML = `<p style="color:#dc2626;font-size:13px;">${esc(e.message)}</p>`;
   }
@@ -1845,7 +1883,6 @@ async function markAsPaid(userId, userEmail, handle, sweepOrderId, grossSats) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
-    // Reload the report to show updated status
     loadPayoutReport();
   } catch (e) {
     btn.disabled = false;
@@ -1856,3 +1893,4 @@ async function markAsPaid(userId, userEmail, handle, sweepOrderId, grossSats) {
 
 window.loadPayoutReport = loadPayoutReport;
 window.markAsPaid = markAsPaid;
+window.copyPayoutAddr = copyPayoutAddr;
