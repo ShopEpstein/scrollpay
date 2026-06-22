@@ -21,21 +21,26 @@ module.exports = async (req, res) => {
     // Optionally filter by sweepOrderId
     const sweepOrderId = req.query.sweepOrderId || null;
 
-    let query = db.collection('sp_xp_listings')
-      .where('status', '==', 'fulfilled')
-      .where('txChain', '==', 'internal')
-      .orderBy('fulfilledAt', 'desc')
-      .limit(500);
+    // Single equality filter only — avoids composite index requirement.
+    // Filter txChain/sweepOrderId in JS after fetching.
+    const baseQuery = sweepOrderId
+      ? db.collection('sp_xp_listings').where('sweepOrderId', '==', sweepOrderId).limit(500)
+      : db.collection('sp_xp_listings').where('status', '==', 'fulfilled').limit(500);
 
-    if (sweepOrderId) {
-      query = db.collection('sp_xp_listings')
-        .where('status', '==', 'fulfilled')
-        .where('sweepOrderId', '==', sweepOrderId)
-        .orderBy('fulfilledAt', 'desc')
-        .limit(500);
-    }
+    const rawSnap = await baseQuery.get();
 
-    const listingsSnap = await query.get();
+    // Apply remaining filters in JS
+    const listingDocs = rawSnap.docs.filter(d => {
+      const l = d.data();
+      if (sweepOrderId) return true; // sweepOrderId filter already applied
+      return l.txChain === 'internal';
+    });
+
+    // Wrap in an object that mimics QuerySnapshot.forEach / .empty
+    const listingsSnap = {
+      empty: listingDocs.length === 0,
+      forEach: cb => listingDocs.forEach(cb),
+    };
 
     if (listingsSnap.empty) {
       return res.status(200).json({ payouts: [], totalSats: 0, totalXp: 0 });
