@@ -230,7 +230,10 @@ document.getElementById('nickname-save-btn').addEventListener('click', async () 
     document.getElementById('nickname-display').style.display = 'block';
     document.getElementById('nickname-set-form').style.display = 'none';
   } else {
-    errEl.textContent = res.error || 'Could not set handle.';
+    const isTaken = (res.error || '').includes('already taken');
+    errEl.textContent = isTaken
+      ? 'Handle already taken. If this is your handle from scrollpay.app, sign in below using your website email & password to recover it.'
+      : (res.error || 'Could not set handle.');
     errEl.style.display = 'block';
   }
 });
@@ -464,7 +467,19 @@ document.getElementById('btn-link-account').addEventListener('click', async () =
   statusEl.style.display = 'none';
 
   try {
+    const stored = await chrome.storage.local.get([USER_KEY]);
+    const oldUid = stored[USER_KEY] || null;
+
     const { uid, email: confirmedEmail } = await firebaseSignIn(email, password);
+
+    // If the extension was using an anonymous/different UID, migrate handle + XP
+    if (oldUid && oldUid !== uid) {
+      statusEl.textContent = 'Syncing your account…';
+      statusEl.style.color = '#f7931a';
+      statusEl.style.display = 'block';
+      await sendToBackground({ type: 'RECONCILE_PROFILES', oldUid, newUid: uid });
+    }
+
     await chrome.storage.local.set({ [USER_KEY]: uid, [LINKED_EMAIL_KEY]: confirmedEmail });
     statusEl.textContent = '✓ Connected! Reloading…';
     statusEl.style.color = '#16a34a';
