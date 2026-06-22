@@ -137,6 +137,8 @@ function switchAdminTab(tabName) {
   });
   // Load campaigns if switching to that tab and not yet loaded
   if (tabName === 'campaigns' && !campaignsLoaded) { loadCampaigns(); campaignsLoaded = true; }
+  // Auto-load payout report when tab is opened
+  if (tabName === 'payouts') { loadPayoutReport(); }
 }
 let campaignsLoaded = false;
 
@@ -1751,7 +1753,7 @@ async function loadPayoutReport() {
   summary.style.display = 'none';
 
   try {
-    const token = await auth.currentUser.getIdToken();
+    const token = await auth.currentUser.getIdToken(true);
     const url   = '/api/admin-payout-report' + (sweepId ? `?sweepOrderId=${encodeURIComponent(sweepId)}` : '');
     const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     const data  = await res.json();

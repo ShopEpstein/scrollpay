@@ -469,6 +469,46 @@ async function transferXp(fromUserId, to, amount, note = '') {
   }
 }
 
+async function reconcileProfiles(oldUid, newUid) {
+  if (!db || !oldUid || !newUid || oldUid === newUid) return { success: true, skipped: true };
+  try {
+    const oldRef = doc(db, 'sp_users', oldUid);
+    const newRef = doc(db, 'sp_users', newUid);
+    const [oldSnap, newSnap] = await Promise.all([getDoc(oldRef), getDoc(newRef)]);
+    if (!oldSnap.exists()) return { success: true, skipped: true };
+
+    const oldData = oldSnap.data();
+    const newData = newSnap.exists() ? newSnap.data() : {};
+    const newUpdates = {};
+    const oldUpdates = { mergedIntoUid: newUid, mergedAt: serverTimestamp() };
+
+    // Migrate handle only if new profile has none and old profile has one
+    if (oldData.nickname && !newData.nickname) {
+      newUpdates.nickname = oldData.nickname;
+      oldUpdates.nickname = null; // Free the handle from old profile
+    }
+
+    // Merge XP from old profile into new
+    const oldXp = oldData.totalSats || 0;
+    if (oldXp > 0) {
+      newUpdates.totalSats = increment(oldXp);
+      oldUpdates.totalSats = 0;
+    }
+
+    const ops = [];
+    if (Object.keys(newUpdates).length > 0) {
+      ops.push(newSnap.exists() ? updateDoc(newRef, newUpdates) : setDoc(newRef, { id: newUid, ...newUpdates }));
+    }
+    ops.push(updateDoc(oldRef, oldUpdates));
+    await Promise.all(ops);
+
+    return { success: true, migrated: Object.keys(newUpdates) };
+  } catch (e) {
+    console.error('[ScrollPay] reconcileProfiles error:', e);
+    return { success: false, error: e.message };
+  }
+}
+
 async function setNickname(userId, nickname) {
   if (!db || !userId) return { success: false, error: 'Not ready' };
   if (!NICKNAME_RE.test(nickname)) return { success: false, error: 'Handle must be 3–20 lowercase letters, numbers, or underscores.' };
@@ -544,6 +584,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         case 'SET_NICKNAME': {
           const result = await setNickname(message.userId, message.nickname);
+          sendResponse(result);
+          break;
+        }
+        case 'RECONCILE_PROFILES': {
+          const result = await reconcileProfiles(message.oldUid, message.newUid);
           sendResponse(result);
           break;
         }
