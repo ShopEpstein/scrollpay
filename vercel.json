@@ -14,6 +14,7 @@
     { "source": "/api/admin-payout-report", "destination": "/api/admin-payout-report.js" },
     { "source": "/api/admin-mark-paid",    "destination": "/api/admin-mark-paid.js" },
     { "source": "/api/admin-broadcast-email", "destination": "/api/admin-broadcast-email.js" },
+    { "source": "/api/admin-send-sweep-summary", "destination": "/api/admin-send-sweep-summary.js" },
     { "source": "/api/profile",             "destination": "/api/profile.js" },
     { "source": "/profile/:handle",         "destination": "/docs/profile.html" },
     { "source": "/advertiser",      "destination": "/advertiser/index.html" },
