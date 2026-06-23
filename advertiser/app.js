@@ -1667,9 +1667,11 @@ document.getElementById('sweep-refresh')?.addEventListener('click', loadSweepOrd
 
 // ── Raffle Entries ──────────────────────────────────────────────
 async function loadRaffleEntries(drawOverride) {
-  const container = document.getElementById('raffle-container');
-  const summary   = document.getElementById('raffle-summary');
-  const picker    = document.getElementById('raffle-draw-picker');
+  const container  = document.getElementById('raffle-container');
+  const summary    = document.getElementById('raffle-summary');
+  const picker     = document.getElementById('raffle-draw-picker');
+  const drawBtn    = document.getElementById('raffle-draw-btn');
+  const winnerBanner = document.getElementById('raffle-winner-banner');
   if (!container) return;
 
   const draw = drawOverride || parseInt(picker?.value) || null;
@@ -1677,6 +1679,8 @@ async function loadRaffleEntries(drawOverride) {
 
   container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Loading…</p>';
   if (summary) summary.style.display = 'none';
+  if (winnerBanner) winnerBanner.style.display = 'none';
+  if (drawBtn) drawBtn.style.display = 'none';
 
   try {
     const token = await auth.currentUser.getIdToken();
@@ -1684,13 +1688,34 @@ async function loadRaffleEntries(drawOverride) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
 
-    const { entries, drawNumber, totalTickets, endsAt, currentDraw } = data;
+    const { entries, drawNumber, totalTickets, endsAt, currentDraw, winner } = data;
 
     if (picker && !picker.value) picker.value = drawNumber;
 
     const endsDate = new Date(endsAt);
     const closed   = endsDate < new Date();
     const endsStr  = endsDate.toLocaleString();
+
+    // Show winner banner if already drawn
+    if (winner && winnerBanner) {
+      const wHandle = winner.nickname ? `@${esc(winner.nickname)}` : `Miner`;
+      winnerBanner.style.display = 'block';
+      winnerBanner.innerHTML = `
+        <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:24px;">🏆</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#15803d;">Draw #${drawNumber} Winner</div>
+            <div style="font-size:15px;font-weight:700;color:#111827;">${wHandle}</div>
+            <div style="font-size:12px;color:#6b7280;">${winner.tickets?.toLocaleString()} tickets · Email ${winner.emailSent ? 'sent ✓' : 'not sent'}</div>
+          </div>
+        </div>`;
+    }
+
+    // Show Draw Winner button only for closed draws without a winner yet
+    if (drawBtn) {
+      drawBtn.style.display = (closed && !winner) ? 'inline-block' : 'none';
+      drawBtn.dataset.draw = drawNumber;
+    }
 
     if (summary) {
       summary.style.display = 'block';
@@ -1700,7 +1725,7 @@ async function loadRaffleEntries(drawOverride) {
           <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Total Tickets</span><div style="font-size:20px;font-weight:800;">${totalTickets.toLocaleString()}</div></div>
           <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Entrants</span><div style="font-size:20px;font-weight:800;">${entries.length}</div></div>
           <div><span style="color:#9ca3af;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">${closed ? 'Closed' : 'Closes'}</span><div style="font-size:13px;font-weight:600;margin-top:4px;">${endsStr}</div></div>
-          ${drawNumber < currentDraw ? '<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Draw closed</span>' : '<span style="background:#fff7ed;border:1px solid #fed7aa;color:#92400e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Active</span>'}
+          ${closed ? '<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Draw closed</span>' : '<span style="background:#fff7ed;border:1px solid #fed7aa;color:#92400e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Active</span>'}
         </div>`;
     }
 
@@ -1717,6 +1742,7 @@ async function loadRaffleEntries(drawOverride) {
             <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Handle / Ref</th>
             <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Tickets</th>
             <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;">Odds</th>
+            <th style="padding:10px 14px;"></th>
           </tr>
         </thead>
         <tbody>
@@ -1731,6 +1757,12 @@ async function loadRaffleEntries(drawOverride) {
               </td>
               <td style="padding:10px 14px;text-align:right;font-weight:800;color:#f7931a;">${(e.tickets||0).toLocaleString()}</td>
               <td style="padding:10px 14px;text-align:right;color:#6b7280;">${odds}%</td>
+              <td style="padding:10px 14px;text-align:right;">
+                <button onclick="removeRaffleEntry('${e.id}', '${esc(handle)}')"
+                  style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;">
+                  Remove
+                </button>
+              </td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1740,7 +1772,51 @@ async function loadRaffleEntries(drawOverride) {
   }
 }
 
-window.loadRaffleEntries = loadRaffleEntries;
+async function removeRaffleEntry(entryId, handle) {
+  if (!confirm(`Remove all entries for ${handle}? Their XP will be refunded.`)) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch(`/api/admin-raffle?entryId=${encodeURIComponent(entryId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    await loadRaffleEntries();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function drawRaffleWinner() {
+  const drawBtn = document.getElementById('raffle-draw-btn');
+  const drawNumber = parseInt(drawBtn?.dataset.draw) || 1;
+  if (!confirm(`Draw the winner for Draw #${drawNumber} now? This cannot be undone.`)) return;
+  drawBtn.disabled = true;
+  drawBtn.textContent = 'Drawing…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-raffle', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drawNumber }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    const w = data.winner;
+    const wHandle = w.nickname ? `@${w.nickname}` : 'Miner';
+    alert(`🏆 Winner: ${wHandle} — ${w.tickets?.toLocaleString()} tickets\nEmail ${data.emailSent ? 'sent ✓' : 'not sent (no email on file)'}`);
+    await loadRaffleEntries();
+  } catch (e) {
+    alert('Error: ' + e.message);
+    drawBtn.disabled = false;
+    drawBtn.textContent = '🏆 Draw Winner';
+  }
+}
+
+window.loadRaffleEntries  = loadRaffleEntries;
+window.removeRaffleEntry  = removeRaffleEntry;
+window.drawRaffleWinner   = drawRaffleWinner;
 document.getElementById('raffle-refresh')?.addEventListener('click', () => loadRaffleEntries());
 
 // ── Payout Report ─────────────────────────────────────────────────
