@@ -1366,6 +1366,11 @@ function renderMinersTable(users) {
       if (u) showPaymentPopup(u, e.currentTarget);
     });
   });
+  container.querySelectorAll('.freeze-btn').forEach(btn => {
+    btn.addEventListener('click', () =>
+      toggleFreezeAccount(btn.dataset.id, btn.dataset.handle, btn.dataset.frozen === '1')
+    );
+  });
   container.querySelectorAll('.sort-miners-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       minerSort = btn.dataset.sort;
@@ -1397,9 +1402,13 @@ function minerRow(u) {
       : `<span style="color:#9ca3af;font-size:11px;">${fs}</span>`;
   const todayColor = u.satsToday > 200 ? '#dc2626' : u.satsToday > 0 ? '#16a34a' : 'inherit';
   const handle = esc(u.nickname || u.email || u.id);
-  return `<tr style="${fs >= 60 ? 'background:#fff5f5;' : fs >= 30 ? 'background:#fffbeb;' : ''}">
+  const frozenBg = u.frozen ? 'background:#eff6ff;' : fs >= 60 ? 'background:#fff5f5;' : fs >= 30 ? 'background:#fffbeb;' : '';
+  const frozenBadge = u.frozen
+    ? `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;" title="${esc(u.frozenReason || 'Under review')}">🔒 Frozen</span>`
+    : '';
+  return `<tr style="${frozenBg}">
     <td style="font-size:12px;color:#6b7280">${u.signupNumber || '—'}</td>
-    <td><strong>${u.nickname ? esc(u.nickname) : '<span style="color:#9ca3af">—</span>'}</strong></td>
+    <td><strong>${u.nickname ? esc(u.nickname) : '<span style="color:#9ca3af">—</span>'}</strong>${frozenBadge ? ' ' + frozenBadge : ''}</td>
     <td style="font-size:12px;color:#6b7280;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${display}</td>
     <td>${(u.totalSats || 0).toLocaleString()}</td>
     <td style="color:${todayColor};font-weight:${u.satsToday>200?'700':'400'}">${(u.satsToday || 0).toLocaleString()}</td>
@@ -1432,6 +1441,14 @@ function minerRow(u) {
               data-handle="${handle}"
               style="font-size:11px;padding:3px 8px;"
               title="Send password reset / login link">🔑</button>
+      <button class="freeze-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              data-handle="${handle}"
+              data-frozen="${u.frozen ? '1' : '0'}"
+              style="font-size:11px;padding:3px 8px;${u.frozen ? 'background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;' : 'background:#f0f9ff;color:#0369a1;border-color:#bae6fd;'}"
+              title="${u.frozen ? 'Unfreeze account' : 'Freeze account for review'}">
+        ${u.frozen ? '🔓 Unfreeze' : '🔒 Freeze'}
+      </button>
     </td>
   </tr>`;
 }
@@ -1519,6 +1536,30 @@ async function openMergeDialog(targetUserId, targetHandle, targetXp) {
   }
 }
 
+async function toggleFreezeAccount(userId, handle, currentlyFrozen) {
+  const action = currentlyFrozen ? 'unfreeze' : 'freeze';
+  let reason = '';
+  if (!currentlyFrozen) {
+    reason = prompt(`Freeze ${handle} for review?\n\nReason (optional):`, 'Raffle manipulation — under review');
+    if (reason === null) return;
+  } else {
+    if (!confirm(`Unfreeze ${handle}?`)) return;
+  }
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ userId, action, reason: reason.trim() || 'Under review' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    loadMiners();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
 async function sendLoginLink(userId, handle) {
   const confirmed = window.confirm(`Send a sign-in link to ${handle}'s email address?`);
   if (!confirmed) return;
@@ -1536,6 +1577,7 @@ async function sendLoginLink(userId, handle) {
     alert('Error: ' + err.message);
   }
 }
+
 
 let payPopupEl = null;
 function showPaymentPopup(u, anchorEl) {

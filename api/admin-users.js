@@ -74,6 +74,9 @@ module.exports = async (req, res) => {
           applepay:   u.applepay   || '',
           paypal:     u.paypal     || '',
           zelle:      u.zelle      || '',
+          // Account status
+          frozen:       u.frozen       || false,
+          frozenReason: u.frozenReason || '',
         };
         row.fraudScore = fraudScore(row);
         users.push(row);
@@ -139,6 +142,34 @@ module.exports = async (req, res) => {
         lastAdminAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       return res.status(200).json({ ok: true, newTotal });
+    }
+
+    // PUT: freeze or unfreeze an account
+    if (req.method === 'PUT') {
+      const { userId, action, reason } = req.body || {};
+      if (!userId || !['freeze', 'unfreeze'].includes(action)) {
+        return res.status(400).json({ error: 'Missing userId or invalid action' });
+      }
+      const userRef = db.collection('sp_users').doc(userId);
+      const snap = await userRef.get();
+      if (!snap.exists) return res.status(404).json({ error: 'User not found' });
+
+      if (action === 'freeze') {
+        await userRef.update({
+          frozen: true,
+          frozenAt: admin.firestore.FieldValue.serverTimestamp(),
+          frozenReason: reason || 'Under review',
+          frozenBy: ADMIN_EMAIL,
+        });
+        return res.status(200).json({ ok: true, frozen: true });
+      } else {
+        await userRef.update({
+          frozen: false,
+          unfrozenAt: admin.firestore.FieldValue.serverTimestamp(),
+          unfrozenBy: ADMIN_EMAIL,
+        });
+        return res.status(200).json({ ok: true, frozen: false });
+      }
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

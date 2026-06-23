@@ -43,6 +43,11 @@ module.exports = async (req, res) => {
       await db.runTransaction(async t => {
         const userSnap = await t.get(userRef);
         if (!userSnap.exists) throw new Error('User not found');
+        if (userSnap.data().frozen) {
+          const err = new Error('Account frozen');
+          err.status = 403;
+          throw err;
+        }
         const balance = userSnap.data().totalSats || 0;
         if (tickets > balance) {
           const err = new Error(`Not enough XP — you have ${balance.toLocaleString()} XP`);
