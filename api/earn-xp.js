@@ -30,6 +30,8 @@ module.exports = async (req, res) => {
     if (!snap.exists) return res.status(404).json({ error: 'Account not found — please reload the page.' });
 
     const data = snap.data();
+    if (data.frozen) return res.status(403).json({ error: 'Account frozen' });
+
     const today = new Date().toDateString();
     const lastDate = data.lastActiveAt?.toDate?.()?.toDateString?.() || '';
     const isToday = lastDate === today;

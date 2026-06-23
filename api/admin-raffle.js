@@ -126,7 +126,7 @@ module.exports = async (req, res) => {
     }
   }
 
-  // DELETE — remove a single entry (ban from draw)
+  // DELETE — remove a single entry (no XP refund — rigged entries are forfeited)
   if (req.method === 'DELETE') {
     const entryId = req.query.entryId;
     if (!entryId) return res.status(400).json({ error: 'entryId required' });
@@ -135,11 +135,8 @@ module.exports = async (req, res) => {
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: 'Entry not found' });
       const data = snap.data();
-      // Refund XP to user
-      await db.collection('sp_users').doc(data.userId)
-        .update({ totalSats: admin.firestore.FieldValue.increment(data.tickets || 0) });
       await ref.delete();
-      return res.status(200).json({ ok: true, refunded: data.tickets || 0, userId: data.userId });
+      return res.status(200).json({ ok: true, userId: data.userId, tickets: data.tickets || 0 });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
