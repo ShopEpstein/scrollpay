@@ -242,8 +242,10 @@
             <input type="number" id="raffle-draw-picker" min="1" style="width:60px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit;outline:none;" />
             <button onclick="loadRaffleEntries()" class="btn-ghost-sm">Load</button>
             <button id="raffle-refresh" class="btn-ghost-sm">↻ Refresh</button>
+            <button id="raffle-draw-btn" onclick="drawRaffleWinner()" style="background:#f7931a;color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;display:none;">🏆 Draw Winner</button>
           </div>
         </div>
+        <div id="raffle-winner-banner" style="display:none;"></div>
         <div id="raffle-summary" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;"></div>
         <div id="raffle-container"></div>
       </div>
