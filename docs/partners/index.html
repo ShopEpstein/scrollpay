@@ -47,12 +47,23 @@
       .grid { grid-template-columns: 1fr; padding: 0 16px; }
     }
   </style>
+  <link rel="stylesheet" href="/docs/theme.css" />
+  <script src="/docs/theme.js"></script>
 </head>
 <body>
 
   <nav>
     <a class="nav-brand" href="/"><img src="/icon128.png" alt="ScrollPay" /></a>
     <a class="nav-home" href="/">← Home</a>
+    <div class="sp-theme-switcher">
+      <button class="sp-theme-btn" id="sp-theme-toggle">☀️ <span class="sp-theme-lbl">Default</span></button>
+      <div class="sp-theme-dd" id="sp-theme-dd">
+        <button class="sp-theme-opt active" data-theme="default"><span class="swatch" style="background:#fff;border-color:#e5e7eb;"></span>Default</button>
+        <button class="sp-theme-opt" data-theme="dark"><span class="swatch" style="background:#0f172a;border-color:#334155;"></span>Dark</button>
+        <button class="sp-theme-opt" data-theme="matrix"><span class="swatch" style="background:#000;border-color:#003300;box-shadow:0 0 4px #00ff41;"></span>Matrix</button>
+        <button class="sp-theme-opt" data-theme="stacverse"><span class="swatch" style="background:#0d0221;border-color:#7c3aed;box-shadow:0 0 4px #7c3aed;"></span>Stacverse</button>
+      </div>
+    </div>
   </nav>
 
   <header>

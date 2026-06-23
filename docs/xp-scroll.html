@@ -232,6 +232,8 @@
       .feed-header-row, .feed-row { grid-template-columns: 55px 80px 80px 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="/docs/theme.css" />
+  <script src="/docs/theme.js"></script>
 </head>
 <body>
 
@@ -244,6 +246,15 @@
       <a href="/xp-scroll" class="active" style="color:var(--orange);">XP/SCROLL</a>
       <a href="/advertiser">Advertise</a>
       <span id="nav-auth-pill" style="font-size:12px;margin-left:4px;"></span>
+      <div class="sp-theme-switcher">
+        <button class="sp-theme-btn" id="sp-theme-toggle">☀️ <span class="sp-theme-lbl">Default</span></button>
+        <div class="sp-theme-dd" id="sp-theme-dd">
+          <button class="sp-theme-opt active" data-theme="default"><span class="swatch" style="background:#fff;border-color:#e5e7eb;"></span>Default</button>
+          <button class="sp-theme-opt" data-theme="dark"><span class="swatch" style="background:#0f172a;border-color:#334155;"></span>Dark</button>
+          <button class="sp-theme-opt" data-theme="matrix"><span class="swatch" style="background:#000;border-color:#003300;box-shadow:0 0 4px #00ff41;"></span>Matrix</button>
+          <button class="sp-theme-opt" data-theme="stacverse"><span class="swatch" style="background:#0d0221;border-color:#7c3aed;box-shadow:0 0 4px #7c3aed;"></span>Stacverse</button>
+        </div>
+      </div>
     </div>
   </div>
 </nav>

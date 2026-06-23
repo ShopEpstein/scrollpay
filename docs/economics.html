@@ -116,6 +116,8 @@
       .nav-links a:not(.nav-cta) { display: none; }
     }
   </style>
+  <link rel="stylesheet" href="/docs/theme.css" />
+  <script src="/docs/theme.js"></script>
 </head>
 <body>
 
@@ -128,6 +130,15 @@
         <a href="/advertiser">Advertise</a>
         <a href="/economics" class="active">How It Works</a>
         <a class="nav-cta" href="/#get-started">Install Free</a>
+        <div class="sp-theme-switcher">
+          <button class="sp-theme-btn" id="sp-theme-toggle">☀️ <span class="sp-theme-lbl">Default</span></button>
+          <div class="sp-theme-dd" id="sp-theme-dd">
+            <button class="sp-theme-opt active" data-theme="default"><span class="swatch" style="background:#fff;border-color:#e5e7eb;"></span>Default</button>
+            <button class="sp-theme-opt" data-theme="dark"><span class="swatch" style="background:#0f172a;border-color:#334155;"></span>Dark</button>
+            <button class="sp-theme-opt" data-theme="matrix"><span class="swatch" style="background:#000;border-color:#003300;box-shadow:0 0 4px #00ff41;"></span>Matrix</button>
+            <button class="sp-theme-opt" data-theme="stacverse"><span class="swatch" style="background:#0d0221;border-color:#7c3aed;box-shadow:0 0 4px #7c3aed;"></span>Stacverse</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
