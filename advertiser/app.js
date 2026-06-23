@@ -1327,6 +1327,16 @@ function renderMinersTable(users) {
       renderMinersTable(allMiners);
     });
   });
+  container.querySelectorAll('.merge-miner-btn').forEach(btn => {
+    btn.addEventListener('click', () =>
+      openMergeDialog(btn.dataset.id, btn.dataset.handle, parseInt(btn.dataset.xp))
+    );
+  });
+  container.querySelectorAll('.reset-pw-btn').forEach(btn => {
+    btn.addEventListener('click', () =>
+      sendLoginLink(btn.dataset.id, btn.dataset.handle)
+    );
+  });
 }
 
 function minerRow(u) {
@@ -1366,6 +1376,17 @@ function minerRow(u) {
               data-uid="${esc(u.id)}"
               style="font-size:11px;padding:3px 8px;"
               title="Payment methods">💳</button>
+      <button class="merge-miner-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              data-handle="${handle}"
+              data-xp="${u.totalSats || 0}"
+              style="font-size:11px;padding:3px 8px;background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;"
+              title="Merge another account into this one">⇄ Merge</button>
+      <button class="reset-pw-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              data-handle="${handle}"
+              style="font-size:11px;padding:3px 8px;"
+              title="Send password reset / login link">🔑</button>
     </td>
   </tr>`;
 }
@@ -1404,6 +1425,68 @@ async function openXpFix(userId, handle, currentXp) {
     if (!res.ok) throw new Error(data.error || 'Failed');
     alert(`Done. New balance: ${data.newTotal.toLocaleString()} XP`);
     loadMiners();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function openMergeDialog(targetUserId, targetHandle, targetXp) {
+  const sourceInput = prompt(
+    `Merge another account INTO ${targetHandle} (current XP: ${targetXp.toLocaleString()})\n\n` +
+    `Enter the SOURCE user ID or handle to merge FROM:\n(Their XP will be added to ${targetHandle} and their account will be zeroed out)`
+  );
+  if (!sourceInput || !sourceInput.trim()) return;
+  const query = sourceInput.trim();
+
+  // Resolve handle → id if needed (search allMiners first)
+  let sourceUserId = query;
+  const byHandle = allMiners.find(u => (u.nickname || '').toLowerCase() === query.toLowerCase());
+  const byId     = allMiners.find(u => u.id === query);
+  if (byHandle) sourceUserId = byHandle.id;
+  else if (byId) sourceUserId = byId.id;
+
+  const sourceUser = allMiners.find(u => u.id === sourceUserId);
+  const sourceLabel = sourceUser ? (sourceUser.nickname || sourceUser.email || sourceUserId) : sourceUserId;
+  const sourceXp = sourceUser ? (sourceUser.totalSats || 0) : '?';
+
+  const confirmed = window.confirm(
+    `Merge "${sourceLabel}" (${typeof sourceXp === 'number' ? sourceXp.toLocaleString() : sourceXp} XP) INTO "${targetHandle}" (${targetXp.toLocaleString()} XP)?\n\n` +
+    `• Source XP will be added to ${targetHandle}\n` +
+    `• Source account will be zeroed out and marked merged\n` +
+    `• Earlier signup number will be kept on ${targetHandle}\n\n` +
+    `This cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-merge-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ sourceUserId, targetUserId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Merge failed');
+    alert(`Done! Merged ${data.xpMerged.toLocaleString()} XP into ${targetHandle}.\nMigrated fields: ${data.migrated.join(', ') || 'none'}`);
+    loadMiners();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function sendLoginLink(userId, handle) {
+  const confirmed = window.confirm(`Send a sign-in link to ${handle}'s email address?`);
+  if (!confirmed) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId, action: 'reset-password' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    alert(`Sign-in link sent to ${data.email}`);
   } catch (err) {
     alert('Error: ' + err.message);
   }
