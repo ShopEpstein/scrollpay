@@ -9,24 +9,85 @@
   --white: #ffffff;
   --green: #16a34a;
   --red: #dc2626;
+  --nav-bg: #111827;
+  --nav-text: #9ca3af;
+  --card-shadow: 0 1px 4px rgba(0,0,0,.06);
+  --input-bg: #ffffff;
+  --theme-font: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --orange: #f7931a;
+  --orange-dk: #e6851a;
+  --ink: #f1f5f9;
+  --ink2: #cbd5e1;
+  --muted: #94a3b8;
+  --border: #334155;
+  --bg: #0f172a;
+  --white: #1e293b;
+  --green: #4ade80;
+  --red: #f87171;
+  --nav-bg: #020617;
+  --nav-text: #64748b;
+  --card-shadow: 0 1px 8px rgba(0,0,0,.4);
+  --input-bg: #1e293b;
+}
+
+/* ── Matrix theme ── */
+[data-theme="matrix"] {
+  --orange: #00ff41;
+  --orange-dk: #00cc33;
+  --ink: #00ff41;
+  --ink2: #00cc33;
+  --muted: #007722;
+  --border: #003300;
+  --bg: #000000;
+  --white: #001a00;
+  --green: #00ff41;
+  --red: #ff4444;
+  --nav-bg: #000000;
+  --nav-text: #007722;
+  --card-shadow: 0 0 12px rgba(0,255,65,.12);
+  --input-bg: #001a00;
+  --theme-font: 'Courier New', 'Courier', monospace;
+}
+
+/* ── Stacverse / Staccana theme ── */
+[data-theme="stacverse"] {
+  --orange: #fbbf24;
+  --orange-dk: #f59e0b;
+  --ink: #ede9fe;
+  --ink2: #c4b5fd;
+  --muted: #7c3aed;
+  --border: #2e1065;
+  --bg: #0d0221;
+  --white: #160535;
+  --green: #a78bfa;
+  --red: #f87171;
+  --nav-bg: #07010f;
+  --nav-text: #6d28d9;
+  --card-shadow: 0 0 20px rgba(124,58,237,.2);
+  --input-bg: #160535;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
 body {
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-family: var(--theme-font);
   color: var(--ink);
   background: var(--bg);
   min-height: 100%;
   font-size: 14px;
   line-height: 1.5;
+  transition: background .25s, color .25s;
 }
 
 .hidden { display: none !important; }
 
 /* ── Nav ── */
 nav {
-  background: var(--ink);
+  background: var(--nav-bg);
   padding: 0 24px;
   height: 52px;
   display: flex;
@@ -34,6 +95,7 @@ nav {
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: background .25s;
 }
 .nav-inner {
   max-width: 960px;
@@ -61,7 +123,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #9ca3af;
+  color: var(--nav-text);
   font-size: 13px;
 }
 
@@ -134,7 +196,7 @@ nav {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--ink);
+  background: var(--nav-bg);
 }
 
 .auth-card {
@@ -143,7 +205,9 @@ nav {
   padding: 36px 32px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  color: var(--ink);
+  border: 1px solid var(--border);
 }
 
 .auth-logo {
@@ -197,7 +261,9 @@ nav {
 .field input[type="email"],
 .field input[type="password"],
 .field input[type="url"],
-.field input[type="number"] {
+.field input[type="number"],
+.field textarea,
+.field select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -205,9 +271,9 @@ nav {
   font-size: 14px;
   font-family: inherit;
   color: var(--ink);
-  background: var(--white);
+  background: var(--input-bg);
   outline: none;
-  transition: border-color .15s;
+  transition: border-color .15s, background .25s;
 }
 .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
 
@@ -228,6 +294,8 @@ nav {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 28px 28px 24px;
+  box-shadow: var(--card-shadow);
+  transition: background .25s, border-color .25s;
 }
 .card-title { font-size: 18px; font-weight: 700; margin-bottom: 22px; }
 
@@ -373,6 +441,7 @@ nav {
   border-radius: 12px;
   overflow: hidden;
   font-size: 13px;
+  transition: background .25s, border-color .25s;
 }
 .campaigns-table thead { background: var(--bg); }
 .campaigns-table th {
@@ -389,9 +458,10 @@ nav {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  color: var(--ink);
 }
 .campaigns-table tr:last-child td { border-bottom: none; }
-.campaigns-table tr:hover td { background: #fafafa; }
+.campaigns-table tr:hover td { background: var(--bg); }
 
 .camp-name { font-weight: 600; color: var(--ink); }
 .camp-headline { color: var(--muted); font-size: 12px; margin-top: 2px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -434,10 +504,12 @@ nav {
 }
 .modal-overlay.hidden { display: none; }
 .modal-card {
-  background: #fff; border-radius: 16px;
+  background: var(--white); border-radius: 16px;
   width: 100%; max-width: 520px;
-  padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
   max-height: 90vh; overflow-y: auto;
+  color: var(--ink);
+  transition: background .25s;
 }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -460,6 +532,8 @@ nav {
   border-radius: 12px;
   padding: 18px 20px;
   text-align: center;
+  box-shadow: var(--card-shadow);
+  transition: background .25s, border-color .25s;
 }
 .stat-val {
   font-size: 28px;
@@ -485,6 +559,7 @@ nav {
   border-radius: 10px;
   overflow: hidden;
   font-size: 12px;
+  transition: background .25s, border-color .25s;
 }
 .mini-table th {
   padding: 8px 12px;
@@ -501,9 +576,10 @@ nav {
   padding: 9px 12px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  color: var(--ink);
 }
 .mini-table tr:last-child td { border-bottom: none; }
-.mini-table tr:hover td { background: #fafafa; }
+.mini-table tr:hover td { background: var(--bg); }
 
 @media (max-width: 700px) {
   #stat-cards { grid-template-columns: repeat(2, 1fr); }
@@ -560,20 +636,140 @@ nav {
 .miner-pay-popup {
   position: fixed;
   z-index: 9999;
-  background: #fff;
-  border: 1.5px solid #e5e7eb;
+  background: var(--white);
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   padding: 16px 18px;
   width: 280px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.16);
+  box-shadow: var(--card-shadow), 0 8px 32px rgba(0,0,0,.2);
   font-size: 12px;
+  color: var(--ink);
 }
-.miner-pay-popup h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+.miner-pay-popup h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--ink); }
 .miner-pay-row { display: flex; gap: 6px; align-items: baseline; margin-bottom: 6px; }
-.miner-pay-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; min-width: 60px; }
-.miner-pay-val { font-size: 12px; color: #111827; font-family: monospace; word-break: break-all; }
+.miner-pay-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 60px; }
+.miner-pay-val { font-size: 12px; color: var(--ink); font-family: monospace; word-break: break-all; }
 .miner-pay-copy {
-  margin-left: auto; padding: 2px 7px; background: #f3f4f6; border: none;
+  margin-left: auto; padding: 2px 7px; background: var(--bg); border: none;
   border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; font-family: inherit;
+  color: var(--ink2);
 }
-.miner-pay-copy:hover { background: #e5e7eb; }
+.miner-pay-copy:hover { background: var(--border); }
+
+/* ── Theme switcher ── */
+.theme-switcher {
+  position: relative;
+}
+.theme-btn {
+  background: transparent;
+  border: 1px solid #374151;
+  color: var(--nav-text);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.theme-btn:hover { border-color: var(--orange); color: var(--orange); }
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  z-index: 9999;
+  display: none;
+}
+.theme-dropdown.open { display: block; }
+.theme-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s;
+}
+.theme-opt:hover { background: var(--bg); }
+.theme-opt.active { font-weight: 700; color: var(--orange); }
+.theme-opt .swatch {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Matrix theme extras ── */
+[data-theme="matrix"] body,
+[data-theme="matrix"] {
+  font-family: 'Courier New', Courier, monospace;
+}
+[data-theme="matrix"] .nav-brand,
+[data-theme="matrix"] .stat-val,
+[data-theme="matrix"] .btn-primary {
+  text-shadow: 0 0 8px rgba(0,255,65,.6);
+}
+[data-theme="matrix"] .campaigns-table tr:hover td {
+  background: #001a00;
+}
+[data-theme="matrix"] .card,
+[data-theme="matrix"] .campaigns-table,
+[data-theme="matrix"] .stat-card {
+  box-shadow: 0 0 12px rgba(0,255,65,.08), inset 0 0 0 1px #003300;
+}
+
+/* ── Stacverse theme extras ── */
+[data-theme="stacverse"] nav::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 60%, rgba(124,58,237,.15));
+}
+[data-theme="stacverse"] .nav-brand {
+  text-shadow: 0 0 12px rgba(251,191,36,.5);
+  background: linear-gradient(90deg, #fbbf24, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="stacverse"] .stat-val {
+  background: linear-gradient(135deg, #fbbf24, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="stacverse"] .btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #fbbf24);
+  box-shadow: 0 0 16px rgba(124,58,237,.4);
+}
+[data-theme="stacverse"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #f59e0b);
+}
+[data-theme="stacverse"] .card,
+[data-theme="stacverse"] .campaigns-table,
+[data-theme="stacverse"] .stat-card {
+  box-shadow: 0 0 24px rgba(124,58,237,.15);
+}
+[data-theme="stacverse"] .admin-tab-btn:hover,
+[data-theme="stacverse"] .admin-tab-btn.active {
+  color: #fbbf24;
+  border-bottom-color: #fbbf24;
+}

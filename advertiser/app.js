@@ -66,6 +66,51 @@ onAuthStateChanged(auth, user => {
   }
 });
 
+// ── Theme switcher ──────────────────────────────────────────────
+
+const THEMES = {
+  default:   { label: 'Default', emoji: '☀️' },
+  dark:      { label: 'Dark',    emoji: '🌙' },
+  matrix:    { label: 'Matrix',  emoji: '🟩' },
+  stacverse: { label: 'Stacverse', emoji: '🪐' },
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.default;
+  document.documentElement.setAttribute('data-theme', name === 'default' ? '' : name);
+  localStorage.setItem('sp_theme', name);
+  const btn = document.getElementById('theme-toggle-btn');
+  const label = document.getElementById('theme-label');
+  if (btn) btn.firstChild.textContent = t.emoji + ' ';
+  if (label) label.textContent = t.label;
+  document.querySelectorAll('.theme-opt').forEach(o => {
+    o.classList.toggle('active', o.dataset.theme === name);
+  });
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('sp_theme') || 'default';
+  applyTheme(saved);
+})();
+
+document.getElementById('theme-toggle-btn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('theme-dropdown').classList.toggle('open');
+});
+
+document.getElementById('theme-dropdown')?.querySelectorAll('.theme-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyTheme(btn.dataset.theme);
+    document.getElementById('theme-dropdown').classList.remove('open');
+  });
+});
+
+document.addEventListener('click', () => {
+  document.getElementById('theme-dropdown')?.classList.remove('open');
+});
+
+// ── Auth ─────────────────────────────────────────────────────────
+
 let authMode = 'login';
 
 document.querySelectorAll('.tab-btn').forEach(btn => {

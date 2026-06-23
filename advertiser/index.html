@@ -16,8 +16,17 @@
     <div class="nav-inner">
       <span class="nav-brand"><img src="/docs/icon128.png" alt="" style="width:28px;height:28px;border-radius:7px;vertical-align:middle;margin-right:8px;" />SCROLLPAY <span class="nav-tag">Advertiser</span></span>
       <div class="nav-right">
-        <a href="https://scrollpay.app" style="font-size:13px;font-weight:600;color:#9ca3af;text-decoration:none;margin-right:8px;">← scrollpay.app</a>
+        <a href="https://scrollpay.app" style="font-size:13px;font-weight:600;color:var(--nav-text);text-decoration:none;margin-right:8px;">← scrollpay.app</a>
         <span id="nav-email"></span>
+        <div class="theme-switcher">
+          <button class="theme-btn" id="theme-toggle-btn" title="Switch skin">🎨 <span id="theme-label">Default</span></button>
+          <div class="theme-dropdown" id="theme-dropdown">
+            <button class="theme-opt active" data-theme="default"><span class="swatch" style="background:#f9fafb;border-color:#e5e7eb;"></span>Default</button>
+            <button class="theme-opt" data-theme="dark"><span class="swatch" style="background:#0f172a;border-color:#334155;"></span>Dark</button>
+            <button class="theme-opt" data-theme="matrix"><span class="swatch" style="background:#000;border-color:#003300;box-shadow:0 0 4px #00ff41;"></span>Matrix</button>
+            <button class="theme-opt" data-theme="stacverse"><span class="swatch" style="background:#0d0221;border-color:#7c3aed;box-shadow:0 0 4px #7c3aed;"></span>Stacverse</button>
+          </div>
+        </div>
         <button id="signout-btn" class="btn-ghost-sm">Sign out</button>
       </div>
     </div>
