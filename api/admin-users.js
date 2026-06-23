@@ -100,9 +100,31 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    // PATCH: adjust XP for a user (admin correction)
+    // PATCH: adjust XP or send password reset
     if (req.method === 'PATCH') {
-      const { userId, adjustXp, note } = req.body || {};
+      const { userId, adjustXp, note, action } = req.body || {};
+
+      // Send password reset email
+      if (action === 'reset-password') {
+        if (!userId) return res.status(400).json({ error: 'Missing userId' });
+        const authUser = await admin.auth().getUser(userId);
+        if (!authUser.email) return res.status(400).json({ error: 'User has no email address' });
+        const link = await admin.auth().generatePasswordResetLink(authUser.email);
+        const { sendEmail } = require('./_email');
+        await sendEmail({
+          to: authUser.email,
+          subject: 'ScrollPay — Sign in to your account',
+          html: `
+            <h2 style="margin:0 0 8px;">Sign in to ScrollPay</h2>
+            <p style="color:#475569;">Use the link below to sign in and access your account. The link expires in 1 hour.</p>
+            <p><a href="${link}" style="color:#f97316;font-weight:700;">Sign in now ↗</a></p>
+            <p style="color:#94a3b8;font-size:12px;margin-top:32px;">— The ScrollPay Team</p>
+          `,
+        });
+        return res.status(200).json({ ok: true, email: authUser.email });
+      }
+
+      // Adjust XP
       if (!userId || typeof adjustXp !== 'number') {
         return res.status(400).json({ error: 'Missing userId or adjustXp' });
       }
