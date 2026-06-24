@@ -159,6 +159,7 @@ const ADMIN_TAB_MAP = {
   partners:  { show: ['partners-section'] },
   sweep:     { show: ['sweep-section'] },
   raffle:    { show: ['raffle-section'] },
+  audit:     { show: ['audit-section'] },
   payouts:   { show: ['payouts-section'] },
   broadcast: { show: ['broadcast-section'] },
 };
@@ -1371,6 +1372,14 @@ function renderMinersTable(users) {
       toggleFreezeAccount(btn.dataset.id, btn.dataset.handle, btn.dataset.frozen === '1')
     );
   });
+  container.querySelectorAll('.audit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('[data-tab="audit"]')?.click();
+      const input = document.getElementById('audit-user-input');
+      if (input) input.value = btn.dataset.id;
+      runAudit(btn.dataset.id);
+    });
+  });
   container.querySelectorAll('.sort-miners-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       minerSort = btn.dataset.sort;
@@ -1449,6 +1458,10 @@ function minerRow(u) {
               title="${u.frozen ? 'Unfreeze account' : 'Freeze account for review'}">
         ${u.frozen ? '🔓 Unfreeze' : '🔒 Freeze'}
       </button>
+      <button class="audit-btn btn-ghost-sm"
+              data-id="${esc(u.id)}"
+              style="font-size:11px;padding:3px 8px;background:#f0f9ff;color:#0369a1;border-color:#bae6fd;"
+              title="Full audit trail">🔍</button>
     </td>
   </tr>`;
 }
@@ -1988,6 +2001,136 @@ window.loadRaffleEntries  = loadRaffleEntries;
 window.removeRaffleEntry  = removeRaffleEntry;
 window.drawRaffleWinner   = drawRaffleWinner;
 document.getElementById('raffle-refresh')?.addEventListener('click', () => loadRaffleEntries());
+
+// ── User Audit ────────────────────────────────────────────────────
+async function runAudit(userIdOverride) {
+  const container = document.getElementById('audit-container');
+  const input = document.getElementById('audit-user-input');
+  if (!container) return;
+
+  let query = userIdOverride || input?.value?.trim();
+  if (!query) { alert('Enter a user ID or nickname'); return; }
+
+  // If it looks like a nickname rather than a uid, resolve it from allMiners
+  let userId = query;
+  if (allMiners.length) {
+    const byNick = allMiners.find(u => (u.nickname || '').toLowerCase() === query.toLowerCase());
+    const byRef  = allMiners.find(u => (u.refCode  || '').toUpperCase() === query.toUpperCase());
+    if (byNick) userId = byNick.id;
+    else if (byRef) userId = byRef.id;
+  }
+
+  container.innerHTML = '<p style="color:#9ca3af;font-size:13px;">Running audit…</p>';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch(`/api/admin-audit?userId=${encodeURIComponent(userId)}`, {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    const { user, summary, raffleEntries, btcListings, scrollOrders, transfersOut, transfersIn } = data;
+
+    const flagHtml = summary.flags.length
+      ? summary.flags.map(f => `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 12px;margin-bottom:6px;font-size:12px;font-weight:700;color:#dc2626;">⚠ ${esc(f)}</div>`).join('')
+      : '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;color:#15803d;">✓ No flags</div>';
+
+    const ts = s => s ? new Date(s * 1000).toLocaleString() : '—';
+    const xp = n => (n || 0).toLocaleString();
+
+    container.innerHTML = `
+      <div style="display:grid;gap:16px;">
+
+        <!-- User card -->
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;">
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">Account</div>
+          <div style="display:flex;gap:32px;flex-wrap:wrap;font-size:13px;">
+            <div><span style="color:#6b7280;">Handle</span><div style="font-weight:700;">${esc(user.nickname || '—')}</div></div>
+            <div><span style="color:#6b7280;">Email</span><div style="font-weight:700;">${esc(user.email || '—')}</div></div>
+            <div><span style="color:#6b7280;">Ref</span><div style="font-weight:700;font-family:monospace;">${esc(user.refCode || '—')}</div></div>
+            <div><span style="color:#6b7280;">Signup #</span><div style="font-weight:700;">${user.signupNumber || '—'}</div></div>
+            <div><span style="color:#6b7280;">Frozen</span><div style="font-weight:700;color:${user.frozen ? '#dc2626' : '#16a34a'}">${user.frozen ? '🔒 YES — ' + esc(user.frozenReason) : '✓ No'}</div></div>
+            <div><span style="color:#6b7280;">Last active</span><div style="font-weight:700;">${ts(user.lastActiveAt)}</div></div>
+          </div>
+        </div>
+
+        <!-- Flags -->
+        <div>
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Flags</div>
+          ${flagHtml}
+        </div>
+
+        <!-- XP accounting -->
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;">
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">XP Accounting</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr><td style="padding:4px 0;color:#374151;">Current balance</td><td style="text-align:right;font-weight:700;">${xp(summary.currentBalance)} XP</td></tr>
+            <tr><td style="padding:4px 0;color:#374151;">In raffle tickets (all draws)</td><td style="text-align:right;font-weight:700;color:#f7931a;">${xp(summary.totalRaffleTickets)} XP</td></tr>
+            <tr><td style="padding:4px 0;color:#374151;">In open BTC listings (escrowed?)</td><td style="text-align:right;font-weight:700;color:${summary.openBtcListingXp > 0 ? '#dc2626' : '#374151'}">${xp(summary.openBtcListingXp)} XP</td></tr>
+            <tr><td style="padding:4px 0;color:#374151;">In open SCROLL asks (escrowed)</td><td style="text-align:right;font-weight:700;">${xp(summary.openScrollAskXp)} XP</td></tr>
+            <tr style="border-top:1px solid #e5e7eb;"><td style="padding:6px 0 0;color:#374151;">Total transferred out</td><td style="text-align:right;font-weight:700;">${xp(summary.totalTransferredOut)} XP</td></tr>
+            <tr><td style="padding:4px 0;color:#374151;">Total transferred in</td><td style="text-align:right;font-weight:700;">${xp(summary.totalTransferredIn)} XP</td></tr>
+            ${summary.doubleSpendBtc > 0 ? `<tr style="background:#fef2f2;"><td style="padding:6px 12px;color:#dc2626;font-weight:700;">⚠ Double-spend (BTC listing > balance)</td><td style="text-align:right;font-weight:800;color:#dc2626;">${xp(summary.doubleSpendBtc)} XP</td></tr>` : ''}
+          </table>
+        </div>
+
+        <!-- Raffle entries -->
+        ${raffleEntries.length ? `
+        <div>
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Raffle Entries (${raffleEntries.length})</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            ${raffleEntries.map(e => `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 0;">Draw #${e.drawNumber}</td><td style="text-align:right;font-weight:700;color:#f7931a;">${xp(e.tickets)} tickets</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        <!-- BTC Listings -->
+        ${btcListings.length ? `
+        <div>
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">BTC Marketplace Listings (${btcListings.length})</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;">Status</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">XP</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">Price</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">Escrowed</th></tr>
+            ${btcListings.map(l => `<tr style="border-bottom:1px solid #f3f4f6;${l.status==='open'?'background:#fff7ed;':''}"><td style="padding:6px 8px;">${esc(l.status)}</td><td style="padding:6px 8px;text-align:right;font-weight:700;">${xp(l.xpAmount)}</td><td style="padding:6px 8px;text-align:right;">${l.pricePerXp} sat/XP</td><td style="padding:6px 8px;text-align:right;">${l.xpEscrowed ? '✓' : '⚠ No'}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        <!-- SCROLL orders -->
+        ${scrollOrders.length ? `
+        <div>
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">SCROLL Market Orders (${scrollOrders.length})</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;">Type</th><th style="padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;">Status</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">XP</th></tr>
+            ${scrollOrders.map(o => `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;">${esc(o.type)}</td><td style="padding:6px 8px;">${esc(o.status)}</td><td style="padding:6px 8px;text-align:right;font-weight:700;">${xp(o.xpAmount)}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        <!-- Transfers out -->
+        ${transfersOut.length ? `
+        <div>
+          <div style="font-size:11px;color:#dc2626;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">⚠ Transfers Sent (${transfersOut.length})</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr style="background:#fef2f2;"><th style="padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;">To</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">Amount</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">When</th></tr>
+            ${transfersOut.map(t => `<tr style="border-bottom:1px solid #fecaca;"><td style="padding:6px 8px;font-family:monospace;font-size:11px;">${esc(t.toHandle || t.toUid)}</td><td style="padding:6px 8px;text-align:right;font-weight:700;color:#dc2626;">${xp(t.amount)}</td><td style="padding:6px 8px;text-align:right;color:#6b7280;">${ts(t.createdAt?._seconds || t.createdAt?.seconds)}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        <!-- Transfers in -->
+        ${transfersIn.length ? `
+        <div>
+          <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Transfers Received (${transfersIn.length})</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;">From</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">Amount</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#6b7280;">When</th></tr>
+            ${transfersIn.map(t => `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;font-family:monospace;font-size:11px;">${esc(t.fromUid)}</td><td style="padding:6px 8px;text-align:right;font-weight:700;">${xp(t.amount)}</td><td style="padding:6px 8px;text-align:right;color:#6b7280;">${ts(t.createdAt?._seconds || t.createdAt?.seconds)}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+      </div>`;
+  } catch (e) {
+    container.innerHTML = `<p style="color:#dc2626;font-size:13px;">${esc(e.message)}</p>`;
+  }
+}
+
+window.runAudit = runAudit;
 
 // ── Payout Report ─────────────────────────────────────────────────
 
