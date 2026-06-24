@@ -135,12 +135,6 @@ module.exports = async (req, res) => {
       const userDoc = snap.docs[0];
       const userData = userDoc.data();
 
-      if ((userData.totalSats || 0) < amount) {
-        return res.status(400).json({
-          error: `Insufficient XP. Your balance: ${userData.totalSats || 0} XP`
-        });
-      }
-
       const existing = await db.collection('sp_xp_listings')
         .where('userId', '==', userDoc.id)
         .where('status', '==', 'open')
@@ -150,21 +144,84 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'You already have an open listing. Cancel it first.' });
       }
 
+      // Block if user also has an open SCROLL market ask for the same XP
+      const scrollAskSnap = await db.collection('sp_scroll_orders')
+        .where('userId', '==', userDoc.id)
+        .where('type', '==', 'ask')
+        .where('status', '==', 'open')
+        .limit(1).get();
+      if (!scrollAskSnap.empty) {
+        return res.status(409).json({ error: 'You have an open SCROLL market sell order. Cancel it first — the same XP cannot be listed in both markets.' });
+      }
+
       const satsRequested = amount * price;
-      const ref = await db.collection('sp_xp_listings').add({
-        userId: userDoc.id,
-        userEmail: userData.email || '',
-        xpAmount: amount,
-        pricePerXp: price,
-        satsRequested,
-        btcAddress: btcAddress.trim(),
-        status: 'open',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      const listingRef = db.collection('sp_xp_listings').doc();
+
+      // Atomically deduct XP and create listing to prevent double-spend
+      await db.runTransaction(async (tx) => {
+        const uRef  = db.collection('sp_users').doc(userDoc.id);
+        const uSnap = await tx.get(uRef);
+        const balance = uSnap.data().totalSats || 0;
+        if (balance < amount) {
+          throw Object.assign(new Error(`Insufficient XP. Your balance: ${balance.toLocaleString()} XP`), { status: 400 });
+        }
+        tx.update(uRef, { totalSats: admin.firestore.FieldValue.increment(-amount) });
+        tx.set(listingRef, {
+          userId:       userDoc.id,
+          userEmail:    userData.email || '',
+          xpAmount:     amount,
+          pricePerXp:   price,
+          satsRequested,
+          btcAddress:   btcAddress.trim(),
+          xpEscrowed:   true,
+          status:       'open',
+          createdAt:    admin.firestore.FieldValue.serverTimestamp(),
+        });
       });
 
-      return res.status(200).json({ id: ref.id, satsRequested, pricePerXp: price });
+      return res.status(200).json({ id: listingRef.id, satsRequested, pricePerXp: price });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      const status = err.status || 500;
+      return res.status(status).json({ error: err.message });
+    }
+  }
+
+  // DELETE — cancel an open listing and return escrowed XP
+  if (req.method === 'DELETE') {
+    const { listingId, refCode } = req.body || {};
+    if (!listingId || !refCode) return res.status(400).json({ error: 'listingId and refCode required' });
+
+    try {
+      const userSnap = await db.collection('sp_users')
+        .where('refCode', '==', refCode.toUpperCase().trim()).limit(1).get();
+      if (userSnap.empty) return res.status(404).json({ error: 'Ref code not found' });
+      const userId = userSnap.docs[0].id;
+
+      const listingRef = db.collection('sp_xp_listings').doc(listingId);
+
+      await db.runTransaction(async (tx) => {
+        const lSnap = await tx.get(listingRef);
+        if (!lSnap.exists) throw Object.assign(new Error('Listing not found'), { status: 404 });
+        const listing = lSnap.data();
+        if (listing.userId !== userId) throw Object.assign(new Error('Not your listing'), { status: 403 });
+        if (listing.status !== 'open') throw Object.assign(new Error(`Listing is already ${listing.status}`), { status: 400 });
+
+        tx.update(listingRef, {
+          status: 'cancelled',
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        // Return escrowed XP
+        if (listing.xpEscrowed) {
+          tx.update(db.collection('sp_users').doc(userId), {
+            totalSats: admin.firestore.FieldValue.increment(listing.xpAmount || 0),
+          });
+        }
+      });
+
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      const status = err.status || 500;
+      return res.status(status).json({ error: err.message });
     }
   }
 

@@ -73,6 +73,7 @@
           <button class="admin-tab-btn" data-tab="partners">🔗 Partners</button>
           <button class="admin-tab-btn" data-tab="sweep">🎯 Requests</button>
           <button class="admin-tab-btn" data-tab="raffle">🎟 Raffle</button>
+          <button class="admin-tab-btn" data-tab="audit">🔍 Audit</button>
           <button class="admin-tab-btn" data-tab="payouts">💸 Payouts</button>
           <button class="admin-tab-btn" data-tab="broadcast">📧 Broadcast</button>
         </div>
@@ -248,6 +249,18 @@
         <div id="raffle-winner-banner" style="display:none;"></div>
         <div id="raffle-summary" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;"></div>
         <div id="raffle-container"></div>
+      </div>
+
+      <!-- Admin-only: User Audit -->
+      <div id="audit-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:16px;">
+          <h2 style="font-size:20px;font-weight:700;">🔍 User Audit</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="audit-user-input" placeholder="User ID or nickname" style="padding:5px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit;outline:none;width:220px;" />
+            <button onclick="runAudit()" style="background:#111827;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">Run Audit</button>
+          </div>
+        </div>
+        <div id="audit-container"></div>
       </div>
 
       <!-- Admin-only: Payout Report -->
