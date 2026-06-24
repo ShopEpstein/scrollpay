@@ -41,7 +41,7 @@
 <body>
   <div class="logo">SCROLLPAY</div>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: June 23, 2026</p>
+  <p class="updated">Last updated: June 24, 2026</p>
 
   <div class="highlight-box">
     <p>TL;DR — We never read your page content, track your browsing history, or sell your data. We only know which domain you are on, whether you saw an ad for 2+ seconds, and whether you clicked it.</p>
@@ -115,7 +115,18 @@
   </ul>
   <p>The extension's content script runs on all URLs (<code>&lt;all_urls&gt;</code> permission) solely to inject the ad widget overlay. It does not read, transmit, or store any page content.</p>
 
-  <h2>4. How We Handle and Use Your Data</h2>
+  <h2>4. Passwords and Sensitive Credentials — Explicit Statement</h2>
+  <p><strong>ScrollPay does not collect, access, read, store, or transmit passwords or any other sensitive credentials under any circumstances.</strong></p>
+  <p>Although the extension's content script is granted permission to run on all URLs (including pages that contain login forms), this permission is used solely to inject the ad widget visual overlay into the page. The content script:</p>
+  <ul>
+    <li>Does <strong>not</strong> read, intercept, or monitor any form fields, including password inputs.</li>
+    <li>Does <strong>not</strong> listen to keyboard events or capture keystrokes.</li>
+    <li>Does <strong>not</strong> access the DOM for any purpose other than appending the widget element.</li>
+    <li>Does <strong>not</strong> transmit any data from the visited page to our servers — only a boolean impression/click signal and the domain name are sent.</li>
+  </ul>
+  <p>No password, authentication token, session cookie, or financial credential is ever collected, stored, or shared by ScrollPay. If you have any concerns about this, you may inspect the extension's source code directly in Chrome by navigating to <code>chrome://extensions</code>, enabling Developer Mode, and clicking "Inspect views".</p>
+
+  <h2>5. How We Handle and Use Your Data</h2>
   <ul>
     <li>Impression and click signals are sent to our servers over encrypted HTTPS connections and used only to update your XP balance and generate aggregate advertiser reports.</li>
     <li>Your email address is used only for the purposes you consented to at sign-up: account linking, winner notifications, and transactional emails.</li>
@@ -123,14 +134,14 @@
     <li>We apply a daily XP cap (5,000 XP) to prevent abuse and maintain fair reward distribution.</li>
   </ul>
 
-  <h2>5. Data Storage</h2>
+  <h2>6. Data Storage</h2>
   <ul>
     <li><strong>Cloud storage:</strong> Account data (email, XP balance, transaction history) is stored in Google Firebase Firestore, hosted in the United States. Firebase is subject to Google's security and compliance standards. See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy</a>.</li>
     <li><strong>Local storage:</strong> Your user ID and session state are stored in <code>chrome.storage.local</code> on your device. This data never leaves your device except as part of authenticated API requests to our servers.</li>
     <li>We do not use browser cookies or <code>localStorage</code>.</li>
   </ul>
 
-  <h2>6. Data Sharing and Disclosure</h2>
+  <h2>7. Data Sharing and Disclosure</h2>
   <p>We do not sell, rent, or trade your personal data. We share data only in the following limited circumstances:</p>
   <ul>
     <li><strong>Advertisers:</strong> We share <em>aggregated, non-personal</em> impression and click counts so advertisers can measure campaign performance. No personal data (name, email, user ID) is included.</li>
@@ -139,10 +150,10 @@
     <li><strong>Business transfers:</strong> If ScrollPay is acquired or merges, your data may transfer to the new entity, which will be bound by this policy.</li>
   </ul>
 
-  <h2>7. Data Retention</h2>
+  <h2>8. Data Retention</h2>
   <p>We retain your account data for as long as your account is active. If you request account deletion, we will remove your personal data within 30 days, except where retention is required by law (e.g. financial transaction records, which may be retained for up to 7 years). Aggregated, anonymized analytics data may be retained indefinitely as it cannot identify you.</p>
 
-  <h2>8. Data Security</h2>
+  <h2>9. Data Security</h2>
   <p>We implement industry-standard security measures to protect your data, including:</p>
   <ul>
     <li>All data in transit is encrypted using TLS 1.2 or higher.</li>
@@ -152,7 +163,7 @@
   </ul>
   <p>No method of electronic storage or transmission is 100% secure. If you believe your account has been compromised, contact us immediately at <a href="mailto:privacy@scrollpay.app">privacy@scrollpay.app</a>.</p>
 
-  <h2>9. Third-Party Services</h2>
+  <h2>10. Third-Party Services</h2>
   <p>The extension integrates with the following third-party services. Each has its own privacy policy:</p>
   <ul>
     <li><strong>Google Firebase</strong> (Firestore, Authentication) — <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">firebase.google.com/support/privacy</a></li>
@@ -160,10 +171,10 @@
   </ul>
   <p>We do not embed third-party analytics SDKs (e.g. Google Analytics, Mixpanel) in the extension.</p>
 
-  <h2>10. International Data Transfers</h2>
+  <h2>11. International Data Transfers</h2>
   <p>Your data is stored and processed primarily in the United States via Google Firebase. If you are located in the European Economic Area (EEA), United Kingdom, or Switzerland, your data may be transferred to and processed in a country with different data protection laws. Such transfers rely on Google's Standard Contractual Clauses or other appropriate safeguards.</p>
 
-  <h2>11. Your Rights</h2>
+  <h2>12. Your Rights</h2>
   <p>Depending on your location, you may have the following rights regarding your personal data:</p>
   <ul>
     <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
@@ -178,13 +189,13 @@
   <p>To exercise any of these rights, email <a href="mailto:privacy@scrollpay.app">privacy@scrollpay.app</a>. We will respond within 30 days. We may verify your identity before fulfilling a request.</p>
   <p>You may also uninstall the extension at any time to immediately stop all data collection by the extension.</p>
 
-  <h2>12. Children's Privacy</h2>
+  <h2>13. Children's Privacy</h2>
   <p>ScrollPay is not directed at children under the age of 13 (or 16 in the EEA). We do not knowingly collect personal data from children. If you believe we have inadvertently collected data from a child, please contact us at <a href="mailto:privacy@scrollpay.app">privacy@scrollpay.app</a> and we will delete it promptly.</p>
 
-  <h2>13. Changes to This Policy</h2>
+  <h2>14. Changes to This Policy</h2>
   <p>We may update this Privacy Policy from time to time. When we make material changes, we will update the "Last updated" date at the top of this page and, where feasible, provide in-extension notice. Your continued use of ScrollPay after changes are posted constitutes acceptance of the updated policy. We encourage you to review this page periodically.</p>
 
-  <h2>14. Contact</h2>
+  <h2>15. Contact</h2>
   <p>For privacy-related questions, requests, or complaints, contact us at:</p>
   <p>
     <strong>ScrollPay</strong><br />
