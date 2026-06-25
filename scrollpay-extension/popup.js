@@ -179,17 +179,13 @@ document.getElementById('sell-xp-btn').addEventListener('click', async () => {
 // Leaderboard
 const POPUP_MEDALS = ['🥇', '🥈', '🥉'];
 let _lbMyHandle = '';
-let _lbDaily = true;
 
-async function loadLeaderboard(myHandle, daily) {
+async function loadLeaderboard(myHandle) {
   if (myHandle !== undefined) _lbMyHandle = myHandle;
-  if (daily !== undefined) _lbDaily = daily;
   const list = document.getElementById('leaderboard-list');
   list.innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    const url = _lbDaily
-      ? 'https://scrollpay.app/api/leaderboard?daily=1'
-      : 'https://scrollpay.app/api/leaderboard';
+    const url = 'https://scrollpay.app/api/leaderboard';
     const res = await fetch(url);
     const data = await res.json();
     const leaders = data.leaders || [];
@@ -226,17 +222,6 @@ async function loadLeaderboard(myHandle, daily) {
   }
 }
 
-document.getElementById('lb-tab-today').addEventListener('click', () => {
-  document.getElementById('lb-tab-today').classList.add('active');
-  document.getElementById('lb-tab-alltime').classList.remove('active');
-  loadLeaderboard(undefined, true);
-});
-
-document.getElementById('lb-tab-alltime').addEventListener('click', () => {
-  document.getElementById('lb-tab-alltime').classList.add('active');
-  document.getElementById('lb-tab-today').classList.remove('active');
-  loadLeaderboard(undefined, false);
-});
 
 // Nickname save
 document.getElementById('nickname-save-btn').addEventListener('click', async () => {
