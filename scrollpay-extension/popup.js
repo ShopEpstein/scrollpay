@@ -192,14 +192,15 @@ async function loadLeaderboard(myHandle, daily) {
       : 'https://scrollpay.app/api/leaderboard';
     const res = await fetch(url);
     const data = await res.json();
-    const leaders = (data.leaders || []).slice(0, 10);
+    const leaders = data.leaders || [];
     if (leaders.length === 0) {
       list.innerHTML = _lbDaily
         ? '<div class="empty-state">No mining activity yet today.</div>'
         : '<div class="empty-state">No miners yet!</div>';
       return;
     }
-    list.innerHTML = leaders.map((l, i) => {
+    const myIdx = _lbMyHandle ? leaders.findIndex(l => l.handle === _lbMyHandle) : -1;
+    const rows = leaders.map((l, i) => {
       const isMe = _lbMyHandle && l.handle === _lbMyHandle;
       const medal = i < 3 ? POPUP_MEDALS[i] : l.rank;
       const handleEl = l.hasNickname
@@ -210,7 +211,16 @@ async function loadLeaderboard(myHandle, daily) {
         ${handleEl}
         <span class="lb-xp">₿ ${l.xp.toLocaleString()}</span>
       </div>`;
-    }).join('');
+    });
+    // If user is outside top 20, append a separator + their row
+    if (myIdx === -1 && _lbMyHandle) {
+      rows.push(`<div class="lb-row lb-me" style="margin-top:4px;border-top:1px dashed #f3f4f6;">
+        <span class="lb-rank">—</span>
+        <span class="lb-handle me">${escapeHtml(_lbMyHandle)}</span>
+        <span class="lb-xp" style="color:#9ca3af">not ranked yet</span>
+      </div>`);
+    }
+    list.innerHTML = rows.join('');
   } catch (e) {
     list.innerHTML = '<div class="empty-state">Could not load.</div>';
   }
