@@ -178,19 +178,29 @@ document.getElementById('sell-xp-btn').addEventListener('click', async () => {
 
 // Leaderboard
 const POPUP_MEDALS = ['🥇', '🥈', '🥉'];
+let _lbMyHandle = '';
+let _lbDaily = true;
 
-async function loadLeaderboard(myHandle) {
+async function loadLeaderboard(myHandle, daily) {
+  if (myHandle !== undefined) _lbMyHandle = myHandle;
+  if (daily !== undefined) _lbDaily = daily;
   const list = document.getElementById('leaderboard-list');
+  list.innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    const res = await fetch('https://scrollpay.app/api/leaderboard');
+    const url = _lbDaily
+      ? 'https://scrollpay.app/api/leaderboard?daily=1'
+      : 'https://scrollpay.app/api/leaderboard';
+    const res = await fetch(url);
     const data = await res.json();
     const leaders = (data.leaders || []).slice(0, 10);
     if (leaders.length === 0) {
-      list.innerHTML = '<div class="empty-state">No miners yet!</div>';
+      list.innerHTML = _lbDaily
+        ? '<div class="empty-state">No mining activity yet today.</div>'
+        : '<div class="empty-state">No miners yet!</div>';
       return;
     }
     list.innerHTML = leaders.map((l, i) => {
-      const isMe = myHandle && l.handle === myHandle;
+      const isMe = _lbMyHandle && l.handle === _lbMyHandle;
       const medal = i < 3 ? POPUP_MEDALS[i] : l.rank;
       const handleEl = l.hasNickname
         ? `<a href="https://scrollpay.app/profile/${encodeURIComponent(l.handle)}" target="_blank" class="lb-handle${isMe ? ' me' : ''}" style="text-decoration:none;color:inherit;">${escapeHtml(l.handle)}</a>`
@@ -205,6 +215,18 @@ async function loadLeaderboard(myHandle) {
     list.innerHTML = '<div class="empty-state">Could not load.</div>';
   }
 }
+
+document.getElementById('lb-tab-today').addEventListener('click', () => {
+  document.getElementById('lb-tab-today').classList.add('active');
+  document.getElementById('lb-tab-alltime').classList.remove('active');
+  loadLeaderboard(undefined, true);
+});
+
+document.getElementById('lb-tab-alltime').addEventListener('click', () => {
+  document.getElementById('lb-tab-alltime').classList.add('active');
+  document.getElementById('lb-tab-today').classList.remove('active');
+  loadLeaderboard(undefined, false);
+});
 
 // Nickname save
 document.getElementById('nickname-save-btn').addEventListener('click', async () => {

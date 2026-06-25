@@ -45,9 +45,12 @@ module.exports = async (req, res) => {
     const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE, remaining);
     if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
+    const todayStr = new Date().toISOString().slice(0, 10);
     const update = {
       totalSats: admin.firestore.FieldValue.increment(awarded),
+      totalXpMined: admin.firestore.FieldValue.increment(awarded),
       satsToday: isToday ? admin.firestore.FieldValue.increment(awarded) : awarded,
+      satsDate: todayStr,
       lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     if (type === 'impression') {
