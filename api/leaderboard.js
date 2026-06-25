@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
 
       const leaders = [];
       snap.forEach(doc => {
-        if (leaders.length >= 20) return;
+        if (leaders.length >= 25) return;
         const d = doc.data();
         // Accept satsDate match OR lastActiveAt from today (covers pre-deploy miners)
         const activeDate = d.satsDate ||
