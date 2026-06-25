@@ -9,27 +9,28 @@ module.exports = async (req, res) => {
   try {
     if (daily) {
       const todayStr = new Date().toISOString().slice(0, 10);
+      const startOfToday = new Date(todayStr + 'T00:00:00.000Z');
+
+      // Query everyone active today, then rank by satsToday in memory
       const snap = await db.collection('sp_users')
-        .orderBy('satsToday', 'desc')
-        .limit(500)
+        .where('lastActiveAt', '>=', startOfToday)
+        .orderBy('lastActiveAt', 'desc')
+        .limit(1000)
         .get();
 
-      const leaders = [];
+      const miners = [];
       snap.forEach(doc => {
-        if (leaders.length >= 25) return;
         const d = doc.data();
-        // Accept satsDate match OR lastActiveAt from today (covers pre-deploy miners)
-        const activeDate = d.satsDate ||
-          (d.lastActiveAt?.toDate?.().toISOString().slice(0, 10));
-        if (activeDate !== todayStr) return;
-        leaders.push({
-          rank: leaders.length + 1,
+        miners.push({
           handle: d.nickname || `Miner #${d.signupNumber || '?'}`,
           xp: d.satsToday || 0,
           recruits: d.referralCount || 0,
           hasNickname: !!d.nickname,
         });
       });
+
+      miners.sort((a, b) => b.xp - a.xp);
+      const leaders = miners.slice(0, 25).map((m, i) => ({ rank: i + 1, ...m }));
 
       res.setHeader('Cache-Control', 'public, max-age=30');
       return res.status(200).json({ leaders, updatedAt: new Date().toISOString(), date: todayStr });
