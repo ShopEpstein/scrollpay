@@ -32,6 +32,7 @@
     { "source": "/api/raffle-entry",   "destination": "/api/raffle-entry.js" },
     { "source": "/api/admin-raffle",   "destination": "/api/admin-raffle.js" },
     { "source": "/api/admin-audit",    "destination": "/api/admin-audit.js" },
+    { "source": "/leaderboard",        "destination": "/docs/leaderboard.html" },
     { "source": "/",                "destination": "/docs/index.html" },
     { "source": "/(.*)",            "destination": "/docs/$1" }
   ]
