@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
       const todayStr = new Date().toISOString().slice(0, 10);
       const snap = await db.collection('sp_users')
         .orderBy('satsToday', 'desc')
-        .limit(50)
+        .limit(500)
         .get();
 
       const leaders = [];
