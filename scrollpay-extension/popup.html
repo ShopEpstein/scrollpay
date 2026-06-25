@@ -67,20 +67,18 @@
       </div>
     </div>
 
-    <!-- XP Halving Countdown -->
-    <div class="halving-card" id="halving-card">
-      <div class="halving-top">
-        <div>
-          <div class="halving-label">⚡ XP Halving Event</div>
-          <div class="halving-rate"><span id="halving-current-rate">—</span> XP per ad right now</div>
-        </div>
-        <div class="halving-timer-wrap">
-          <div class="halving-timer-label">Next halving</div>
-          <div class="halving-timer" id="halving-timer">—:—:—</div>
+    <!-- Top Miners Leaderboard -->
+    <div class="section">
+      <div class="lb-header">
+        <span class="section-label">Top Miners</span>
+        <div class="lb-tabs">
+          <button class="lb-tab active" id="lb-tab-today">Today</button>
+          <button class="lb-tab" id="lb-tab-alltime">All-time</button>
         </div>
       </div>
-      <div class="halving-bar-track"><div class="halving-bar-fill" id="halving-bar-fill"></div></div>
-      <div class="halving-footer" id="halving-footer"></div>
+      <div id="leaderboard-list" class="leaderboard-list">
+        <div class="empty-state">Loading…</div>
+      </div>
     </div>
 
     <!-- BTC Draw -->
@@ -123,20 +121,6 @@
         <button class="copy-btn" id="copy-ref-btn">Copy</button>
       </div>
       <div class="referral-note" id="referral-note">Earn 2,500 XP per direct recruit · 500 XP L2 · 100 XP L3</div>
-    </div>
-
-    <!-- Top Miners Leaderboard -->
-    <div class="section">
-      <div class="lb-header">
-        <span class="section-label">Top Miners</span>
-        <div class="lb-tabs">
-          <button class="lb-tab active" id="lb-tab-today">Today</button>
-          <button class="lb-tab" id="lb-tab-alltime">All-time</button>
-        </div>
-      </div>
-      <div id="leaderboard-list" class="leaderboard-list">
-        <div class="empty-state">Loading…</div>
-      </div>
     </div>
 
     <!-- Messages -->
