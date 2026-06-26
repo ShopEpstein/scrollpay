@@ -320,6 +320,25 @@ body {
 }
 
 /* Link Website Account */
+.link-card {
+  margin: 0 12px 8px;
+  background: #fffbeb;
+  border: 1.5px solid #f7931a;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.link-card-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f7931a;
+  margin-bottom: 3px;
+}
+.link-card-sub {
+  font-size: 11px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
 .link-hint {
   font-size: 11px;
   color: #6b7280;
