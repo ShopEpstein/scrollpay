@@ -18,13 +18,6 @@
       </div>
     </div>
 
-    <!-- Sync banner — shown only for unlinked anonymous users -->
-    <div id="sync-banner" style="display:none;margin:0 12px 4px;background:linear-gradient(135deg,#431407,#1c1000);border:1.5px solid #f7931a;border-radius:10px;padding:11px 14px;display:none;">
-      <div style="font-size:12px;font-weight:700;color:#f7931a;margin-bottom:3px;">⚡ Sync with scrollpay.app</div>
-      <div style="font-size:11px;color:#d97706;line-height:1.5;margin-bottom:8px;">Link your account to merge your XP between the extension and the website — one balance, everywhere.</div>
-      <button id="sync-banner-btn" style="width:100%;background:#f7931a;color:#000;border:none;border-radius:6px;padding:7px 0;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.2px;">Link Account & Sync XP →</button>
-    </div>
-
     <!-- Miner Handle -->
     <div class="section nickname-section">
       <div class="section-label">Miner Handle</div>
@@ -64,6 +57,27 @@
           <span class="wallet-label">Available</span>
           <span class="wallet-val wallet-avail" id="wallet-available">—</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Link Website Account — shown prominently when not connected -->
+    <div id="link-account-section">
+      <!-- Linked: compact green bar -->
+      <div id="linked-account-view" style="display:none;padding:8px 16px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:12px;font-weight:600;color:#16a34a;" id="linked-email-display"></div>
+          <button class="btn-unlink-acct" id="btn-unlink">Unlink</button>
+        </div>
+      </div>
+      <!-- Unlinked: prominent orange card -->
+      <div id="link-account-form" class="link-card">
+        <div class="link-card-title">🔗 Connect your scrollpay.app account</div>
+        <div class="link-card-sub">Sign in to sync your XP across the extension and website — one balance, everywhere.</div>
+        <input type="email" id="link-email" placeholder="Email" autocomplete="email" class="link-input" />
+        <input type="password" id="link-password" placeholder="Password" autocomplete="current-password" class="link-input" />
+        <button class="btn-link-acct" id="btn-link-account">Sign in &amp; Connect</button>
+        <button class="btn-forgot-pw" id="btn-forgot-pw">Forgot password?</button>
+        <p id="link-status" class="link-status" style="display:none"></p>
       </div>
     </div>
 
@@ -171,23 +185,6 @@
     <!-- Sell XP -->
     <div class="section" style="padding-top:0">
       <button class="btn-sell-xp" id="sell-xp-btn">₿ Sell my XP for Bitcoin</button>
-    </div>
-
-    <!-- Link Website Account -->
-    <div class="section" id="link-account-section">
-      <div class="section-label">Website Account</div>
-      <div id="linked-account-view" style="display:none">
-        <div class="linked-email" id="linked-email-display"></div>
-        <button class="btn-unlink-acct" id="btn-unlink">Unlink account</button>
-      </div>
-      <div id="link-account-form">
-        <div class="link-hint">Sign in to connect your scrollpay.app account and sync XP across devices.</div>
-        <input type="email" id="link-email" placeholder="Email" autocomplete="email" class="link-input" />
-        <input type="password" id="link-password" placeholder="Password" autocomplete="current-password" class="link-input" />
-        <button class="btn-link-acct" id="btn-link-account">Sign in &amp; Connect</button>
-        <button class="btn-forgot-pw" id="btn-forgot-pw">Forgot password?</button>
-        <p id="link-status" class="link-status" style="display:none"></p>
-      </div>
     </div>
 
     <!-- Profile -->
