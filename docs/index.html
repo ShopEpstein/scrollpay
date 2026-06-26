@@ -669,9 +669,15 @@
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="text-align:left">Top Miners</h2>
-          <p class="section-sub" style="text-align:left;margin-top:6px;">All-time XP mined · Set your miner handle to claim your spot on the board.</p>
+          <p class="section-sub" style="text-align:left;margin-top:6px;" id="lb-sub">Top miners last 24 hours · Set your miner handle to claim your spot.</p>
         </div>
-        <button id="lb-refresh" class="btn-ghost" style="padding:8px 18px;font-size:13px;margin-top:4px;">↻ Refresh</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <div style="display:flex;gap:4px;">
+            <button id="lb-tab-today" class="btn-ghost" style="padding:6px 14px;font-size:12px;font-weight:700;background:var(--orange);color:#fff;border-color:var(--orange);">Today</button>
+            <button id="lb-tab-alltime" class="btn-ghost" style="padding:6px 14px;font-size:12px;">All-time</button>
+          </div>
+          <button id="lb-refresh" class="btn-ghost" style="padding:6px 14px;font-size:13px;">↻</button>
+        </div>
       </div>
       <div class="lb-wrap">
         <div id="lb-container" style="font-size:14px;color:var(--muted);padding:16px 0;">Loading…</div>
@@ -1272,16 +1278,22 @@
 
     const MEDALS = ['🥇', '🥈', '🥉'];
     const RANK_CLASS = ['gold', 'silver', 'bronze'];
+    let _lbDaily = true;
 
-    async function loadLeaderboard() {
+    async function loadLeaderboard(daily) {
+      if (daily !== undefined) _lbDaily = daily;
       const container = document.getElementById('lb-container');
       container.innerHTML = '<p style="color:var(--muted);padding:12px 0;">Loading…</p>';
       try {
-        const res = await fetch('/api/leaderboard');
+        const url = _lbDaily ? '/api/leaderboard?daily=1' : '/api/leaderboard';
+        const res = await fetch(url);
         const data = await res.json();
         const leaders = data.leaders || [];
+        document.getElementById('lb-sub').textContent = _lbDaily
+          ? `Top miners last 24 hours · Set your miner handle to claim your spot.`
+          : 'All-time XP mined · Set your miner handle to claim your spot on the board.';
         if (leaders.length === 0) {
-          container.innerHTML = '<p style="color:var(--muted);padding:12px 0;">No miners yet — be the first!</p>';
+          container.innerHTML = `<p style="color:var(--muted);padding:12px 0;">${_lbDaily ? 'No mining activity in the last 24 hours.' : 'No miners yet — be the first!'}</p>`;
           return;
         }
         container.innerHTML = `
@@ -1290,7 +1302,7 @@
               <tr>
                 <th style="width:40px">#</th>
                 <th>Handle</th>
-                <th class="th-r">XP Mined</th>
+                <th class="th-r">XP ${_lbDaily ? '(24h)' : 'Mined'}</th>
                 <th class="th-r">Recruits</th>
               </tr>
             </thead>
@@ -1318,7 +1330,19 @@
       }
     }
 
-    document.getElementById('lb-refresh').addEventListener('click', loadLeaderboard);
+    document.getElementById('lb-refresh').addEventListener('click', () => loadLeaderboard());
+
+    document.getElementById('lb-tab-today').addEventListener('click', () => {
+      document.getElementById('lb-tab-today').style.cssText = 'padding:6px 14px;font-size:12px;font-weight:700;background:var(--orange);color:#fff;border-color:var(--orange);';
+      document.getElementById('lb-tab-alltime').style.cssText = 'padding:6px 14px;font-size:12px;';
+      loadLeaderboard(true);
+    });
+
+    document.getElementById('lb-tab-alltime').addEventListener('click', () => {
+      document.getElementById('lb-tab-alltime').style.cssText = 'padding:6px 14px;font-size:12px;font-weight:700;background:var(--orange);color:#fff;border-color:var(--orange);';
+      document.getElementById('lb-tab-today').style.cssText = 'padding:6px 14px;font-size:12px;';
+      loadLeaderboard(false);
+    });
 
     async function earnXp(amount, type) {
       if (!currentUser || isCapped || amount <= 0) return;

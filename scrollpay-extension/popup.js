@@ -104,11 +104,20 @@ async function loadUserData() {
     }
   }
 
-  // Nickname display
+  // Nickname display / force-handle nudge
   if (data.nickname) {
     document.getElementById('nickname-value').textContent = data.nickname;
     document.getElementById('nickname-display').style.display = 'block';
     document.getElementById('nickname-set-form').style.display = 'none';
+    document.getElementById('handle-nudge').style.display = 'none';
+  } else {
+    // Highlight handle input and show nudge
+    document.getElementById('handle-nudge').style.display = 'block';
+    const nicknameInput = document.getElementById('nickname-input');
+    if (nicknameInput) {
+      nicknameInput.style.borderColor = '#f97316';
+      nicknameInput.style.boxShadow = '0 0 0 2px #fed7aa';
+    }
   }
 
   // Load recent ads from local storage
@@ -179,19 +188,23 @@ document.getElementById('sell-xp-btn').addEventListener('click', async () => {
 // Leaderboard
 const POPUP_MEDALS = ['🥇', '🥈', '🥉'];
 let _lbMyHandle = '';
+let _lbDaily = true;
 
-async function loadLeaderboard(myHandle) {
+async function loadLeaderboard(myHandle, daily) {
   if (myHandle !== undefined) _lbMyHandle = myHandle;
+  if (daily !== undefined) _lbDaily = daily;
   const list = document.getElementById('leaderboard-list');
   list.innerHTML = '<div class="empty-state">Loading…</div>';
   try {
-    const url = 'https://scrollpay.app/api/leaderboard';
+    const url = _lbDaily
+      ? 'https://scrollpay.app/api/leaderboard?daily=1'
+      : 'https://scrollpay.app/api/leaderboard';
     const res = await fetch(url);
     const data = await res.json();
     const leaders = data.leaders || [];
     if (leaders.length === 0) {
       list.innerHTML = _lbDaily
-        ? '<div class="empty-state">No mining activity yet today.</div>'
+        ? '<div class="empty-state">No mining activity in the last 24h.</div>'
         : '<div class="empty-state">No miners yet!</div>';
       return;
     }
@@ -222,6 +235,18 @@ async function loadLeaderboard(myHandle) {
   }
 }
 
+
+document.getElementById('lb-tab-today').addEventListener('click', () => {
+  document.getElementById('lb-tab-today').classList.add('active');
+  document.getElementById('lb-tab-alltime').classList.remove('active');
+  loadLeaderboard(undefined, true);
+});
+
+document.getElementById('lb-tab-alltime').addEventListener('click', () => {
+  document.getElementById('lb-tab-alltime').classList.add('active');
+  document.getElementById('lb-tab-today').classList.remove('active');
+  loadLeaderboard(undefined, false);
+});
 
 // Nickname save
 document.getElementById('nickname-save-btn').addEventListener('click', async () => {
