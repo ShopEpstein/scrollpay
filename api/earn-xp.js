@@ -1,7 +1,7 @@
 const { admin, db, initError, verifyToken } = require('./_firebase');
 
 const MAX_PER_WRITE = 50;
-const DAILY_CAP = 25000;
+const DAILY_CAP = 5000;
 
 // Awards override XP to a referrer (fire-and-forget — never blocks the caller).
 function awardOverrideXp(referrerId, override) {
@@ -46,12 +46,14 @@ module.exports = async (req, res) => {
     if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
     const todayStr = new Date().toISOString().slice(0, 10);
+    const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
     const update = {
       totalSats: admin.firestore.FieldValue.increment(awarded),
       totalXpMined: admin.firestore.FieldValue.increment(awarded),
       satsToday: isToday ? admin.firestore.FieldValue.increment(awarded) : awarded,
       satsDate: todayStr,
       lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...(clientIp && { lastIp: clientIp }),
     };
     if (type === 'impression') {
       update.totalImpressions = admin.firestore.FieldValue.increment(1);

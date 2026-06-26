@@ -8,12 +8,11 @@ module.exports = async (req, res) => {
 
   try {
     if (daily) {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const startOfToday = new Date(todayStr + 'T00:00:00.000Z');
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const todayStr  = new Date().toISOString().slice(0, 10);
 
-      // Query everyone active today, then rank by satsToday in memory
       const snap = await db.collection('sp_users')
-        .where('lastActiveAt', '>=', startOfToday)
+        .where('lastActiveAt', '>=', oneDayAgo)
         .orderBy('lastActiveAt', 'desc')
         .limit(1000)
         .get();
@@ -30,7 +29,7 @@ module.exports = async (req, res) => {
       });
 
       miners.sort((a, b) => b.xp - a.xp);
-      const leaders = miners.slice(0, 25).map((m, i) => ({ rank: i + 1, ...m }));
+      const leaders = miners.slice(0, 10).map((m, i) => ({ rank: i + 1, ...m }));
 
       res.setHeader('Cache-Control', 'public, max-age=30');
       return res.status(200).json({ leaders, updatedAt: new Date().toISOString(), date: todayStr });

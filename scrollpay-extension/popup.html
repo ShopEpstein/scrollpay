@@ -67,9 +67,21 @@
       </div>
     </div>
 
+    <!-- Handle nudge (shown when no handle is set) -->
+    <div id="handle-nudge" style="display:none;margin:0 12px 4px;background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:10px 14px;">
+      <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:2px;">⛏️ Set your miner handle</div>
+      <div style="font-size:11px;color:#92400e;line-height:1.4;">Set a handle above to appear on the leaderboard and earn referral XP.</div>
+    </div>
+
     <!-- Top Miners Leaderboard -->
     <div class="section">
-      <div class="section-label">Top Miners</div>
+      <div class="lb-header">
+        <span class="section-label">Top Miners</span>
+        <div class="lb-tabs">
+          <button class="lb-tab active" id="lb-tab-today">Today</button>
+          <button class="lb-tab" id="lb-tab-alltime">All-time</button>
+        </div>
+      </div>
       <div id="leaderboard-list" class="leaderboard-list">
         <div class="empty-state">Loading…</div>
       </div>

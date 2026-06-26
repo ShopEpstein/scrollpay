@@ -84,21 +84,27 @@
 
   <div class="wrap">
     <h1>⛏️ Leaderboard</h1>
-    <p class="sub">Top miners by total XP earned.</p>
+    <p class="sub" id="lb-sub">Top miners last 24 hours.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-today">Today</button>
+      <button class="tab-btn" id="tab-alltime">All-time</button>
+    </div>
 
     <div id="lb-container">
       <div class="loading">Loading…</div>
     </div>
 
-    <p class="reset-note">Earn XP by watching ads with the <a href="/" style="color:#f97316;">ScrollPay extension</a></p>
+    <p class="reset-note" id="reset-note">Earn XP by watching ads with the <a href="/" style="color:#f97316;">ScrollPay extension</a></p>
   </div>
 
   <script>
     const MEDALS = ['🥇', '🥈', '🥉'];
+    let currentMode = 'today';
 
-    function renderTable(leaders) {
+    function renderTable(leaders, daily) {
       if (!leaders.length) {
-        return '<div class="empty">No miners yet.</div>';
+        return `<div class="empty">${daily ? 'No mining activity in the last 24 hours.' : 'No miners yet.'}</div>`;
       }
       const rows = leaders.map((l, i) => {
         const medal = i < 3 ? `<span class="medals">${MEDALS[i]}</span>` : (i + 1);
@@ -114,7 +120,7 @@
       }).join('');
       return `<table class="lb-table">
         <thead><tr>
-          <th>#</th><th>Miner</th><th>Team</th><th style="text-align:right">XP total</th>
+          <th>#</th><th>Miner</th><th>Team</th><th style="text-align:right">XP ${daily ? '(24h)' : 'total'}</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -124,19 +130,39 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    async function load() {
+    async function load(mode) {
+      currentMode = mode;
       const container = document.getElementById('lb-container');
       container.innerHTML = '<div class="loading">Loading…</div>';
+      const daily = mode === 'today';
       try {
-        const res = await fetch('https://scrollpay.app/api/leaderboard');
+        const url = daily
+          ? 'https://scrollpay.app/api/leaderboard?daily=1'
+          : 'https://scrollpay.app/api/leaderboard';
+        const res = await fetch(url);
         const data = await res.json();
-        container.innerHTML = renderTable(data.leaders || []);
+        container.innerHTML = renderTable(data.leaders || [], daily);
+        document.getElementById('lb-sub').textContent = daily
+          ? 'Top 10 miners last 24 hours.'
+          : 'Top miners by total XP earned of all time.';
       } catch (e) {
         container.innerHTML = '<div class="empty">Could not load leaderboard.</div>';
       }
     }
 
-    load();
+    document.getElementById('tab-today').addEventListener('click', () => {
+      document.getElementById('tab-today').classList.add('active');
+      document.getElementById('tab-alltime').classList.remove('active');
+      load('today');
+    });
+
+    document.getElementById('tab-alltime').addEventListener('click', () => {
+      document.getElementById('tab-alltime').classList.add('active');
+      document.getElementById('tab-today').classList.remove('active');
+      load('alltime');
+    });
+
+    load('today');
   </script>
 </body>
 </html>
