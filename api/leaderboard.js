@@ -8,12 +8,12 @@ module.exports = async (req, res) => {
 
   try {
     if (daily) {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const todayStr  = new Date().toISOString().slice(0, 10);
+      const todayStr = new Date().toISOString().slice(0, 10);
 
+      // Filter by satsDate (calendar day string) so stale satsToday values
+      // from previous days don't pollute the today leaderboard.
       const snap = await db.collection('sp_users')
-        .where('lastActiveAt', '>=', oneDayAgo)
-        .orderBy('lastActiveAt', 'desc')
+        .where('satsDate', '==', todayStr)
         .limit(1000)
         .get();
 
