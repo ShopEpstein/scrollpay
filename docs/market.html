@@ -619,18 +619,26 @@
           <h2>Open sell orders</h2>
           <button class="ob-refresh" id="ob-refresh">↻ Refresh</button>
         </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;">
+          <input type="text" id="handle-search" placeholder="Search by miner handle…" autocomplete="off"
+            style="flex:1;padding:7px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s;"
+            onfocus="this.style.borderColor='#f7931a'" onblur="this.style.borderColor='#e5e7eb'" />
+          <button id="handle-search-btn" style="padding:7px 14px;background:#f7931a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Search</button>
+          <button id="handle-search-clear" style="display:none;padding:7px 10px;background:none;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;color:#6b7280;cursor:pointer;font-family:inherit;">✕ Clear</button>
+        </div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
         <table class="ob-table">
           <thead>
             <tr>
+              <th>Seller</th>
               <th>Price (sats / XP)</th>
               <th>XP amount</th>
-              <th>Total</th>
+              <th class="ob-hide-mobile">Total</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="ob-body">
-            <tr><td colspan="3" class="ob-empty">Loading…</td></tr>
+            <tr><td colspan="5" class="ob-empty">Loading…</td></tr>
           </tbody>
         </table>
         </div>
@@ -1039,7 +1047,7 @@
       listings.forEach(l => { listingMap[l.id] = l; });
       const tbody = document.getElementById('ob-body');
       if (!listings.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="ob-empty">No open orders — be the first to list your XP.</td></tr>';
         return;
       }
       tbody.innerHTML = listings.map(l => {
@@ -1051,11 +1059,15 @@
           ? `<div class="td-conversions">${fmtUsd(usd)} · ${fmtEth(eth)} · ${fmtSol(sol)} · ${fmtUsd(usd)} USDC</div>`
           : '';
         const lid = l.id.replace(/'/g, "\\'");
+        const sellerCell = l.sellerNickname
+          ? `<a href="/profile/${encodeURIComponent(l.sellerNickname)}" style="font-weight:700;color:#f7931a;text-decoration:none;font-size:13px;" target="_blank">@${escHtml(l.sellerNickname)}</a>`
+          : `<span style="color:#9ca3af;font-size:12px;">—</span>`;
         return `
           <tr>
+            <td>${sellerCell}</td>
             <td class="td-price">${(l.pricePerXp || 0).toLocaleString()} sats</td>
             <td class="td-xp">${(l.xpAmount || 0).toLocaleString()} XP</td>
-            <td class="td-total">
+            <td class="td-total ob-hide-mobile">
               ${sats.toLocaleString()} sats
               ${convLine}
             </td>
@@ -1068,13 +1080,24 @@
       }).join('');
     }
 
-    async function loadOrderBook() {
-      try {
-        const res = await fetch('/api/xp-market');
-        const data = await res.json();
-        const listings = data.listings || [];
+    let _allListings = [];
 
-        if (listings.length > 0) {
+    async function loadOrderBook(handleFilter) {
+      try {
+        const url = handleFilter
+          ? `/api/xp-market?handle=${encodeURIComponent(handleFilter)}`
+          : '/api/xp-market';
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById('ob-body').innerHTML =
+            `<tr><td colspan="5" class="ob-empty">${escHtml(data.error || 'Error loading listings.')}</td></tr>`;
+          return;
+        }
+        const listings = data.listings || [];
+        if (!handleFilter) _allListings = listings;
+
+        if (listings.length > 0 && !handleFilter) {
           const prices = listings.map(l => l.pricePerXp);
           const supply = listings.reduce((s, l) => s + (l.xpAmount || 0), 0);
           const avg = Math.round(prices.reduce((s, p) => s + p, 0) / prices.length);
@@ -1083,7 +1106,7 @@
           document.getElementById('stat-supply').textContent = supply.toLocaleString();
           updateSweepCard(listings);
           document.getElementById('stat-orders').textContent = listings.length;
-        } else {
+        } else if (!handleFilter) {
           ['stat-best','stat-avg','stat-supply','stat-orders'].forEach(id => {
             document.getElementById(id).textContent = '—';
           });
@@ -1093,11 +1116,41 @@
         renderOrderBookRows(listings);
       } catch (e) {
         document.getElementById('ob-body').innerHTML =
-          '<tr><td colspan="4" class="ob-empty">Failed to load order book.</td></tr>';
+          '<tr><td colspan="5" class="ob-empty">Failed to load order book.</td></tr>';
       }
     }
 
-    document.getElementById('ob-refresh').addEventListener('click', loadOrderBook);
+    document.getElementById('ob-refresh').addEventListener('click', () => {
+      const searchVal = document.getElementById('handle-search').value.trim();
+      loadOrderBook(searchVal || null);
+    });
+
+    // Handle search wiring
+    function doHandleSearch() {
+      const val = document.getElementById('handle-search').value.trim();
+      if (!val) {
+        renderOrderBookRows(_allListings);
+        document.getElementById('handle-search-clear').style.display = 'none';
+        return;
+      }
+      document.getElementById('handle-search-clear').style.display = '';
+      loadOrderBook(val);
+    }
+
+    document.getElementById('handle-search-btn').addEventListener('click', doHandleSearch);
+    document.getElementById('handle-search').addEventListener('keydown', e => { if (e.key === 'Enter') doHandleSearch(); });
+    document.getElementById('handle-search-clear').addEventListener('click', () => {
+      document.getElementById('handle-search').value = '';
+      document.getElementById('handle-search-clear').style.display = 'none';
+      renderOrderBookRows(_allListings);
+    });
+
+    // Pre-fill handle from URL ?handle=xxx
+    const urlHandle = new URLSearchParams(window.location.search).get('handle');
+    if (urlHandle) {
+      document.getElementById('handle-search').value = urlHandle;
+      document.getElementById('handle-search-clear').style.display = '';
+    }
 
     // ── Payout preview with conversions ─────────────────────────
     function updatePreview() {
@@ -1311,14 +1364,20 @@
 
     function shareListing(listingId) {
       const l   = listingMap[listingId];
-      const url = `${location.origin}/market?listing=${encodeURIComponent(listingId)}`;
+      const url = l?.sellerNickname
+        ? `${location.origin}/market?handle=${encodeURIComponent(l.sellerNickname)}`
+        : `${location.origin}/market?listing=${encodeURIComponent(listingId)}`;
+      const sellerTag = l?.sellerNickname ? ` from @${l.sellerNickname}` : '';
       const title = l
-        ? `Buy ${(l.xpAmount||0).toLocaleString()} XP @ ${(l.pricePerXp||0).toLocaleString()} sats/XP — ScrollPay`
+        ? `Buy ${(l.xpAmount||0).toLocaleString()} XP @ ${(l.pricePerXp||0).toLocaleString()} sats/XP${sellerTag} — ScrollPay`
         : 'XP Listing on ScrollPay';
+      const text = l?.sellerNickname
+        ? `@${l.sellerNickname} is selling ${(l.xpAmount||0).toLocaleString()} XP on ScrollPay — buy it and boost your Bitcoin draw odds!`
+        : 'Check out this XP listing on ScrollPay!';
       if (navigator.share) {
-        navigator.share({ title, text: 'Check out this XP listing!', url }).catch(() => {});
+        navigator.share({ title, text, url }).catch(() => {});
       } else {
-        navigator.clipboard.writeText(url)
+        navigator.clipboard.writeText(`${text}\n${url}`)
           .then(() => alert('Listing link copied!'))
           .catch(() => prompt('Copy link:', url));
       }
@@ -1520,7 +1579,7 @@
 
     fetchRates();
     setInterval(fetchRates, 60000);
-    loadOrderBook();
+    loadOrderBook(urlHandle || null);
     loadRecentSales();
 
     // ── XP Price Chart ───────────────────────────────────────────
@@ -1789,10 +1848,14 @@
           const date = l.fulfilledAt?._seconds
             ? new Date(l.fulfilledAt._seconds * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
             : '';
+          const sellerEl = l.sellerNickname
+            ? `<span style="font-size:11px;color:#6b7280;margin-top:2px;display:block;">sold by <a href="/profile/${encodeURIComponent(l.sellerNickname)}" style="font-weight:700;color:#f7931a;text-decoration:none;" target="_blank">@${escHtml(l.sellerNickname)}</a></span>`
+            : '';
           return `<div class="sale-row">
             <span class="sale-check">✓</span>
             <div class="sale-info">
               <div class="sale-amount">${(l.xpAmount||0).toLocaleString()} XP · paid in ${chain}</div>
+              ${sellerEl}
               ${txEl}
               ${date ? `<div class="sale-date">${date}</div>` : ''}
             </div>

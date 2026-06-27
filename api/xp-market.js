@@ -37,11 +37,14 @@ module.exports = async (req, res) => {
         .limit(20)
         .get();
       const listings = [];
+      const sellerUids = new Set();
       snap.forEach(d => {
         const data = d.data();
-        if (!data.txHash || data.txHash === 'xp-sweep') return; // only show verified on-chain payouts
+        if (!data.txHash || data.txHash === 'xp-sweep') return;
+        if (data.userId) sellerUids.add(data.userId);
         listings.push({
           id: d.id,
+          userId: data.userId || null,
           xpAmount: data.xpAmount,
           pricePerXp: data.pricePerXp || 0,
           satsRequested: data.satsRequested || 0,
@@ -49,8 +52,20 @@ module.exports = async (req, res) => {
           txChain: data.txChain || 'btc',
           txUrl: data.txUrl || '',
           fulfilledAt: data.fulfilledAt,
+          sellerNickname: null,
         });
       });
+
+      // Enrich with seller nicknames
+      const nicknameMap = {};
+      await Promise.all([...sellerUids].map(async uid => {
+        try {
+          const uSnap = await db.collection('sp_users').doc(uid).get();
+          if (uSnap.exists) nicknameMap[uid] = uSnap.data().nickname || null;
+        } catch (_) {}
+      }));
+      listings.forEach(l => { l.sellerNickname = nicknameMap[l.userId] || null; });
+
       listings.sort((a, b) => (b.fulfilledAt?._seconds || 0) - (a.fulfilledAt?._seconds || 0));
       return res.status(200).json({ listings });
     } catch (err) {
@@ -59,7 +74,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    const { refCode } = req.query;
+    const { refCode, handle } = req.query;
     if (refCode) {
       try {
         const userSnap = await db.collection('sp_users')
@@ -81,23 +96,71 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: err.message });
       }
     }
+
+    // Handle search — look up userId by nickname then fetch their listings
+    if (handle) {
+      try {
+        const userSnap = await db.collection('sp_users')
+          .where('nickname', '==', handle.toLowerCase().trim()).limit(1).get();
+        if (userSnap.empty) return res.status(404).json({ error: `No miner found with handle "${handle}".` });
+        const uid = userSnap.docs[0].id;
+        const nickname = userSnap.docs[0].data().nickname || null;
+        const snap = await db.collection('sp_xp_listings')
+          .where('userId', '==', uid)
+          .where('status', '==', 'open')
+          .limit(20)
+          .get();
+        const listings = [];
+        snap.forEach(d => {
+          const data = d.data();
+          listings.push({
+            id: d.id,
+            xpAmount: data.xpAmount,
+            pricePerXp: data.pricePerXp,
+            satsRequested: data.satsRequested,
+            createdAt: data.createdAt,
+            sellerNickname: nickname,
+          });
+        });
+        listings.sort((a, b) => (a.pricePerXp || 0) - (b.pricePerXp || 0));
+        return res.status(200).json({ listings, handle: nickname });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     try {
       const snap = await db.collection('sp_xp_listings')
         .where('status', '==', 'open')
         .limit(100)
         .get();
       const listings = [];
+      const sellerUids = new Set();
       snap.forEach(d => {
         const data = d.data();
+        if (data.userId) sellerUids.add(data.userId);
         listings.push({
           id: d.id,
+          userId: data.userId || null,
           xpAmount: data.xpAmount,
           pricePerXp: data.pricePerXp,
           satsRequested: data.satsRequested,
           createdAt: data.createdAt,
+          sellerNickname: null,
         });
       });
-      // Cheapest first; ties broken by creation time — no composite index needed
+
+      // Enrich with seller nicknames
+      const nicknameMap = {};
+      await Promise.all([...sellerUids].map(async uid => {
+        try {
+          const uSnap = await db.collection('sp_users').doc(uid).get();
+          if (uSnap.exists) nicknameMap[uid] = uSnap.data().nickname || null;
+        } catch (_) {}
+      }));
+      listings.forEach(l => { l.sellerNickname = nicknameMap[l.userId] || null; });
+
+      // Cheapest first; ties broken by creation time
       listings.sort((a, b) => {
         if (a.pricePerXp !== b.pricePerXp) return a.pricePerXp - b.pricePerXp;
         return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
