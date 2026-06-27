@@ -1226,6 +1226,43 @@ function renderPartnersTable() {
   });
 }
 
+function handleLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 900 * 1024) {
+    alert('Image is too large (max 900 KB). Try compressing it first.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('pf-logo').value = e.target.result;
+    showLogoPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateLogoPreview(url) {
+  if (url && (url.startsWith('http') || url.startsWith('data:'))) {
+    showLogoPreview(url);
+  } else {
+    document.getElementById('pf-logo-preview').style.display = 'none';
+  }
+}
+
+function showLogoPreview(src) {
+  const preview = document.getElementById('pf-logo-preview');
+  const img = document.getElementById('pf-logo-img');
+  img.src = src;
+  preview.style.display = 'block';
+}
+
+function clearLogo() {
+  document.getElementById('pf-logo').value = '';
+  document.getElementById('pf-logo-file').value = '';
+  document.getElementById('pf-logo-preview').style.display = 'none';
+}
+
 function openPartnerForm(p = null) {
   document.getElementById('partner-form-wrap').style.display = 'block';
   document.getElementById('partner-form-title').textContent = p ? 'Edit Partner' : 'Add Partner';
@@ -1233,7 +1270,9 @@ function openPartnerForm(p = null) {
   document.getElementById('pf-name').value = p ? p.name : '';
   document.getElementById('pf-slug').value = p ? p.slug : '';
   document.getElementById('pf-desc').value = p ? p.description : '';
-  document.getElementById('pf-logo').value = p ? p.logo : '';
+  document.getElementById('pf-logo').value = p ? (p.logo || '') : '';
+  document.getElementById('pf-logo-file').value = '';
+  if (p?.logo) { showLogoPreview(p.logo); } else { document.getElementById('pf-logo-preview').style.display = 'none'; }
   document.getElementById('pf-website').value = p ? p.website : '';
   document.getElementById('pf-twitter').value = p ? p.twitter : '';
   document.getElementById('pf-telegram').value = p ? p.telegram : '';
@@ -2470,5 +2509,8 @@ async function banUser(userId, handle, zeroXp, action = 'ban') {
   }
 }
 
-window.loadFraud = loadFraud;
-window.banUser   = banUser;
+window.loadFraud        = loadFraud;
+window.banUser          = banUser;
+window.handleLogoUpload = handleLogoUpload;
+window.updateLogoPreview = updateLogoPreview;
+window.clearLogo        = clearLogo;
