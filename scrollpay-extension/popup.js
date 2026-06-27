@@ -563,6 +563,32 @@ document.getElementById('btn-unlink').addEventListener('click', async () => {
   document.getElementById('link-account-form').style.display = 'block';
 });
 
+// ── Payout History ────────────────────────────────────────────
+async function loadPayouts(userId) {
+  const wrap = document.getElementById('payout-history-wrap');
+  const list = document.getElementById('payout-history-list');
+  if (!wrap || !list) return;
+  try {
+    const res = await fetch(`https://scrollpay.app/api/payout-history?userId=${encodeURIComponent(userId)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const payouts = data.payouts || [];
+    if (!payouts.length) return;
+    wrap.style.display = 'block';
+    list.innerHTML = payouts.map(p => {
+      const date = p.paidAt ? new Date(p.paidAt * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const isTxHash = /^[0-9a-f]{64}$/i.test(p.txNote);
+      const txEl = isTxHash
+        ? `<a href="https://mempool.space/tx/${p.txNote}" target="_blank" class="payout-txlink">${p.txNote.slice(0, 12)}…${p.txNote.slice(-6)}</a>`
+        : `<span class="payout-txref">${escapeHtml(p.txNote)}</span>`;
+      return `<div class="payout-row-item">
+        <div class="payout-sats">₿ ${p.netSats.toLocaleString()} sats</div>
+        <div class="payout-meta">${txEl}${date ? ` · ${date}` : ''}</div>
+      </div>`;
+    }).join('');
+  } catch (_) {}
+}
+
 // ── Profile ──────────────────────────────────────────────────
 const PROFILE_API = 'https://scrollpay.app/api/profile';
 
@@ -570,6 +596,7 @@ async function loadProfile(userId, handle) {
   const section = document.getElementById('profile-section');
   if (!userId || !handle) { section.style.display = 'none'; return; }
   section.style.display = 'block';
+  loadPayouts(userId);
 
   // Link to public profile
   const linkEl = document.getElementById('profile-public-link');

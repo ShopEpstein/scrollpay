@@ -674,3 +674,17 @@ body {
   text-decoration: none; padding: 4px 0;
 }
 .btn-view-profile:hover { text-decoration: underline; }
+
+/* Payout History */
+.payout-row-item {
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.payout-sats { font-size: 13px; font-weight: 700; color: #15803d; }
+.payout-meta { font-size: 10px; color: #6b7280; margin-top: 2px; }
+.payout-txlink { color: #f7931a; text-decoration: none; font-family: monospace; }
+.payout-txlink:hover { text-decoration: underline; }
+.payout-txref { font-family: monospace; color: #374151; }

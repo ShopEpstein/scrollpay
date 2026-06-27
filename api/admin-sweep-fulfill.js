@@ -95,12 +95,9 @@ module.exports = async (req, res) => {
       const batch = db.batch();
 
       chunk.forEach(l => {
-        // Mark listing fulfilled
+        // Mark listing fulfilled — txHash is set later by admin-mark-paid once BTC is sent
         batch.update(l.ref, {
           status: 'fulfilled',
-          txHash: 'xp-sweep',
-          txChain: 'internal',
-          txUrl: '',
           fulfilledAt: now,
           sweepOrderId,
           buyerEmail,

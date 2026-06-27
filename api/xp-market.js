@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
       const listings = [];
       snap.forEach(d => {
         const data = d.data();
-        if (!data.txHash) return; // only show verified payouts
+        if (!data.txHash || data.txHash === 'xp-sweep') return; // only show verified on-chain payouts
         listings.push({
           id: d.id,
           xpAmount: data.xpAmount,
