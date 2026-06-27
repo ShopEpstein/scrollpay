@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ScrollPay — Earn XP While You Browse",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Earn XP watching ads on any website. Sell for Bitcoin, win weekly BTC draws, earn referral bonuses. Widget never reads page content.",
   "permissions": [
     "storage"
