@@ -583,28 +583,50 @@
     </div>
 
     <!-- ── Sweep / Campaign Card ───────────────────────────────── -->
-    <div id="sweep-card" style="display:none;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:14px;padding:18px 22px;margin-bottom:16px;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div id="sweep-card" style="display:none;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:14px;padding:18px 22px;margin-bottom:8px;align-items:center;gap:16px;flex-wrap:wrap;">
       <div style="flex:1;min-width:180px;">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#f7931a;margin-bottom:5px;">⚡ Run an Ad Campaign</div>
         <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:3px;">Sweep all <span id="sweep-xp" style="color:#f7931a;">—</span></div>
         <div style="color:#64748b;font-size:13px;font-variant-numeric:tabular-nums;"><span id="sweep-sats">—</span> &nbsp;·&nbsp; <span id="sweep-usd" style="color:#94a3b8;font-weight:600;"></span></div>
       </div>
-      <button onclick="openSweepForm()" style="background:#f7931a;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">Buy All for Campaign →</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+        <button onclick="openSweepForm(false)" style="background:#f7931a;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Buy All at Ask →</button>
+        <button onclick="openSweepForm(true)" style="background:transparent;color:#f7931a;border:1.5px solid #f7931a;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Make Lowball Bid</button>
+      </div>
     </div>
 
     <div id="sweep-form-wrap" style="display:none;background:#fff;border:1.5px solid #f7931a;border-radius:14px;padding:22px 24px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <div style="font-size:16px;font-weight:800;color:#111827;">Start a Campaign</div>
+        <div style="font-size:16px;font-weight:800;color:#111827;" id="sw-form-title">Start a Campaign</div>
         <button onclick="closeSweepForm()" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;padding:0 4px;line-height:1;">×</button>
       </div>
-      <div style="font-size:13px;color:#6b7280;margin-bottom:18px;">Buy all listed XP at once to power your ad campaign. We'll reply within 24h with a BTC payment address.</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:14px;" id="sw-form-sub">Buy all listed XP at once to power your ad campaign. We'll reply within 24h with a BTC payment address.</div>
+
+      <!-- Lowball bid section — shown only for bid mode -->
+      <div id="sw-bid-section" style="display:none;background:#fef9c3;border:1.5px solid #fde047;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#92400e;margin-bottom:10px;">Your Bid Price</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="sw-bid-presets">
+          <button class="sw-pct-btn" data-pct="5" onclick="setSweepBidPct(5)" style="padding:6px 12px;font-size:12px;font-weight:700;border:1.5px solid #fde047;border-radius:6px;background:#fff;color:#92400e;cursor:pointer;font-family:inherit;">5% of ask</button>
+          <button class="sw-pct-btn" data-pct="10" onclick="setSweepBidPct(10)" style="padding:6px 12px;font-size:12px;font-weight:700;border:1.5px solid #fde047;border-radius:6px;background:#fff;color:#92400e;cursor:pointer;font-family:inherit;">10% of ask</button>
+          <button class="sw-pct-btn" data-pct="25" onclick="setSweepBidPct(25)" style="padding:6px 12px;font-size:12px;font-weight:700;border:1.5px solid #fde047;border-radius:6px;background:#fff;color:#92400e;cursor:pointer;font-family:inherit;">25% of ask</button>
+          <button class="sw-pct-btn" data-pct="50" onclick="setSweepBidPct(50)" style="padding:6px 12px;font-size:12px;font-weight:700;border:1.5px solid #fde047;border-radius:6px;background:#fff;color:#92400e;cursor:pointer;font-family:inherit;">50% of ask</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input id="sw-bid-price" type="number" min="1" placeholder="Custom sats/XP"
+            oninput="onSweepBidInput()"
+            style="width:150px;padding:8px 10px;border:1.5px solid #fde047;border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:#fff;" />
+          <span style="font-size:12px;color:#92400e;font-weight:600;">sats / XP</span>
+        </div>
+        <div id="sw-bid-preview" style="font-size:13px;color:#78350f;"></div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Your Name</label><input id="sw-name" type="text" placeholder="Jane Smith" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
         <div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Email *</label><input id="sw-email" type="email" placeholder="you@company.com" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
       </div>
       <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Website / Campaign Name</label><input id="sw-website" type="text" placeholder="myproject.com" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" /></div>
       <div style="margin-bottom:16px;"><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px;">Message (optional)</label><textarea id="sw-note" rows="2" placeholder="Tell us about your campaign..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;resize:vertical;"></textarea></div>
-      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#92400e;">You're requesting <strong id="sw-xp-label">—</strong> XP for <strong id="sw-sats-label">—</strong> sats (<strong id="sw-usd-label">—</strong>). We'll email BTC payment details within 24h.</div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#92400e;" id="sw-summary-box">You're requesting <strong id="sw-xp-label">—</strong> XP for <strong id="sw-sats-label">—</strong> sats (<strong id="sw-usd-label">—</strong>). We'll email BTC payment details within 24h.</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <button id="sw-submit-btn" onclick="submitSweep()" style="background:#0f172a;color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Submit Campaign Request →</button>
         <button onclick="closeSweepForm()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:11px 16px;font-size:13px;color:#6b7280;cursor:pointer;font-family:inherit;">Cancel</button>
@@ -1712,12 +1734,14 @@
     setInterval(loadXpChart, 120000);
 
     // ── Sweep / Campaign ─────────────────────────────────────────
-    let _sweepData = { xp: 0, sats: 0 };
+    let _sweepData = { xp: 0, sats: 0, avgPrice: 0 };
+    let _sweepIsLowball = false;
 
     function updateSweepCard(listings) {
       const xp   = listings.reduce((s, l) => s + (l.xpAmount     || 0), 0);
       const sats = listings.reduce((s, l) => s + (l.satsRequested || 0), 0);
-      _sweepData = { xp, sats };
+      const avgPrice = xp > 0 ? Math.round(sats / xp) : 0;
+      _sweepData = { xp, sats, avgPrice };
       const usd = satsToUsd(sats);
       document.getElementById('sweep-xp').textContent   = xp.toLocaleString() + ' XP available';
       document.getElementById('sweep-sats').textContent = sats.toLocaleString() + ' sats';
@@ -1728,7 +1752,50 @@
       document.getElementById('sweep-card').style.display = xp > 0 ? 'flex' : 'none';
     }
 
-    function openSweepForm() {
+    function setSweepBidPct(pct) {
+      const price = Math.max(1, Math.round(_sweepData.avgPrice * pct / 100));
+      document.getElementById('sw-bid-price').value = price;
+      document.querySelectorAll('.sw-pct-btn').forEach(b => {
+        b.style.background = Number(b.dataset.pct) === pct ? '#fde047' : '#fff';
+      });
+      onSweepBidInput();
+    }
+
+    function onSweepBidInput() {
+      const price = parseInt(document.getElementById('sw-bid-price').value) || 0;
+      const preview = document.getElementById('sw-bid-preview');
+      if (!price || !_sweepData.xp) { preview.textContent = ''; return; }
+      const bidTotal = price * _sweepData.xp;
+      const pct = _sweepData.avgPrice > 0 ? (price / _sweepData.avgPrice * 100).toFixed(1) : '?';
+      const usd = satsToUsd(bidTotal);
+      preview.innerHTML = `Your bid: <strong>${price.toLocaleString()} sats/XP</strong> × ${_sweepData.xp.toLocaleString()} XP = <strong>${bidTotal.toLocaleString()} sats</strong>${usd ? ` (${fmtUsd(usd)})` : ''} · <strong>${pct}% of market ask</strong>`;
+      document.querySelectorAll('.sw-pct-btn').forEach(b => {
+        const approxPct = _sweepData.avgPrice > 0 ? (price / _sweepData.avgPrice * 100) : 0;
+        b.style.background = Math.abs(Number(b.dataset.pct) - approxPct) < 1 ? '#fde047' : '#fff';
+      });
+    }
+
+    function openSweepForm(isLowball) {
+      _sweepIsLowball = !!isLowball;
+      const bidSection = document.getElementById('sw-bid-section');
+      const title = document.getElementById('sw-form-title');
+      const sub = document.getElementById('sw-form-sub');
+      const submitBtn = document.getElementById('sw-submit-btn');
+      const summaryBox = document.getElementById('sw-summary-box');
+
+      if (isLowball) {
+        title.textContent = 'Make a Lowball Bid';
+        sub.textContent = 'Name your price — sellers will be notified of your offer and can choose to accept or counter.';
+        bidSection.style.display = 'block';
+        submitBtn.textContent = 'Submit Lowball Bid →';
+        summaryBox.innerHTML = 'Bidding on <strong id="sw-xp-label">' + _sweepData.xp.toLocaleString() + ' XP</strong> at market ask <strong id="sw-sats-label">' + _sweepData.sats.toLocaleString() + '</strong> sats (<strong id="sw-usd-label">' + (satsToUsd(_sweepData.sats) ? fmtUsd(satsToUsd(_sweepData.sats)) : '—') + '</strong>). Your bid price is what you\'re willing to pay per XP.';
+      } else {
+        title.textContent = 'Start a Campaign';
+        sub.textContent = 'Buy all listed XP at once to power your ad campaign. We\'ll reply within 24h with a BTC payment address.';
+        bidSection.style.display = 'none';
+        submitBtn.textContent = 'Submit Campaign Request →';
+        summaryBox.innerHTML = 'You\'re requesting <strong id="sw-xp-label">' + _sweepData.xp.toLocaleString() + ' XP</strong> for <strong id="sw-sats-label">' + _sweepData.sats.toLocaleString() + '</strong> sats (<strong id="sw-usd-label">' + (satsToUsd(_sweepData.sats) ? fmtUsd(satsToUsd(_sweepData.sats)) : '—') + '</strong>). We\'ll email BTC payment details within 24h.';
+      }
       document.getElementById('sweep-form-wrap').style.display = 'block';
       document.getElementById('sweep-form-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -1752,21 +1819,39 @@
         out.style.background = '#fef2f2'; out.style.color = '#dc2626';
         out.style.display = 'block'; return;
       }
+
+      let bidPricePerXp = null, bidTotalSats = null, bidPct = null;
+      if (_sweepIsLowball) {
+        bidPricePerXp = parseInt(document.getElementById('sw-bid-price').value) || 0;
+        if (!bidPricePerXp || bidPricePerXp < 1) {
+          out.textContent = 'Enter a bid price (sats/XP).';
+          out.style.background = '#fef2f2'; out.style.color = '#dc2626';
+          out.style.display = 'block'; return;
+        }
+        bidTotalSats = bidPricePerXp * _sweepData.xp;
+        bidPct = _sweepData.avgPrice > 0 ? (bidPricePerXp / _sweepData.avgPrice * 100) : null;
+      }
+
       btn.disabled = true; btn.textContent = 'Submitting…';
 
       try {
+        const body = {
+          name, email, website, message: note,
+          totalXp: _sweepData.xp, totalSats: _sweepData.sats,
+          usdEstimate: satsToUsd(_sweepData.sats) || 0,
+        };
+        if (_sweepIsLowball) Object.assign(body, { bidPricePerXp, bidTotalSats, bidPct });
+
         const res = await fetch('/api/sweep-xp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name, email, website, message: note,
-            totalXp: _sweepData.xp, totalSats: _sweepData.sats,
-            usdEstimate: satsToUsd(_sweepData.sats) || 0,
-          }),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Server error');
-        out.textContent = '✓ Campaign request received! We\'ll email you within 24h with BTC payment details.';
+        out.textContent = _sweepIsLowball
+          ? '✓ Lowball bid submitted! Sellers have been notified. We\'ll follow up if there\'s a match.'
+          : '✓ Campaign request received! We\'ll email you within 24h with BTC payment details.';
         out.style.background = '#f0fdf4'; out.style.color = '#16a34a';
         out.style.display = 'block';
         btn.textContent = 'Request sent ✓';

@@ -35,23 +35,45 @@ module.exports = async (req, res) => {
       return res.status(200).json({ leaders, updatedAt: new Date().toISOString(), date: todayStr });
     }
 
-    // All-time
-    const snap = await db.collection('sp_users')
-      .orderBy('totalSats', 'desc')
-      .limit(20)
-      .get();
+    // All-time — order by totalXpMined so that selling XP doesn't remove
+    // someone from the leaderboard. Fall back to totalSats for older users
+    // who don't yet have totalXpMined written.
+    const [snapMined, snapBalance] = await Promise.all([
+      db.collection('sp_users').orderBy('totalXpMined', 'desc').limit(20).get(),
+      db.collection('sp_users').orderBy('totalSats', 'desc').limit(20).get(),
+    ]);
 
-    const leaders = [];
-    snap.forEach(doc => {
+    const seenUids = new Set();
+    const leaderMap = {};
+
+    snapMined.forEach(doc => {
       const d = doc.data();
-      leaders.push({
-        rank: leaders.length + 1,
+      seenUids.add(doc.id);
+      leaderMap[doc.id] = {
         handle: d.nickname || `Miner #${d.signupNumber || '?'}`,
-        xp: d.totalSats || 0,
+        xp: d.totalXpMined || d.totalSats || 0,
         recruits: d.referralCount || 0,
         hasNickname: !!d.nickname,
-      });
+      };
     });
+
+    // Include high-balance users who might predate the totalXpMined field
+    snapBalance.forEach(doc => {
+      if (seenUids.has(doc.id)) return;
+      const d = doc.data();
+      if (!d.totalSats) return;
+      leaderMap[doc.id] = {
+        handle: d.nickname || `Miner #${d.signupNumber || '?'}`,
+        xp: d.totalXpMined || d.totalSats || 0,
+        recruits: d.referralCount || 0,
+        hasNickname: !!d.nickname,
+      };
+    });
+
+    const leaders = Object.values(leaderMap)
+      .sort((a, b) => b.xp - a.xp)
+      .slice(0, 20)
+      .map((m, i) => ({ rank: i + 1, ...m }));
 
     res.setHeader('Cache-Control', 'public, max-age=60');
     return res.status(200).json({ leaders, updatedAt: new Date().toISOString() });
