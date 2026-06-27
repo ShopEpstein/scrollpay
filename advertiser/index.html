@@ -76,6 +76,7 @@
           <button class="admin-tab-btn" data-tab="audit">🔍 Audit</button>
           <button class="admin-tab-btn" data-tab="payouts">💸 Payouts</button>
           <button class="admin-tab-btn" data-tab="broadcast">📧 Broadcast</button>
+          <button class="admin-tab-btn" data-tab="fraud">🚨 Fraud</button>
         </div>
       </div>
 
@@ -310,6 +311,22 @@
           style="width:100%;background:#f7931a;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px;">
           📧 Send to All Users Now
         </button>
+      </div>
+
+      <!-- Admin-only: Fraud Dashboard -->
+      <div id="fraud-section" style="display:none;margin-top:48px;">
+        <div class="page-head" style="margin-bottom:16px;">
+          <h2 style="font-size:20px;font-weight:700;">🚨 Fraud Dashboard</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="loadFraud()" class="btn-ghost-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="fraud-info" style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#991b1b;line-height:1.6;">
+          <strong>Abuse signals</strong> — users flagged for multi-account, referral fraud, or IP clustering. Review before banning.
+        </div>
+        <div id="fraud-container">
+          <div style="color:#9ca3af;font-size:13px;">Loading…</div>
+        </div>
       </div>
 
       <!-- Miner message compose (floating) -->

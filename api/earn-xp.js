@@ -56,6 +56,7 @@ module.exports = async (req, res) => {
     if (!snap.exists) return res.status(404).json({ error: 'Account not found — please reload the page.' });
 
     const data = snap.data();
+    if (data.banned) return res.status(403).json({ error: 'Account banned' });
     if (data.frozen) return res.status(403).json({ error: 'Account frozen' });
 
     // Rate limit: max RATE_LIMIT_PER_MINUTE calls per IP per minute
