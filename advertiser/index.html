@@ -192,7 +192,20 @@
             <div class="field"><label>Project Name <span class="req">*</span></label><input type="text" id="pf-name" placeholder="My Project" /></div>
             <div class="field"><label>URL Slug <span class="req">*</span></label><input type="text" id="pf-slug" placeholder="my-project" /><span class="hint">scrollpay.app/partners/<b id="slug-preview">my-project</b></span></div>
             <div class="field"><label>Description</label><textarea id="pf-desc" rows="3" placeholder="Short description of the project..." style="width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;resize:vertical;"></textarea></div>
-            <div class="field"><label>Logo URL</label><input type="url" id="pf-logo" placeholder="https://example.com/logo.png" /></div>
+            <div class="field">
+              <label>Logo</label>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <label for="pf-logo-file" style="display:inline-flex;align-items:center;gap:6px;background:#f97316;color:#fff;border-radius:7px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                  📁 Upload image
+                  <input type="file" id="pf-logo-file" accept="image/*" style="display:none;" onchange="handleLogoUpload(this)" />
+                </label>
+                <input type="url" id="pf-logo" placeholder="…or paste a URL" style="flex:1;min-width:160px;" oninput="updateLogoPreview(this.value)" />
+              </div>
+              <div id="pf-logo-preview" style="display:none;margin-top:10px;">
+                <img id="pf-logo-img" src="" alt="Logo preview" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;padding:4px;" />
+                <button type="button" onclick="clearLogo()" style="margin-left:10px;background:none;border:none;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;">✕ Remove</button>
+              </div>
+            </div>
             <div class="field"><label>Website</label><input type="url" id="pf-website" placeholder="https://example.com" /></div>
             <div class="field"><label>Twitter / X URL</label><input type="url" id="pf-twitter" placeholder="https://twitter.com/project" /></div>
             <div class="field"><label>Telegram URL</label><input type="url" id="pf-telegram" placeholder="https://t.me/project" /></div>
