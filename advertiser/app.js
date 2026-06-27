@@ -162,10 +162,11 @@ const ADMIN_TAB_MAP = {
   audit:     { show: ['audit-section'] },
   payouts:   { show: ['payouts-section'] },
   broadcast: { show: ['broadcast-section'] },
+  fraud:     { show: ['fraud-section'] },
 };
 const ALL_ADMIN_SECTIONS = ['stats-section', 'xp-market-section', 'fulfilled-section',
   'inbox-section', 'partners-section', 'miners-section', 'sweep-section', 'raffle-section',
-  'payouts-section', 'broadcast-section', 'advertiser-panel'];
+  'payouts-section', 'broadcast-section', 'fraud-section', 'advertiser-panel'];
 
 function switchAdminTab(tabName) {
   ALL_ADMIN_SECTIONS.forEach(id => {
@@ -186,6 +187,8 @@ function switchAdminTab(tabName) {
   if (tabName === 'campaigns' && !campaignsLoaded) { loadCampaigns(); campaignsLoaded = true; }
   // Auto-load payout report when tab is opened
   if (tabName === 'payouts') { loadPayoutReport(); }
+  // Auto-load fraud dashboard when tab is opened
+  if (tabName === 'fraud') { loadFraud(); }
 }
 let campaignsLoaded = false;
 
@@ -1223,6 +1226,43 @@ function renderPartnersTable() {
   });
 }
 
+function handleLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 900 * 1024) {
+    alert('Image is too large (max 900 KB). Try compressing it first.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('pf-logo').value = e.target.result;
+    showLogoPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateLogoPreview(url) {
+  if (url && (url.startsWith('http') || url.startsWith('data:'))) {
+    showLogoPreview(url);
+  } else {
+    document.getElementById('pf-logo-preview').style.display = 'none';
+  }
+}
+
+function showLogoPreview(src) {
+  const preview = document.getElementById('pf-logo-preview');
+  const img = document.getElementById('pf-logo-img');
+  img.src = src;
+  preview.style.display = 'block';
+}
+
+function clearLogo() {
+  document.getElementById('pf-logo').value = '';
+  document.getElementById('pf-logo-file').value = '';
+  document.getElementById('pf-logo-preview').style.display = 'none';
+}
+
 function openPartnerForm(p = null) {
   document.getElementById('partner-form-wrap').style.display = 'block';
   document.getElementById('partner-form-title').textContent = p ? 'Edit Partner' : 'Add Partner';
@@ -1230,7 +1270,9 @@ function openPartnerForm(p = null) {
   document.getElementById('pf-name').value = p ? p.name : '';
   document.getElementById('pf-slug').value = p ? p.slug : '';
   document.getElementById('pf-desc').value = p ? p.description : '';
-  document.getElementById('pf-logo').value = p ? p.logo : '';
+  document.getElementById('pf-logo').value = p ? (p.logo || '') : '';
+  document.getElementById('pf-logo-file').value = '';
+  if (p?.logo) { showLogoPreview(p.logo); } else { document.getElementById('pf-logo-preview').style.display = 'none'; }
   document.getElementById('pf-website').value = p ? p.website : '';
   document.getElementById('pf-twitter').value = p ? p.twitter : '';
   document.getElementById('pf-telegram').value = p ? p.telegram : '';
@@ -2372,3 +2414,103 @@ window.confirmMarkPaid   = confirmMarkPaid;
 window.copyPayoutAddr    = copyPayoutAddr;
 window.sendBroadcast       = sendBroadcast;
 window.sendSweepSummary    = sendSweepSummary;
+
+// ── Fraud Dashboard ──────────────────────────────────────────────
+
+async function loadFraud() {
+  const container = document.getElementById('fraud-container');
+  if (!container) return;
+  container.innerHTML = '<div style="color:#9ca3af;font-size:13px;">Loading…</div>';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-fraud', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load fraud data');
+
+    const users = data.users || [];
+    if (!users.length) {
+      container.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:20px 0;">No flagged users found.</div>';
+      return;
+    }
+
+    const rows = users.map(u => {
+      const xp = (u.totalSats || 0).toLocaleString();
+      const xpMined = (u.totalXpMined || 0).toLocaleString();
+      const flags = [];
+      if (u.flaggedMultiAccount) flags.push('<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">multi-account</span>');
+      if (u.flaggedReferralFraud) flags.push('<span style="background:#fff7ed;color:#c2410c;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">ref fraud</span>');
+      if (u.banned) flags.push('<span style="background:#111827;color:#f87171;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">BANNED</span>');
+      if (u.frozen && !u.banned) flags.push('<span style="background:#eff6ff;color:#2563eb;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">frozen</span>');
+
+      const handle = esc(u.nickname || u.email || u.id);
+      const uid    = esc(u.id);
+      const isBanned = !!u.banned;
+
+      return `<tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:10px 12px 10px 0;font-size:13px;font-weight:600;color:#111827;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${handle}</td>
+        <td style="padding:10px 8px;font-size:12px;color:#6b7280;font-family:monospace;">${uid.slice(0, 10)}…</td>
+        <td style="padding:10px 8px;font-size:13px;text-align:right;">${xp}</td>
+        <td style="padding:10px 8px;font-size:13px;text-align:right;color:#6b7280;">${xpMined}</td>
+        <td style="padding:10px 8px;">${flags.join(' ')}</td>
+        <td style="padding:10px 0 10px 8px;white-space:nowrap;">
+          ${isBanned
+            ? `<button onclick="banUser('${uid}','${handle}',false,'unban')" style="background:#d1fae5;color:#065f46;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Unban</button>`
+            : `<button onclick="banUser('${uid}','${handle}',false,'ban')" style="background:#fef2f2;color:#dc2626;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px;">Ban</button>
+               <button onclick="banUser('${uid}','${handle}',true,'ban')" style="background:#111827;color:#f87171;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Ban + Zero XP</button>`
+          }
+        </td>
+      </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:2px solid #e5e7eb;">
+              <th style="text-align:left;padding:8px 12px 8px 0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Handle / Email</th>
+              <th style="text-align:left;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">User ID</th>
+              <th style="text-align:right;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">XP Balance</th>
+              <th style="text-align:right;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total Mined</th>
+              <th style="padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Flags</th>
+              <th style="padding:8px 0 8px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#9ca3af;">${users.length} flagged user(s)</div>
+    `;
+  } catch (e) {
+    container.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+async function banUser(userId, handle, zeroXp, action = 'ban') {
+  const verb = action === 'unban' ? 'Unban' : (zeroXp ? 'Ban and zero XP for' : 'Ban');
+  if (!confirm(`${verb} @${handle}?`)) return;
+
+  const reason = action === 'ban' ? (prompt('Reason (or leave blank for "Policy violation"):') || '') : '';
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-ban', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, action, reason, zeroXp: !!zeroXp }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    alert(`✓ ${action === 'unban' ? 'Unbanned' : 'Banned'}: ${handle}`);
+    loadFraud();
+  } catch (e) {
+    alert(`Error: ${e.message}`);
+  }
+}
+
+window.loadFraud        = loadFraud;
+window.banUser          = banUser;
+window.handleLogoUpload = handleLogoUpload;
+window.updateLogoPreview = updateLogoPreview;
+window.clearLogo        = clearLogo;
