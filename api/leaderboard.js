@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
       });
 
       miners.sort((a, b) => b.xp - a.xp);
-      const leaders = miners.slice(0, 20).map((m, i) => ({ rank: i + 1, ...m }));
+      const leaders = miners.slice(0, 10).map((m, i) => ({ rank: i + 1, ...m }));
 
       res.setHeader('Cache-Control', 'public, max-age=30');
       return res.status(200).json({ leaders, updatedAt: new Date().toISOString(), date: todayStr });

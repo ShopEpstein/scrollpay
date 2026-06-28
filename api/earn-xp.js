@@ -72,33 +72,51 @@ module.exports = async (req, res) => {
       ).catch(() => {});
     }
 
-    const today = new Date().toDateString();
-    const lastDate = data.lastActiveAt?.toDate?.()?.toDateString?.() || '';
-    const isToday = lastDate === today;
-    const satsToday = isToday ? (data.satsToday || 0) : 0;
+    // Atomically check cap and award XP — transaction prevents concurrent
+    // requests from racing past the cap check simultaneously.
+    let awarded = 0, capped = false, newTotal = 0;
 
-    if (satsToday >= DAILY_CAP) {
-      return res.status(200).json({ awarded: 0, capped: true, total: data.totalSats || 0 });
+    await db.runTransaction(async (tx) => {
+      const uSnap = await tx.get(userRef);
+      const d = uSnap.data();
+
+      const today = new Date().toDateString();
+      const lastDate = d.lastActiveAt?.toDate?.()?.toDateString?.() || '';
+      const isToday = lastDate === today;
+      const satsToday = isToday ? (d.satsToday || 0) : 0;
+
+      if (satsToday >= DAILY_CAP) {
+        awarded = 0;
+        capped = true;
+        newTotal = d.totalSats || 0;
+        return;
+      }
+
+      const remaining = DAILY_CAP - satsToday;
+      awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE, remaining);
+      if (awarded <= 0) throw Object.assign(new Error('Invalid amount'), { status: 400 });
+
+      capped = (satsToday + awarded) >= DAILY_CAP;
+      newTotal = (d.totalSats || 0) + awarded;
+
+      const update = {
+        totalSats:    admin.firestore.FieldValue.increment(awarded),
+        totalXpMined: admin.firestore.FieldValue.increment(awarded),
+        satsToday:    isToday ? admin.firestore.FieldValue.increment(awarded) : awarded,
+        satsDate:     todayStr,
+        lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(clientIp && { lastIp: clientIp }),
+      };
+      if (type === 'impression') {
+        update.totalImpressions = admin.firestore.FieldValue.increment(1);
+        update.impressionsToday = isToday ? admin.firestore.FieldValue.increment(1) : 1;
+      }
+      tx.update(userRef, update);
+    });
+
+    if (!awarded) {
+      return res.status(200).json({ awarded: 0, capped: true, total: newTotal });
     }
-
-    const remaining = DAILY_CAP - satsToday;
-    const awarded = Math.min(parseInt(amount) || 0, MAX_PER_WRITE, remaining);
-    if (awarded <= 0) return res.status(400).json({ error: 'Invalid amount' });
-
-    const update = {
-      totalSats:    admin.firestore.FieldValue.increment(awarded),
-      totalXpMined: admin.firestore.FieldValue.increment(awarded),
-      satsToday:    isToday ? admin.firestore.FieldValue.increment(awarded) : awarded,
-      satsDate:     todayStr,
-      lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...(clientIp && { lastIp: clientIp }),
-    };
-    if (type === 'impression') {
-      update.totalImpressions  = admin.firestore.FieldValue.increment(1);
-      update.impressionsToday  = isToday ? admin.firestore.FieldValue.increment(1) : 1;
-    }
-
-    await userRef.update(update);
 
     // IP dedup: if 3+ distinct accounts earn from same IP today, flag this one
     if (ipRef && clientIp) {
@@ -125,8 +143,8 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       awarded,
       overrideAwarded: override,
-      capped: (satsToday + awarded) >= DAILY_CAP,
-      total: (data.totalSats || 0) + awarded,
+      capped,
+      total: newTotal,
     });
   } catch (err) {
     const status = err.code?.startsWith('auth/') ? 401 : 500;
