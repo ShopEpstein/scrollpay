@@ -2417,7 +2417,7 @@ window.sendSweepSummary    = sendSweepSummary;
 
 // ── Fraud Dashboard ──────────────────────────────────────────────
 
-function fraudUserRow(u, extraFlags = []) {
+function fraudUserRow(u, extraFlags = [], extraCell = '') {
   const handle = esc(u.nickname || u.email || u.uid || '');
   const uid    = esc(u.uid || '');
   const xp     = (u.totalSats || 0).toLocaleString();
@@ -2433,7 +2433,7 @@ function fraudUserRow(u, extraFlags = []) {
     <td style="padding:9px 8px;font-size:11px;color:#9ca3af;font-family:monospace;">${uid.slice(0,10)}…</td>
     <td style="padding:9px 8px;font-size:13px;text-align:right;">${xp}</td>
     <td style="padding:9px 8px;font-size:13px;text-align:right;color:#f97316;font-weight:700;">${today}</td>
-    <td style="padding:9px 8px;">${flags.join(' ')}</td>
+    <td style="padding:9px 8px;">${flags.join(' ')}${extraCell}</td>
     <td style="padding:9px 0 9px 8px;white-space:nowrap;">
       ${isBanned
         ? `<button onclick="banUser('${uid}','${handle}',false,'unban')" style="background:#d1fae5;color:#065f46;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Unban</button>`
@@ -2498,7 +2498,14 @@ async function loadFraud() {
       </div>`).join('')}
     </div>`;
 
-    const velocityRows    = velocity.map(u => fraudUserRow(u, ['<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">⚡ velocity</span>']));
+    const velocityRows    = velocity.map(u => {
+      const imp = u.impressionsToday ?? null;
+      const xpp = u.xpPerImpression ?? null;
+      const impCell = imp !== null
+        ? `<span style="display:inline-block;margin-left:6px;background:#fef9c3;color:#92400e;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">${imp.toLocaleString()} impressions${xpp ? ` · ${xpp} XP/imp` : ''}</span>`
+        : '';
+      return fraudUserRow(u, ['<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">⚡ velocity</span>'], impCell);
+    });
     const multiRows       = multiAccount.map(u => fraudUserRow(u));
     const refRows         = referralFraud.map(u => fraudUserRow(u));
     const noImpRows       = noImpressions.map(u => fraudUserRow(u, ['<span style="background:#f3f4f6;color:#374151;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">no impressions</span>']));
