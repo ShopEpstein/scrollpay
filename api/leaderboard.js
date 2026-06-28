@@ -9,27 +9,37 @@ module.exports = async (req, res) => {
   try {
     if (daily) {
       const todayStr = new Date().toISOString().slice(0, 10);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      // Filter by satsDate (calendar day string) so stale satsToday values
-      // from previous days don't pollute the today leaderboard.
+      // Use lastActiveAt rolling 24h window — matches how admin stats counts
+      // "active today". satsDate filter was too strict and missed users whose
+      // satsDate wasn't written on every earn call.
       const snap = await db.collection('sp_users')
-        .where('satsDate', '==', todayStr)
+        .where('lastActiveAt', '>=', oneDayAgo)
         .limit(1000)
         .get();
 
       const miners = [];
       snap.forEach(doc => {
         const d = doc.data();
+        // Must have earned XP today — either satsDate matches (new path) or
+        // they were active in last 24h with a positive satsToday (covers users
+        // whose satsDate wasn't written on every earn call)
+        const xp = d.satsToday || 0;
+        if (!xp) return;
+        const userDate = d.satsDate || '';
+        // Exclude if satsDate is set but is clearly from a previous day
+        if (userDate && userDate < todayStr) return;
         miners.push({
           handle: d.nickname || `Miner #${d.signupNumber || '?'}`,
-          xp: d.satsToday || 0,
+          xp,
           recruits: d.referralCount || 0,
           hasNickname: !!d.nickname,
         });
       });
 
       miners.sort((a, b) => b.xp - a.xp);
-      const leaders = miners.slice(0, 10).map((m, i) => ({ rank: i + 1, ...m }));
+      const leaders = miners.slice(0, 20).map((m, i) => ({ rank: i + 1, ...m }));
 
       res.setHeader('Cache-Control', 'public, max-age=30');
       return res.status(200).json({ leaders, updatedAt: new Date().toISOString(), date: todayStr });
