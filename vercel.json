@@ -34,6 +34,7 @@
     { "source": "/api/admin-audit",    "destination": "/api/admin-audit.js" },
     { "source": "/api/admin-fraud",      "destination": "/api/admin-fraud.js" },
     { "source": "/api/admin-ban",         "destination": "/api/admin-ban.js" },
+    { "source": "/api/admin-freeze-batch", "destination": "/api/admin-freeze-batch.js" },
     { "source": "/api/payout-history",  "destination": "/api/payout-history.js" },
     { "source": "/leaderboard",        "destination": "/docs/leaderboard.html" },
     { "source": "/",                "destination": "/docs/index.html" },

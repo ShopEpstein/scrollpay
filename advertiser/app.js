@@ -2485,7 +2485,7 @@ async function loadFraud() {
       return;
     }
 
-    const summaryHtml = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+    const summaryHtml = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
       ${[
         ['🚀 Velocity', summary.velocityFlags, '#dc2626'],
         ['👥 Multi-acct', summary.multiAccountFlags, '#c2410c'],
@@ -2496,7 +2496,12 @@ async function loadFraud() {
         <div style="font-size:20px;font-weight:800;color:${color};">${val || 0}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:2px;">${label}</div>
       </div>`).join('')}
-    </div>`;
+    </div>
+    ${velocity.length ? `<div style="margin-bottom:20px;">
+      <button onclick="freezeAllVelocity()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">
+        🚨 Freeze All ${velocity.length} Velocity Abusers + Cancel Their Listings
+      </button>
+    </div>` : ''}`;
 
     const velocityRows    = velocity.map(u => {
       const imp = u.impressionsToday ?? null;
@@ -2552,8 +2557,26 @@ async function banUser(userId, handle, zeroXp, action = 'ban') {
   }
 }
 
+async function freezeAllVelocity() {
+  if (!confirm('Freeze ALL velocity abusers, zero their XP, and cancel their open listings? This cannot be undone.')) return;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/admin-freeze-batch', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    alert(`✓ Frozen ${data.frozenCount} accounts · ${data.listingsCancelled} listings cancelled`);
+    loadFraud();
+  } catch (e) {
+    alert(`Error: ${e.message}`);
+  }
+}
+
 window.loadFraud        = loadFraud;
 window.banUser          = banUser;
+window.freezeAllVelocity = freezeAllVelocity;
 window.handleLogoUpload = handleLogoUpload;
 window.updateLogoPreview = updateLogoPreview;
 window.clearLogo        = clearLogo;
