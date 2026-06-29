@@ -2417,6 +2417,54 @@ window.sendSweepSummary    = sendSweepSummary;
 
 // ── Fraud Dashboard ──────────────────────────────────────────────
 
+function fraudUserRow(u, extraFlags = [], extraCell = '') {
+  const handle = esc(u.nickname || u.email || u.uid || '');
+  const uid    = esc(u.uid || '');
+  const xp     = (u.totalSats || 0).toLocaleString();
+  const today  = (u.satsToday || 0).toLocaleString();
+  const flags  = [...extraFlags];
+  if (u.flaggedMultiAccount) flags.push('<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">multi-acct</span>');
+  if (u.flaggedReferralFraud) flags.push('<span style="background:#fff7ed;color:#c2410c;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">ref fraud</span>');
+  if (u.frozen) flags.push('<span style="background:#eff6ff;color:#2563eb;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">frozen</span>');
+  if (u.banned) flags.push('<span style="background:#111827;color:#f87171;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">BANNED</span>');
+  const isBanned = !!u.banned;
+  return `<tr style="border-bottom:1px solid #f3f4f6;">
+    <td style="padding:9px 10px 9px 0;font-size:13px;font-weight:600;color:#111827;">${handle}</td>
+    <td style="padding:9px 8px;font-size:11px;color:#9ca3af;font-family:monospace;">${uid.slice(0,10)}…</td>
+    <td style="padding:9px 8px;font-size:13px;text-align:right;">${xp}</td>
+    <td style="padding:9px 8px;font-size:13px;text-align:right;color:#f97316;font-weight:700;">${today}</td>
+    <td style="padding:9px 8px;">${flags.join(' ')}${extraCell}</td>
+    <td style="padding:9px 0 9px 8px;white-space:nowrap;">
+      ${isBanned
+        ? `<button onclick="banUser('${uid}','${handle}',false,'unban')" style="background:#d1fae5;color:#065f46;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Unban</button>`
+        : `<button onclick="banUser('${uid}','${handle}',false,'ban')" style="background:#fef2f2;color:#dc2626;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px;">Ban</button>
+           <button onclick="banUser('${uid}','${handle}',true,'ban')" style="background:#111827;color:#f87171;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Ban + Zero XP</button>`
+      }
+    </td>
+  </tr>`;
+}
+
+function fraudSection(title, color, rows) {
+  if (!rows.length) return '';
+  return `
+    <div style="margin-bottom:32px;">
+      <h3 style="font-size:14px;font-weight:700;color:${color};margin-bottom:10px;">${title} (${rows.length})</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="border-bottom:2px solid #e5e7eb;">
+            <th style="text-align:left;padding:7px 10px 7px 0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Handle</th>
+            <th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">UID</th>
+            <th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">XP Balance</th>
+            <th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Today</th>
+            <th style="padding:7px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Flags</th>
+            <th style="padding:7px 0 7px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Actions</th>
+          </tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 async function loadFraud() {
   const container = document.getElementById('fraud-container');
   if (!container) return;
@@ -2429,59 +2477,54 @@ async function loadFraud() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load fraud data');
 
-    const users = data.users || [];
-    if (!users.length) {
-      container.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:20px 0;">No flagged users found.</div>';
+    const { velocity = [], multiAccount = [], referralFraud = [], noImpressions = [], sharedIps = [], summary = {} } = data;
+    const total = (velocity.length + multiAccount.length + referralFraud.length + noImpressions.length);
+
+    if (!total && !sharedIps.length) {
+      container.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:20px 0;">No fraud signals detected.</div>';
       return;
     }
 
-    const rows = users.map(u => {
-      const xp = (u.totalSats || 0).toLocaleString();
-      const xpMined = (u.totalXpMined || 0).toLocaleString();
-      const flags = [];
-      if (u.flaggedMultiAccount) flags.push('<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">multi-account</span>');
-      if (u.flaggedReferralFraud) flags.push('<span style="background:#fff7ed;color:#c2410c;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">ref fraud</span>');
-      if (u.banned) flags.push('<span style="background:#111827;color:#f87171;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">BANNED</span>');
-      if (u.frozen && !u.banned) flags.push('<span style="background:#eff6ff;color:#2563eb;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;">frozen</span>');
+    const summaryHtml = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+      ${[
+        ['🚀 Velocity', summary.velocityFlags, '#dc2626'],
+        ['👥 Multi-acct', summary.multiAccountFlags, '#c2410c'],
+        ['🔗 Ref fraud', summary.referralFraudFlags, '#b45309'],
+        ['👻 No impressions', summary.noImpressionHighBalance, '#6b7280'],
+        ['🌐 Shared IPs', summary.sharedIpGroups, '#4f46e5'],
+      ].map(([label, val, color]) => `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:${color};">${val || 0}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px;">${label}</div>
+      </div>`).join('')}
+    </div>`;
 
-      const handle = esc(u.nickname || u.email || u.id);
-      const uid    = esc(u.id);
-      const isBanned = !!u.banned;
+    const velocityRows    = velocity.map(u => {
+      const imp = u.impressionsToday ?? null;
+      const xpp = u.xpPerImpression ?? null;
+      const impCell = imp !== null
+        ? `<span style="display:inline-block;margin-left:6px;background:#fef9c3;color:#92400e;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">${imp.toLocaleString()} impressions${xpp ? ` · ${xpp} XP/imp` : ''}</span>`
+        : '';
+      return fraudUserRow(u, ['<span style="background:#fef2f2;color:#dc2626;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">⚡ velocity</span>'], impCell);
+    });
+    const multiRows       = multiAccount.map(u => fraudUserRow(u));
+    const refRows         = referralFraud.map(u => fraudUserRow(u));
+    const noImpRows       = noImpressions.map(u => fraudUserRow(u, ['<span style="background:#f3f4f6;color:#374151;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;">no impressions</span>']));
 
-      return `<tr style="border-bottom:1px solid #f3f4f6;">
-        <td style="padding:10px 12px 10px 0;font-size:13px;font-weight:600;color:#111827;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${handle}</td>
-        <td style="padding:10px 8px;font-size:12px;color:#6b7280;font-family:monospace;">${uid.slice(0, 10)}…</td>
-        <td style="padding:10px 8px;font-size:13px;text-align:right;">${xp}</td>
-        <td style="padding:10px 8px;font-size:13px;text-align:right;color:#6b7280;">${xpMined}</td>
-        <td style="padding:10px 8px;">${flags.join(' ')}</td>
-        <td style="padding:10px 0 10px 8px;white-space:nowrap;">
-          ${isBanned
-            ? `<button onclick="banUser('${uid}','${handle}',false,'unban')" style="background:#d1fae5;color:#065f46;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Unban</button>`
-            : `<button onclick="banUser('${uid}','${handle}',false,'ban')" style="background:#fef2f2;color:#dc2626;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px;">Ban</button>
-               <button onclick="banUser('${uid}','${handle}',true,'ban')" style="background:#111827;color:#f87171;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Ban + Zero XP</button>`
-          }
-        </td>
-      </tr>`;
-    }).join('');
+    const sharedIpHtml = sharedIps.length ? `
+      <div style="margin-bottom:32px;">
+        <h3 style="font-size:14px;font-weight:700;color:#4f46e5;margin-bottom:10px;">🌐 Shared IPs today (${sharedIps.length})</h3>
+        ${sharedIps.map(g => `<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;">
+          <strong>${esc(g.ip)}</strong> — ${g.accountCount} accounts: <code style="font-size:11px;">${(g.uids||[]).join(', ')}</code>
+        </div>`).join('')}
+      </div>` : '';
 
-    container.innerHTML = `
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr style="border-bottom:2px solid #e5e7eb;">
-              <th style="text-align:left;padding:8px 12px 8px 0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Handle / Email</th>
-              <th style="text-align:left;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">User ID</th>
-              <th style="text-align:right;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">XP Balance</th>
-              <th style="text-align:right;padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total Mined</th>
-              <th style="padding:8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Flags</th>
-              <th style="padding:8px 0 8px 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:12px;font-size:12px;color:#9ca3af;">${users.length} flagged user(s)</div>
-    `;
+    container.innerHTML = summaryHtml
+      + fraudSection('⚡ Velocity abuse (near/over daily cap)', '#dc2626', velocityRows)
+      + fraudSection('👥 Multi-account flags', '#c2410c', multiRows)
+      + fraudSection('🔗 Referral fraud flags', '#b45309', refRows)
+      + fraudSection('👻 High balance, zero impressions', '#6b7280', noImpRows)
+      + sharedIpHtml
+      + `<div style="font-size:12px;color:#9ca3af;">Generated ${esc(data.generatedAt || '')}</div>`;
   } catch (e) {
     container.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error: ${esc(e.message)}</div>`;
   }
