@@ -20,17 +20,19 @@ module.exports = async (req, res) => {
     const snap = await userRef.get();
     if (!snap.exists) return res.status(404).json({ error: 'Account not found.' });
 
-    if (snap.data().nickname) {
+    if (snap.data().nickname && !snap.data().tempNickname) {
       return res.status(409).json({ error: 'Handle already set — it cannot be changed.' });
     }
 
-    // Enforce uniqueness
-    const taken = await db.collection('sp_users').where('nickname', '==', nickname).limit(1).get();
-    if (!taken.empty) {
-      return res.status(409).json({ error: 'Handle already taken — choose another.' });
+    // Enforce uniqueness (skip if user is just keeping their temp handle)
+    if (nickname !== snap.data().nickname) {
+      const taken = await db.collection('sp_users').where('nickname', '==', nickname).limit(1).get();
+      if (!taken.empty) {
+        return res.status(409).json({ error: 'Handle already taken — choose another.' });
+      }
     }
 
-    await userRef.update({ nickname });
+    await userRef.update({ nickname, tempNickname: false });
     return res.status(200).json({ nickname });
   } catch (err) {
     const status = err.code?.startsWith('auth/') ? 401 : 500;
