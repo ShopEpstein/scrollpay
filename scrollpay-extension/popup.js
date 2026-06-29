@@ -100,11 +100,16 @@ async function loadUserData() {
     }
   }
 
-  // Nickname display / force-handle nudge
-  if (data.nickname) {
+  // Nickname display / force-handle modal
+  if (data.nickname && !data.tempNickname) {
     document.getElementById('nickname-value').textContent = data.nickname;
     document.getElementById('nickname-display').style.display = 'block';
     document.getElementById('nickname-set-form').style.display = 'none';
+    document.getElementById('handle-nudge').style.display = 'none';
+  } else if (data.tempNickname) {
+    // Block the UI until user sets a real handle
+    const modal = document.getElementById('handle-modal');
+    if (modal) modal.style.display = 'flex';
     document.getElementById('handle-nudge').style.display = 'none';
   } else {
     // Highlight handle input and show nudge
@@ -276,6 +281,47 @@ document.getElementById('nickname-save-btn').addEventListener('click', async () 
     const isTaken = (res.error || '').includes('already taken');
     errEl.textContent = isTaken
       ? 'Handle already taken. If this is your handle from scrollpay.app, sign in below using your website email & password to recover it.'
+      : (res.error || 'Could not set handle.');
+    errEl.style.display = 'block';
+  }
+});
+
+// Blocking handle modal save
+document.getElementById('modal-handle-save-btn').addEventListener('click', async () => {
+  const input = document.getElementById('modal-handle-input');
+  const errEl = document.getElementById('modal-handle-error');
+  const btn = document.getElementById('modal-handle-save-btn');
+  const nickname = input.value.trim().toLowerCase();
+
+  errEl.style.display = 'none';
+  if (!/^[a-z0-9_]{3,20}$/.test(nickname)) {
+    errEl.textContent = 'Lowercase letters, numbers, underscores only (3–20 chars).';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const result = await chrome.storage.local.get([USER_KEY]);
+  const userId = result[USER_KEY];
+  if (!userId) return;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  const res = await sendToBackground({ type: 'SET_NICKNAME', userId, nickname });
+  btn.disabled = false;
+  btn.textContent = 'Confirm Handle';
+
+  if (res.success) {
+    document.getElementById('handle-modal').style.display = 'none';
+    document.getElementById('nickname-value').textContent = nickname;
+    document.getElementById('nickname-display').style.display = 'block';
+    document.getElementById('nickname-set-form').style.display = 'none';
+    document.getElementById('handle-nudge').style.display = 'none';
+    loadLeaderboard(nickname);
+    loadProfile(userId, nickname);
+  } else {
+    const isTaken = (res.error || '').includes('already taken');
+    errEl.textContent = isTaken
+      ? 'Handle already taken. Choose another.'
       : (res.error || 'Could not set handle.');
     errEl.style.display = 'block';
   }

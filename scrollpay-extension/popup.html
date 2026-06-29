@@ -87,6 +87,23 @@
       <div style="font-size:11px;color:#92400e;line-height:1.4;">Set a handle above to appear on the leaderboard and earn referral XP.</div>
     </div>
 
+    <!-- Blocking handle modal (shown for new users with temp handle) -->
+    <div id="handle-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:320px;">
+        <div style="font-size:22px;text-align:center;margin-bottom:8px;">⛏️</div>
+        <h2 style="font-size:16px;font-weight:700;text-align:center;margin-bottom:4px;">Choose your miner handle</h2>
+        <p style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:16px;">This is your public identity on the leaderboard. Choose wisely — it's permanent once set.</p>
+        <input type="text" id="modal-handle-input" placeholder="e.g. satoshi_21" maxlength="20"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;" />
+        <p style="font-size:11px;color:#9ca3af;margin-bottom:12px;">Lowercase, numbers, underscores · 3–20 chars</p>
+        <p id="modal-handle-error" style="display:none;font-size:12px;color:#ef4444;margin-bottom:8px;"></p>
+        <button id="modal-handle-save-btn"
+          style="width:100%;padding:12px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          Confirm Handle
+        </button>
+      </div>
+    </div>
+
     <!-- Top Miners Leaderboard -->
     <div class="section">
       <div class="lb-header">
@@ -101,12 +118,12 @@
       </div>
     </div>
 
-    <!-- BTC Draw -->
+    <!-- XP Value -->
     <div class="section draw-section">
-      <div class="section-label">Weekly BTC Draw</div>
+      <div class="section-label">Your XP Value</div>
       <div class="draw-card">
-        <div class="draw-entries">₿ <span id="draw-entries">0</span> XP in the draw</div>
-        <div class="draw-note">Every XP = 1 lottery entry. Others can buy your XP to stack their own odds.</div>
+        <div class="draw-entries">₿ <span id="draw-entries">0</span> XP available</div>
+        <div class="draw-note">Sell your XP to advertisers or collectors on the open market — your attention, your price.</div>
       </div>
     </div>
 

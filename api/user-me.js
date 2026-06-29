@@ -81,6 +81,8 @@ module.exports = async (req, res) => {
       referralCount: 0,
       downlineSize: 0,
       downlineXp: 0,
+      nickname: `miner_${refCode.slice(0, 6).toLowerCase()}`,
+      tempNickname: true,
       installedAt: admin.firestore.FieldValue.serverTimestamp(),
       lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
     };
