@@ -115,16 +115,24 @@
   </ul>
   <p>The extension's content script runs on all URLs (<code>&lt;all_urls&gt;</code> permission) solely to inject the ad widget overlay. It does not read, transmit, or store any page content.</p>
 
-  <h2>4. Passwords and Sensitive Credentials — Explicit Statement</h2>
-  <p><strong>ScrollPay does not collect, access, read, store, or transmit passwords or any other sensitive credentials under any circumstances.</strong></p>
-  <p>Although the extension's content script is granted permission to run on all URLs (including pages that contain login forms), this permission is used solely to inject the ad widget visual overlay into the page. The content script:</p>
+  <h2>4. Passwords and Account Credentials — Full Disclosure</h2>
+
+  <p><strong>The extension popup contains a "Sign in &amp; Connect" form</strong> where you may optionally enter your scrollpay.app email address and password to link your website account to the extension. Here is exactly how those credentials are handled:</p>
   <ul>
-    <li>Does <strong>not</strong> read, intercept, or monitor any form fields, including password inputs.</li>
-    <li>Does <strong>not</strong> listen to keyboard events or capture keystrokes.</li>
-    <li>Does <strong>not</strong> access the DOM for any purpose other than appending the widget element.</li>
-    <li>Does <strong>not</strong> transmit any data from the visited page to our servers — only a boolean impression/click signal and the domain name are sent.</li>
+    <li>Your email and password are passed directly to <strong>Google Firebase Authentication</strong> using the official Firebase JavaScript SDK. Firebase processes the credentials and returns a short-lived authentication token.</li>
+    <li>Your password is <strong>never transmitted to ScrollPay's own servers</strong> and is <strong>never stored</strong> — not in <code>chrome.storage</code>, not in Firestore, and not in any log. Only the Firebase-issued token is stored locally and used for authenticated API calls.</li>
+    <li>Firebase Authentication is governed by Google's privacy policy. See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">firebase.google.com/support/privacy</a>.</li>
   </ul>
-  <p>No password, authentication token, session cookie, or financial credential is ever collected, stored, or shared by ScrollPay. If you have any concerns about this, you may inspect the extension's source code directly in Chrome by navigating to <code>chrome://extensions</code>, enabling Developer Mode, and clicking "Inspect views".</p>
+
+  <p><strong>The content script (which runs on all websites) never touches passwords.</strong> Although it has the <code>&lt;all_urls&gt;</code> permission to inject the ad widget overlay, it:</p>
+  <ul>
+    <li>Does <strong>not</strong> read, intercept, or monitor any form fields on any website, including password inputs.</li>
+    <li>Does <strong>not</strong> listen to keyboard events or capture keystrokes on any website.</li>
+    <li>Does <strong>not</strong> access the DOM for any purpose other than appending the ScrollPay widget element.</li>
+    <li>Does <strong>not</strong> transmit any data from visited pages — only a boolean impression/click signal and the domain name are sent to our servers.</li>
+  </ul>
+
+  <p>In summary: the only password ScrollPay ever handles is your own ScrollPay account password, entered voluntarily in the popup sign-in form, processed exclusively by Firebase Auth — not by ScrollPay. No third-party passwords, session cookies, or credentials are ever accessed.</p>
 
   <h2>5. How We Handle and Use Your Data</h2>
   <ul>
